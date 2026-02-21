@@ -1,0 +1,28 @@
+# 의존성
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# 민감 정보 (절대 올리지 말 것!)
+.env
+*.env
+.env.local
+.env.*.local
+
+# 빌드 캐시
+*.log
+*.tmp
+
+# 디버그 파일
+debug_*.html
+debug_*.json
+
+# macOS
+.DS_Store
+
+# 브라우저 data
+playwright-report/
+test-results/

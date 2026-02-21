@@ -1,0 +1,103 @@
+{
+    "common": {
+        "dashboard_title": "K-Trend Intelligence",
+        "dashboard_badge": "Beta",
+        "search_placeholder": "ブランド名または商品名を検索...",
+        "login": "ログイン",
+        "logout": "ログアウト",
+        "my_favorites": "お気に入り",
+        "loading": "データを読み込み中...",
+        "error_init": "初期化中にエラーが発生しました",
+        "no_results": "結果が見つかりませんでした。",
+        "go_to_link": "ページを見る",
+        "ai_analyze": "AI分析を実行",
+        "footer_text": "K-Trend Intelligence © 2026 · Olive Youngデータに基づく · グローバルセラー向けトレンド分析",
+        "stat_products": "商品",
+        "stat_categories": "カテゴリー",
+        "login_signup": "ログイン / 会員登録",
+        "ai_search_tip": "AIスマート検索 (意味ベース検索)",
+        "ai_search_active": "AIスマート検索有効",
+        "ai_search_inactive": "通常検索",
+        "confirm_clear_notifs": "すべての通知を削除してもよろしいですか？"
+    },
+    "tabs": {
+        "all": "すべての商品",
+        "trending": "急上昇トレンド",
+        "deals": "今日の特価",
+        "reviews": "レビュー分析",
+        "insights": "市場分析",
+        "favorites": "お気に入り",
+        "crawl_logs": "収集ログ"
+    },
+    "kpi": {
+        "trending": "リアルタイム急上昇",
+        "deals": "今日の目玉商品",
+        "reviews": "レビュー急増",
+        "total": "全収集商品"
+    },
+    "filters": {
+        "category": "カテゴリー",
+        "sort_rank": "順位順",
+        "sort_price": "価格順",
+        "sort_reviews": "レビュー順"
+    },
+    "notifications": {
+        "title": "通知",
+        "clear_all": "すべて削除",
+        "empty": "新しい通知はありません。",
+        "price_drop": "📉 価格変動",
+        "rank_up": "🚀 順位急上昇"
+    },
+    "modal": {
+        "tab_info": "基本情報",
+        "tab_ai": "AIレビュー分析",
+        "tab_history": "推移分析",
+        "price": "価格",
+        "rank": "カテゴリー順位",
+        "reviews": "レビュー数",
+        "ai_summary": "AI分析要約",
+        "pros": "メリット",
+        "cons": "デメリット",
+        "keywords": "主要キーワード",
+        "history_rank": "順位推移",
+        "history_price": "価格推移",
+        "history_desc": "過去30/60/90日間の価格と順位の変動です。",
+        "days_30": "30日",
+        "days_60": "60日",
+        "days_90": "90日"
+    },
+    "sections": {
+        "all": "カテゴリー別ランキング",
+        "all_desc": "Olive Youngカテゴリー別ランキングに基づく商品一覧",
+        "trending": "7日間の急上昇商品",
+        "trending_desc": "直近7日間でランキングが最も大きく上昇した商品",
+        "deals": "今日の特価セール",
+        "deals_desc": "本日、最も割引率が高い商品",
+        "reviews": "レビュー人気商品",
+        "reviews_desc": "レビュー数が多く、実証された人気商品",
+        "favorites": "お気に入り商品",
+        "favorites_desc": "ブックマークした商品を一ヶ所で確認できます",
+        "insights": "市場認識と分析",
+        "insights_desc": "収集されたデータに基づく包括的な市場統計",
+        "logs": "収集ログ",
+        "logs_desc": "日次自動データ収集ステータス",
+        "fav_login_required": "ログインが必要です",
+        "fav_login_desc": "お気に入りを見るにはログインしてください",
+        "fav_empty": "お気に入りがありません",
+        "fav_empty_desc": "商品のハートアイコンをクリックして追加してください"
+    },
+    "insights": {
+        "category_share": "カテゴリー別シェア",
+        "brand_power": "ブランドパワー TOP 10",
+        "price_range": "価格帯別商品分布"
+    },
+    "auth": {
+        "login": "ログイン",
+        "signup": "会員登録",
+        "email": "メールアドレス",
+        "password": "パスワード",
+        "logging_in": "ログイン中...",
+        "signing_up": "登録中...",
+        "signup_success": "会員登録に成功しました！メールを確認してください（または直接ログインを試みてください）。"
+    }
+}

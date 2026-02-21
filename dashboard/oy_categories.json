@@ -1,0 +1,202 @@
+[
+  {
+    "tag": "A",
+    "text": "스킨케어",
+    "href": "javascript:common.link.moveCategoryShop('10000010001', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_대카테고리', t_1st_category_type: '대_스킨케어' })",
+    "data": "10000010001",
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "A",
+    "text": "마스크팩",
+    "href": "javascript:common.link.moveCategoryShop('10000010009', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_대카테고리', t_1st_category_type: '대_마스크팩' })",
+    "data": "10000010009",
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "A",
+    "text": "메이크업",
+    "href": "javascript:common.link.moveCategoryShop('10000010002', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_대카테고리', t_1st_category_type: '대_메이크업' })",
+    "data": "10000010002",
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "A",
+    "text": "더모 코스메틱",
+    "href": "javascript:common.link.moveCategoryShop('10000010008', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_대카테고리', t_1st_category_type: '대_더모 코스메틱' })",
+    "data": "10000010008",
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "LI",
+    "text": "스킨케어",
+    "href": null,
+    "data": null,
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "A",
+    "text": "스킨케어",
+    "href": "javascript:common.link.moveCategory('100000100080013', 'Cat100000100080013_MID', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_중카테고리', t_1st_category_type: '대_더모 코스메틱', t_2nd_category_type: '중_스킨케어' })",
+    "data": "100000100080013",
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "LI",
+    "text": "마스크팩",
+    "href": null,
+    "data": null,
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "A",
+    "text": "마스크팩",
+    "href": "javascript:common.link.moveCategory('100000100080011', 'Cat100000100080011_MID', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_중카테고리', t_1st_category_type: '대_더모 코스메틱', t_2nd_category_type: '중_마스크팩' })",
+    "data": "100000100080011",
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "LI",
+    "text": "스킨케어",
+    "href": null,
+    "data": null,
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "A",
+    "text": "스킨케어",
+    "href": "javascript:common.link.moveCategory('100000100070007', 'Cat100000100070007_MID', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_중카테고리', t_1st_category_type: '대_맨즈케어', t_2nd_category_type: '중_스킨케어' })",
+    "data": "100000100070007",
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "LI",
+    "text": "메이크업",
+    "href": null,
+    "data": null,
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "A",
+    "text": "메이크업",
+    "href": "javascript:common.link.moveCategory('100000100070008', 'Cat100000100070008_MID', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_중카테고리', t_1st_category_type: '대_맨즈케어', t_2nd_category_type: '중_메이크업' })",
+    "data": "100000100070008",
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "A",
+    "text": "네일",
+    "href": "javascript:common.link.moveCategoryShop('10000010012', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_대카테고리', t_1st_category_type: '대_네일' })",
+    "data": "10000010012",
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "LI",
+    "text": "전체",
+    "href": null,
+    "data": null,
+    "onclick": null,
+    "className": "on"
+  },
+  {
+    "tag": "BUTTON",
+    "text": "전체",
+    "href": null,
+    "data": "",
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "LI",
+    "text": "스킨케어",
+    "href": null,
+    "data": null,
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "BUTTON",
+    "text": "스킨케어",
+    "href": null,
+    "data": "10000010001",
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "LI",
+    "text": "마스크팩",
+    "href": null,
+    "data": null,
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "BUTTON",
+    "text": "마스크팩",
+    "href": null,
+    "data": "10000010009",
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "LI",
+    "text": "메이크업",
+    "href": null,
+    "data": null,
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "BUTTON",
+    "text": "메이크업",
+    "href": null,
+    "data": "10000010002",
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "LI",
+    "text": "네일",
+    "href": null,
+    "data": null,
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "BUTTON",
+    "text": "네일",
+    "href": null,
+    "data": "10000010012",
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "LI",
+    "text": "더모 코스메틱",
+    "href": null,
+    "data": null,
+    "onclick": null,
+    "className": ""
+  },
+  {
+    "tag": "BUTTON",
+    "text": "더모 코스메틱",
+    "href": null,
+    "data": "10000010008",
+    "onclick": null,
+    "className": ""
+  }
+]

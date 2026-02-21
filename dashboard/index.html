@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K-Trend Intelligence – 한국 이커머스 트렌드</title>
+  <meta name="description" content="동남아시아 셀러를 위한 한국 이커머스 트렌드 인텔리전스 대시보드" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        K-Trend <span style="font-weight:300; color:#666; font-size:14px;">Intelligence</span>
+      </div>
+
+      <div class="header-right">
+        <div class="search-box">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+          <input type="text" id="searchInput" data-i18n="common.search_placeholder" placeholder="상품명, 브랜드 검색..." />
+          <button class="ai-toggle-btn" id="aiSearchToggle" data-i18n-title="common.ai_search_tip"
+            title="AI 스마트 검색 사용">✨</button>
+        </div>
+
+        <!-- Language Switcher -->
+        <div class="lang-selector">
+          <button class="header-icon-btn" id="langBtn" title="Change Language">
+            <span id="currentLangIcon">🌐</span>
+          </button>
+          <div class="lang-dropdown" id="langDropdown">
+            <div class="lang-item" data-lang="ko"><span class="lang-flag">🇰🇷</span> South Korea</div>
+            <div class="lang-item" data-lang="en"><span class="lang-flag">🇺🇸</span> English</div>
+            <div class="lang-item" data-lang="vi"><span class="lang-flag">🇻🇳</span> Tiếng Việt</div>
+            <div class="lang-item" data-lang="th"><span class="lang-flag">🇹🇭</span> ไทย</div>
+            <div class="lang-item" data-lang="id"><span class="lang-flag">🇮🇩</span> Indonesia</div>
+            <div class="lang-item" data-lang="ja"><span class="lang-flag">🇯🇵</span> 日本語</div>
+          </div>
+        </div>
+        <div class="header-stats" id="headerStats">
+          <span class="stat-chip"><span class="stat-dot green"></span><span id="totalProducts">-</span> <span
+              data-i18n="common.stat_products">상품</span></span>
+          <span class="stat-chip"><span class="stat-dot blue"></span><span id="totalCategories">-</span> <span
+              data-i18n="common.stat_categories">카테고리</span></span>
+        </div>
+        <div class="notification-wrapper">
+          <button class="header-icon-btn" id="notifBell">
+            <span class="bell-icon">🔔</span>
+            <span class="unread-badge" id="notifBadge" style="display:none"></span>
+          </button>
+          <div class="notif-dropdown" id="notifDropdown">
+            <div class="notif-header">
+              <h3 data-i18n="notifications.title">실시간 알림</h3>
+              <button class="notif-clear-btn" id="clearNotif" data-i18n="notifications.clear_all">비우기</button>
+            </div>
+            <div class="notif-list" id="notifList">
+              <!-- Notifications will be loaded here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main">
+    <!-- New Platform Bar: Centralized Controls -->
+    <section class="platform-bar">
+      <div class="platform-switcher">
+        <button class="platform-btn active" data-platform="oliveyoung">Olive Young</button>
+        <button class="platform-btn" data-platform="musinsa">Musinsa</button>
+        <button class="platform-btn" data-platform="ably">Ably</button>
+        <button class="platform-btn" data-platform="ssg">Shinsegae</button>
+        <button class="platform-btn" data-platform="k_trend">Korea Trends</button>
+        <button class="platform-btn" data-platform="steady_sellers">Steady Sellers</button>
+      </div>
+      <div id="platformControls" class="platform-controls"></div>
+    </section>
+
+    <!-- KPI Cards -->
+    <section class="kpi-grid" id="kpiGrid">
+      <div class="kpi-card kpi-trending">
+        <div class="kpi-icon">🔥</div>
+        <div class="kpi-content">
+          <div class="kpi-value" id="kpiTrending">-</div>
+          <div class="kpi-label" data-i18n="kpi.trending">7일 급상승</div>
+        </div>
+      </div>
+      <div class="kpi-card kpi-deals">
+        <div class="kpi-icon">💰</div>
+        <div class="kpi-content">
+          <div class="kpi-value" id="kpiDeals">-</div>
+          <div class="kpi-label" data-i18n="kpi.deals">오늘 할인</div>
+        </div>
+      </div>
+      <div class="kpi-card kpi-reviews">
+        <div class="kpi-icon">⭐</div>
+        <div class="kpi-content">
+          <div class="kpi-value" id="kpiReviews">-</div>
+          <div class="kpi-label" data-i18n="kpi.reviews">리뷰 상위</div>
+        </div>
+      </div>
+      <div class="kpi-card kpi-total">
+        <div class="kpi-icon">📦</div>
+        <div class="kpi-content">
+          <div class="kpi-value" id="kpiTotal">-</div>
+          <div class="kpi-label" data-i18n="kpi.total">전체 상품</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Category Filter -->
+    <section class="filter-bar">
+      <div class="filter-label" data-i18n="filters.category">카테고리</div>
+      <div class="category-chips" id="categoryChips">
+      </div>
+    </section>
+
+    <!-- Tab Navigation -->
+    <section class="tab-bar">
+      <button class="tab active" data-tab="all"><span>📋</span> <span data-i18n="tabs.all">전체 상품</span></button>
+      <button class="tab" data-tab="trending"><span>🔥</span> <span data-i18n="tabs.trending">급상승 TOP</span></button>
+      <button class="tab" data-tab="deals"><span>💰</span> <span data-i18n="tabs.deals">할인 특가</span></button>
+      <button class="tab" data-tab="reviews"><span>⭐</span> <span data-i18n="tabs.reviews">리뷰 인기</span></button>
+      <button class="tab" data-tab="wishlist"><span>❤️</span> <span data-i18n="tabs.favorites">관심 상품</span></button>
+      <button class="tab" data-tab="insights"><span>📊</span> <span data-i18n="tabs.insights">시장 분석</span></button>
+      <button class="tab" data-tab="logs"><span>📋</span> <span data-i18n="tabs.crawl_logs">수집 로그</span></button>
+    </section>
+
+    <!-- Content Area -->
+    <section class="content-area">
+      <!-- Trending Tab -->
+      <div class="tab-content" id="tab-trending">
+        <div class="section-header">
+          <h2 data-i18n="sections.trending">7일간 급상승 상품</h2>
+          <p class="section-desc" data-i18n="sections.trending_desc">최근 7일 동안 랭킹이 가장 크게 상승한 상품들</p>
+        </div>
+        <div class="products-grid" id="trendingGrid">
+          <div class="loading-skeleton"></div>
+        </div>
+      </div>
+
+      <!-- Deals Tab -->
+      <div class="tab-content" id="tab-deals">
+        <div class="section-header">
+          <h2 data-i18n="sections.deals">오늘의 특가 할인</h2>
+          <p class="section-desc" data-i18n="sections.deals_desc">가장 큰 폭으로 할인 중인 상품들</p>
+        </div>
+        <div class="products-grid" id="dealsGrid">
+          <div class="loading-skeleton"></div>
+        </div>
+      </div>
+
+      <!-- Reviews Tab -->
+      <div class="tab-content" id="tab-reviews">
+        <div class="section-header">
+          <h2 data-i18n="sections.reviews">리뷰 인기 상품</h2>
+          <p class="section-desc" data-i18n="sections.reviews_desc">리뷰 수가 가장 많은 검증된 인기 상품들</p>
+        </div>
+        <div class="products-grid" id="reviewsGrid">
+          <div class="loading-skeleton"></div>
+        </div>
+      </div>
+
+      <!-- Wishlist Tab -->
+      <div class="tab-content" id="tab-wishlist">
+        <div class="section-header">
+          <h2 data-i18n="sections.favorites">나의 관심 상품</h2>
+          <p class="section-desc" data-i18n="sections.favorites_desc">북마크한 상품들을 한눈에 확인하세요</p>
+        </div>
+        <div class="products-grid" id="wishlistGrid">
+          <div class="loading-skeleton"></div>
+        </div>
+      </div>
+
+      <!-- Insights Tab -->
+      <div class="tab-content" id="tab-insights">
+        <div class="section-header">
+          <h2 data-i18n="sections.insights">시장 인지도 및 분석</h2>
+          <p class="section-desc" data-i18n="sections.insights_desc">현재 수집된 데이터를 바탕으로 한 시장 종합 통계입니다.</p>
+        </div>
+        <div class="insights-grid">
+          <div class="insight-card">
+            <h3 data-i18n="insights.category_share">📂 카테고리별 점유율</h3>
+            <div class="chart-wrapper">
+              <canvas id="categoryShareChart"></canvas>
+            </div>
+          </div>
+          <div class="insight-card">
+            <h3 data-i18n="insights.brand_power">🏷️ 브랜드 파워 TOP 10</h3>
+            <div class="chart-wrapper">
+              <canvas id="brandPowerChart"></canvas>
+            </div>
+          </div>
+          <div class="insight-card full-width">
+            <h3 data-i18n="insights.price_range">💰 가격대별 상품 분포</h3>
+            <div class="chart-wrapper">
+              <canvas id="priceRangeChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logs Tab -->
+      <div class="tab-content" id="tab-logs">
+        <div class="section-header">
+          <h2 data-i18n="sections.logs">데이터 수집 로그</h2>
+          <p class="section-desc" data-i18n="sections.logs_desc">최근 30일간의 수집 성공/실패 기록입니다.</p>
+        </div>
+        <div class="log-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>수집 시간</th>
+                <th>작업명</th>
+                <th>상태</th>
+                <th>수집량</th>
+                <th>메시지</th>
+              </tr>
+            </thead>
+            <tbody id="crawlLogsBody">
+              <tr>
+                <td colspan="5" style="text-align:center; padding:40px;">데이터를 불러오는 중...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="tab-content active" id="tab-all">
+        <div class="section-header">
+          <h2 id="rankingTitle" data-i18n="sections.all">카테고리별 랭킹</h2>
+          <p id="rankingDesc" class="section-desc" data-i18n="sections.all_desc">올리브영 카테고리별 순위 기반 상품 목록</p>
+        </div>
+        <div class="table-container">
+          <table class="data-table" id="allProductsTable">
+            <thead>
+              <tr>
+                <th>순위</th>
+                <th>이미지</th>
+                <th class="sortable" data-sort="name">상품명</th>
+                <th class="sortable" data-sort="brand">브랜드</th>
+                <th class="sortable" data-sort="price">가격</th>
+                <th>리뷰</th>
+                <th>평점</th>
+                <th>링크</th>
+              </tr>
+            </thead>
+            <tbody id="allProductsBody">
+              <tr>
+                <td colspan="8" class="loading-cell">데이터 로딩 중...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Product Detail Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="productModal">
+      <button class="modal-close" id="modalClose">&times;</button>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p data-i18n="common.footer_text">K-Trend Intelligence © 2026 · 올리브영 데이터 기반 · 동남아 셀러를 위한 트렌드 분석</p>
+  </footer>
+
+  <script type="module" src="/main.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,66 @@
+name: Daily Trend Crawl + Gemini Tagging
+
+on:
+  schedule:
+    - cron: '0 15 * * *'   # 한국시간 자정 (UTC 15:00)
+    - cron: '0 4 * * *'    # 한국시간 오후 1시 (UTC 04:00) — 하루 2회
+  workflow_dispatch: # 수동 실행 가능
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install Node dependencies
+      run: npm install
+      working-directory: ./dashboard
+
+    - name: Install Python dependencies
+      run: pip install requests python-dotenv playwright pytrends pandas
+      working-directory: ./dashboard
+
+    - name: Install Playwright browsers
+      run: playwright install chromium --with-deps
+
+    - name: Run Daily Crawler (OliveYoung, Musinsa, Ably...)
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      run: node scripts/crawler.js
+      working-directory: ./dashboard
+
+    - name: Run Google Trends Crawler
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      run: python generic_crawler/google_trends_crawler.py
+      working-directory: ./dashboard
+
+    - name: Run Naver DataLab Crawler
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      run: python generic_crawler/naver_datalab_crawler.py
+      working-directory: ./dashboard
+
+    - name: Run Gemini Trend Enricher (브랜드/성분/패션 자동 태깅)
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      run: python scripts/trend_enricher.py
+      working-directory: ./dashboard
+

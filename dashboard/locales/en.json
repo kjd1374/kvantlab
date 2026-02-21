@@ -1,0 +1,103 @@
+{
+    "common": {
+        "dashboard_title": "K-Trend Intelligence",
+        "dashboard_badge": "Beta",
+        "search_placeholder": "Search brand or product...",
+        "login": "Login",
+        "logout": "Logout",
+        "my_favorites": "My Favorites",
+        "loading": "Loading data...",
+        "error_init": "An error occurred during initialization",
+        "no_results": "No results found.",
+        "go_to_link": "Visit Page",
+        "ai_analyze": "Run AI Analysis",
+        "footer_text": "K-Trend Intelligence © 2026 · Based on Olive Young Data · Trend Analysis for Global Sellers",
+        "stat_products": "Products",
+        "stat_categories": "Categories",
+        "login_signup": "Login / Register",
+        "ai_search_tip": "AI Smart Search (Semantic Search)",
+        "ai_search_active": "AI Smart Search Active",
+        "ai_search_inactive": "Standard Search",
+        "confirm_clear_notifs": "Are you sure you want to clear all notifications?"
+    },
+    "tabs": {
+        "all": "All Products",
+        "trending": "Trending",
+        "deals": "Daily Deals",
+        "reviews": "Review Analysis",
+        "insights": "Market Insights",
+        "favorites": "Interests",
+        "crawl_logs": "Crawl Logs"
+    },
+    "kpi": {
+        "trending": "Real-time Trending",
+        "deals": "Daily Best Deals",
+        "reviews": "Rising Reviews",
+        "total": "Total Products"
+    },
+    "filters": {
+        "category": "Category",
+        "sort_rank": "By Rank",
+        "sort_price": "By Price",
+        "sort_reviews": "By Reviews"
+    },
+    "notifications": {
+        "title": "Notifications",
+        "clear_all": "Clear All",
+        "empty": "No new notifications.",
+        "price_drop": "📉 Price Change",
+        "rank_up": "🚀 Rank Jump"
+    },
+    "modal": {
+        "tab_info": "Info",
+        "tab_ai": "AI Review",
+        "tab_history": "History",
+        "price": "Price",
+        "rank": "Rank",
+        "reviews": "Reviews",
+        "ai_summary": "AI Summary",
+        "pros": "Pros",
+        "cons": "Cons",
+        "keywords": "Keywords",
+        "history_rank": "Rank Trend",
+        "history_price": "Price Trend",
+        "history_desc": "Price and rank changes over the last 30/60/90 days.",
+        "days_30": "30 Days",
+        "days_60": "60 Days",
+        "days_90": "90 Days"
+    },
+    "sections": {
+        "all": "Category Rankings",
+        "all_desc": "Product list based on Olive Young category rankings",
+        "trending": "7-Day Trending",
+        "trending_desc": "Products with the biggest rank jumps in the last 7 days",
+        "deals": "Daily Deals",
+        "deals_desc": "Highest discount products available today",
+        "reviews": "Review Leaders",
+        "reviews_desc": "Proven popular products with the most reviews",
+        "favorites": "My Interests",
+        "favorites_desc": "View all your bookmarked products in one place",
+        "insights": "Market Analysis",
+        "insights_desc": "Comprehensive market statistics based on collected data",
+        "logs": "Collection Logs",
+        "logs_desc": "Daily automated data collection status",
+        "fav_login_required": "Login Required",
+        "fav_login_desc": "Please login to view your favorites",
+        "fav_empty": "No favorites yet",
+        "fav_empty_desc": "Click the heart icon on any product to add it here"
+    },
+    "insights": {
+        "category_share": "Category Share",
+        "brand_power": "Brand Power TOP 10",
+        "price_range": "Price Range Distribution"
+    },
+    "auth": {
+        "login": "Login",
+        "signup": "Sign Up",
+        "email": "Email",
+        "password": "Password",
+        "logging_in": "Logging in...",
+        "signing_up": "Signing up...",
+        "signup_success": "Sign up successful! Please check your email (or try logging in directly)."
+    }
+}

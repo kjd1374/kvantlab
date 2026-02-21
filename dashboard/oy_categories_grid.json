@@ -1,0 +1,119 @@
+[
+  {
+    "text": "스킨케어",
+    "href": "javascript:common.link.moveCategoryShop('10000010001', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_대카테고리', t_1st_category_type: '대_스킨케어' })",
+    "dataRef": "10000010001",
+    "onclick": null,
+    "className": "",
+    "parentClass": "sub_depth",
+    "html": "<a href=\"javascript:common.link.moveCategoryShop('10000010001', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_대카테고리', t_1st_category_type: '대_스킨케어' })\" data-ref-dispcatno=\"10000010001\" data-attr=\"공통^드로우^스킨케어\">스킨케어</a>"
+  },
+  {
+    "text": "마스크팩",
+    "href": "javascript:common.link.moveCategoryShop('10000010009', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_대카테고리', t_1st_category_type: '대_마스크팩' })",
+    "dataRef": "10000010009",
+    "onclick": null,
+    "className": "",
+    "parentClass": "sub_depth",
+    "html": "<a href=\"javascript:common.link.moveCategoryShop('10000010009', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_대카테고리', t_1st_category_type: '대_마스크팩' })\" data-ref-dispcatno=\"10000010009\" data-attr=\"공통^드로우^마스크팩\">마스크팩</a>"
+  },
+  {
+    "text": "클렌징",
+    "href": "javascript:common.link.moveCategoryShop('10000010010', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_대카테고리', t_1st_category_type: '대_클렌징' })",
+    "dataRef": "10000010010",
+    "onclick": null,
+    "className": "",
+    "parentClass": "sub_depth",
+    "html": "<a href=\"javascript:common.link.moveCategoryShop('10000010010', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_대카테고리', t_1st_category_type: '대_클렌징' })\" data-ref-dispcatno=\"10000010010\" data-attr=\"공통^드로우^클렌징\">클렌징</a>"
+  },
+  {
+    "text": "메이크업",
+    "href": "javascript:common.link.moveCategoryShop('10000010002', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_대카테고리', t_1st_category_type: '대_메이크업' })",
+    "dataRef": "10000010002",
+    "onclick": null,
+    "className": "",
+    "parentClass": "sub_depth",
+    "html": "<a href=\"javascript:common.link.moveCategoryShop('10000010002', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_대카테고리', t_1st_category_type: '대_메이크업' })\" data-ref-dispcatno=\"10000010002\" data-attr=\"공통^드로우^메이크업\">메이크업</a>"
+  },
+  {
+    "text": "스킨케어",
+    "href": "javascript:common.link.moveCategory('100000100080013', 'Cat100000100080013_MID', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_중카테고리', t_1st_category_type: '대_더모 코스메틱', t_2nd_category_type: '중_스킨케어' })",
+    "dataRef": "100000100080013",
+    "onclick": null,
+    "className": "",
+    "parentClass": "",
+    "html": "<a href=\"javascript:common.link.moveCategory('100000100080013', 'Cat100000100080013_MID', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_중카테고리', t_1st_category_type: '대_더모 코스메틱', t_2nd_category_type: '중_스킨케어' })\" data-ref-dispcatno=\"100000100080013\" data-attr=\"공통^드로우^더모 코스메틱_스킨케어\" data-trk=\"/\">스킨케어</a>"
+  },
+  {
+    "text": "클렌징",
+    "href": "javascript:common.link.moveCategory('100000100080006', 'Cat100000100080006_MID', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_중카테고리', t_1st_category_type: '대_더모 코스메틱', t_2nd_category_type: '중_클렌징' })",
+    "dataRef": "100000100080006",
+    "onclick": null,
+    "className": "",
+    "parentClass": "",
+    "html": "<a href=\"javascript:common.link.moveCategory('100000100080006', 'Cat100000100080006_MID', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_중카테고리', t_1st_category_type: '대_더모 코스메틱', t_2nd_category_type: '중_클렌징' })\" data-ref-dispcatno=\"100000100080006\" data-attr=\"공통^드로우^더모 코스메틱_클렌징\" data-trk=\"/\">클렌징</a>"
+  },
+  {
+    "text": "마스크팩",
+    "href": "javascript:common.link.moveCategory('100000100080011', 'Cat100000100080011_MID', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_중카테고리', t_1st_category_type: '대_더모 코스메틱', t_2nd_category_type: '중_마스크팩' })",
+    "dataRef": "100000100080011",
+    "onclick": null,
+    "className": "",
+    "parentClass": "",
+    "html": "<a href=\"javascript:common.link.moveCategory('100000100080011', 'Cat100000100080011_MID', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_중카테고리', t_1st_category_type: '대_더모 코스메틱', t_2nd_category_type: '중_마스크팩' })\" data-ref-dispcatno=\"100000100080011\" data-attr=\"공통^드로우^더모 코스메틱_마스크팩\" data-trk=\"/\">마스크팩</a>"
+  },
+  {
+    "text": "스킨케어",
+    "href": "javascript:common.link.moveCategory('100000100070007', 'Cat100000100070007_MID', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_중카테고리', t_1st_category_type: '대_맨즈케어', t_2nd_category_type: '중_스킨케어' })",
+    "dataRef": "100000100070007",
+    "onclick": null,
+    "className": "",
+    "parentClass": "",
+    "html": "<a href=\"javascript:common.link.moveCategory('100000100070007', 'Cat100000100070007_MID', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_중카테고리', t_1st_category_type: '대_맨즈케어', t_2nd_category_type: '중_스킨케어' })\" data-ref-dispcatno=\"100000100070007\" data-attr=\"공통^드로우^맨즈케어_스킨케어\" data-trk=\"/\">스킨케어</a>"
+  },
+  {
+    "text": "메이크업",
+    "href": "javascript:common.link.moveCategory('100000100070008', 'Cat100000100070008_MID', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_중카테고리', t_1st_category_type: '대_맨즈케어', t_2nd_category_type: '중_메이크업' })",
+    "dataRef": "100000100070008",
+    "onclick": null,
+    "className": "",
+    "parentClass": "",
+    "html": "<a href=\"javascript:common.link.moveCategory('100000100070008', 'Cat100000100070008_MID', 'Drawer',{ t_page: '드로우_카테고리', t_click: '카테고리탭_중카테고리', t_1st_category_type: '대_맨즈케어', t_2nd_category_type: '중_메이크업' })\" data-ref-dispcatno=\"100000100070008\" data-attr=\"공통^드로우^맨즈케어_메이크업\" data-trk=\"/\">메이크업</a>"
+  },
+  {
+    "text": "스킨케어",
+    "href": null,
+    "dataRef": "10000010001",
+    "onclick": null,
+    "className": "",
+    "parentClass": "",
+    "html": "<button type=\"button\" data-ref-dispcatno=\"10000010001\">스킨케어</button>"
+  },
+  {
+    "text": "마스크팩",
+    "href": null,
+    "dataRef": "10000010009",
+    "onclick": null,
+    "className": "",
+    "parentClass": "",
+    "html": "<button type=\"button\" data-ref-dispcatno=\"10000010009\">마스크팩</button>"
+  },
+  {
+    "text": "클렌징",
+    "href": null,
+    "dataRef": "10000010010",
+    "onclick": null,
+    "className": "",
+    "parentClass": "",
+    "html": "<button type=\"button\" data-ref-dispcatno=\"10000010010\">클렌징</button>"
+  },
+  {
+    "text": "메이크업",
+    "href": null,
+    "dataRef": "10000010002",
+    "onclick": null,
+    "className": "",
+    "parentClass": "",
+    "html": "<button type=\"button\" data-ref-dispcatno=\"10000010002\">메이크업</button>"
+  }
+]

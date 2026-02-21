@@ -1,0 +1,103 @@
+{
+    "common": {
+        "dashboard_title": "K-Trend Intelligence",
+        "dashboard_badge": "Beta",
+        "search_placeholder": "Tìm kiếm thương hiệu hoặc sản phẩm...",
+        "login": "Đăng nhập",
+        "logout": "Đăng xuất",
+        "my_favorites": "Sản phẩm quan tâm",
+        "loading": "Đang tải dữ liệu...",
+        "error_init": "Đã xảy ra lỗi khi khởi tạo",
+        "no_results": "Không tìm thấy kết quả.",
+        "go_to_link": "Truy cập",
+        "ai_analyze": "Chạy phân tích AI",
+        "footer_text": "K-Trend Intelligence © 2026 · Dựa trên dữ liệu Olive Young · Phân tích xu hướng cho người bán toàn cầu",
+        "stat_products": "Sản phẩm",
+        "stat_categories": "Danh mục",
+        "login_signup": "Đăng nhập / Đăng ký",
+        "ai_search_tip": "Tìm kiếm thông minh AI (Tìm kiếm ngữ nghĩa)",
+        "ai_search_active": "Tìm kiếm thông minh AI đang hoạt động",
+        "ai_search_inactive": "Tìm kiếm tiêu chuẩn",
+        "confirm_clear_notifs": "Bạn có chắc chắn muốn xóa tất cả thông báo không?"
+    },
+    "tabs": {
+        "all": "Tất cả sản phẩm",
+        "trending": "Xu hướng",
+        "deals": "Ưu đãi hôm nay",
+        "reviews": "Phân tích review",
+        "insights": "Phân tích thị trường",
+        "favorites": "Quan tâm",
+        "crawl_logs": "Lịch sử thu thập"
+    },
+    "kpi": {
+        "trending": "Xu hướng thời gian thực",
+        "deals": "Ưu đãi tốt nhất",
+        "reviews": "Review đang tăng",
+        "total": "Tổng số sản phẩm"
+    },
+    "filters": {
+        "category": "Danh mục",
+        "sort_rank": "Theo thứ hạng",
+        "sort_price": "Theo giá",
+        "sort_reviews": "Theo review"
+    },
+    "notifications": {
+        "title": "Thông báo",
+        "clear_all": "Xóa tất cả",
+        "empty": "Không có thông báo mới.",
+        "price_drop": "📉 Thay đổi giá",
+        "rank_up": "🚀 Tăng hạng mạnh"
+    },
+    "modal": {
+        "tab_info": "Thông tin",
+        "tab_ai": "Phân tích AI",
+        "tab_history": "Lịch sử",
+        "price": "Giá",
+        "rank": "Thứ hạng",
+        "reviews": "Số lượng review",
+        "ai_summary": "Tóm tắt AI",
+        "pros": "Ưu điểm",
+        "cons": "Nhược điểm",
+        "keywords": "Từ khóa chính",
+        "history_rank": "Xu hướng thứ hạng",
+        "history_price": "Xu hướng giá",
+        "history_desc": "Thay đổi giá và thứ hạng trong 30/60/90 ngày qua.",
+        "days_30": "30 ngày",
+        "days_60": "60 ngày",
+        "days_90": "90 ngày"
+    },
+    "sections": {
+        "all": "Xếp hạng danh mục",
+        "all_desc": "Danh sách sản phẩm dựa trên xếp hạng danh mục Olive Young",
+        "trending": "Top 7 ngày tăng vọt",
+        "trending_desc": "Các sản phẩm có thứ hạng tăng mạnh nhất trong 7 ngày qua",
+        "deals": "Ưu đãi đặc biệt hôm nay",
+        "deals_desc": "Sản phẩm có mức giảm giá cao nhất hiện nay",
+        "reviews": "Sản phẩm review phổ biến",
+        "reviews_desc": "Các sản phẩm phổ biến đã được kiểm chứng với nhiều review nhất",
+        "favorites": "Sản phẩm của tôi",
+        "favorites_desc": "Xem lại tất cả các sản phẩm bạn đã đánh dấu",
+        "insights": "Nhận thức và phân tích thị trường",
+        "insights_desc": "Thống kê thị trường toàn diện dựa trên dữ liệu thu thập được.",
+        "logs": "Lịch sử thu thập",
+        "logs_desc": "Trạng thái thu thập dữ liệu tự động hàng ngày",
+        "fav_login_required": "Yêu cầu đăng nhập",
+        "fav_login_desc": "Vui lòng đăng nhập để xem sản phẩm quan tâm",
+        "fav_empty": "Chưa có sản phẩm quan tâm",
+        "fav_empty_desc": "Nhấp vào biểu tượng trái tim trên bất kỳ sản phẩm nào để thêm vào đây"
+    },
+    "insights": {
+        "category_share": "Thị phần theo danh mục",
+        "brand_power": "Sức mạnh thương hiệu TOP 10",
+        "price_range": "Phân bổ theo mức giá"
+    },
+    "auth": {
+        "login": "Đăng nhập",
+        "signup": "Đăng ký",
+        "email": "Email",
+        "password": "Mật khẩu",
+        "logging_in": "Đang đăng nhập...",
+        "signing_up": "Đang đăng ký...",
+        "signup_success": "Đăng ký thành công! Vui lòng kiểm tra email của bạn (hoặc thử đăng nhập trực tiếp)."
+    }
+}
