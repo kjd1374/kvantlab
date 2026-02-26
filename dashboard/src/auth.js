@@ -25,6 +25,30 @@ export function setupAuthUI() {
   const headerRight = document.querySelector('.header-right');
   const session = getSession();
 
+  // Initialize Auto-Logout on Inactivity
+  if (session && !window._autoLogoutInitiated) {
+    window._autoLogoutInitiated = true;
+    let logoutTimer;
+
+    // 3 hours = 10800000 ms
+    const resetLogoutTimer = () => {
+      clearTimeout(logoutTimer);
+      logoutTimer = setTimeout(async () => {
+        if (getSession()) {
+          alert(window.t ? window.t('auth.auto_logout_msg') || '장시간 활동이 없어 보안을 위해 자동 로그아웃 되었습니다.' : '장시간 활동이 없어 보호를 위해 자동 로그아웃 되었습니다.');
+          await signOut();
+          window.location.href = '/index.html';
+        }
+      }, 10800000);
+    };
+
+    // Listen to common user activities with passive to not hurt performance
+    ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(eventName => {
+      document.addEventListener(eventName, resetLogoutTimer, { passive: true });
+    });
+    resetLogoutTimer();
+  }
+
   // Create Auth Container in Header
   let authContainer = document.querySelector('.header-auth');
   if (!authContainer) {

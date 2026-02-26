@@ -205,43 +205,7 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
-        .lang-dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            margin-top: 8px;
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 12px;
-            padding: 8px;
-            min-width: 150px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            display: none;
-            flex-direction: column;
-            gap: 4px;
-            z-index: 1000;
-        }
 
-        .lang-dropdown.show {
-            display: flex;
-        }
-
-        .lang-item {
-            padding: 10px 12px;
-            color: #ddd;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: background 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.95rem;
-        }
-
-        .lang-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-        }
 
         /* Override Auth Buttons for Dark Theme */
         .header-auth .btn-login {
@@ -426,6 +390,23 @@
         </div>
     </footer>
 
+    <!-- Notice Modal -->
+    <div class="modal-overlay" id="noticeModalOverlay">
+        <div class="modal" id="noticeModal"
+            style="max-width: 600px; max-height: 80vh; overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main);">
+            <div class="modal-close" id="noticeModalClose" style="color: var(--text-secondary);">✕</div>
+            <div class="modal-header"
+                style="border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;">
+                <h2 id="noticeModalTitle" style="font-size: 1.5rem; margin-bottom: 8px; margin-top: 0;">제목</h2>
+                <div id="noticeModalDate" style="color: var(--text-secondary); font-size: 0.9rem;">날짜</div>
+            </div>
+            <div class="modal-body" id="noticeModalBody"
+                style="line-height: 1.6; color: var(--text-secondary); white-space: pre-wrap; word-break: break-all;">
+                내용
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase / Supabase SDKs -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module">
@@ -451,18 +432,18 @@
 
             langBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                langDropdown.classList.toggle('show');
+                langDropdown.classList.toggle('open');
             });
 
             document.addEventListener('click', () => {
-                langDropdown.classList.remove('show');
+                langDropdown.classList.remove('open');
             });
 
             langItems.forEach(item => {
                 item.addEventListener('click', async () => {
                     const lang = item.dataset.lang;
                     await i18n.setLanguage(lang);
-                    langDropdown.classList.remove('show');
+                    langDropdown.classList.remove('open');
                 });
             });
 
@@ -514,8 +495,12 @@
                         const langCode = window.i18n ? (window.i18n.currentLang === 'en' ? 'en-US' : window.i18n.currentLang) : 'ko-KR';
                         const dateText = new Date(item.created_at).toLocaleDateString(langCode);
 
+                        // Prepare safe data strings
+                        const safeTitle = item.title.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                        const safeContent = item.content ? item.content.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, "\\n") : '';
+
                         return `
-                            <div class="announcement-item" onclick="alert('공지 상세 보기 구현 예정: ' + '${item.title}')">
+                            <div class="announcement-item" onclick="openNoticeModal('${safeTitle}', '${dateText}', '${safeContent}')">
                                 <div>
                                     <span class="ai-badge">${badgeText}</span>
                                     <span class="a-title">${item.title}</span>
@@ -529,6 +514,27 @@
                 }
             }
             loadAnnouncements();
+
+            // Notice Modal Logic
+            window.openNoticeModal = function (title, date, content) {
+                document.getElementById('noticeModalTitle').textContent = title;
+                document.getElementById('noticeModalDate').textContent = date;
+                document.getElementById('noticeModalBody').innerHTML = content.replace(/\\n/g, '<br>');
+                document.getElementById('noticeModalOverlay').classList.add('open');
+                document.body.style.overflow = 'hidden';
+            };
+
+            document.getElementById('noticeModalClose').addEventListener('click', () => {
+                document.getElementById('noticeModalOverlay').classList.remove('open');
+                document.body.style.overflow = '';
+            });
+
+            document.getElementById('noticeModalOverlay').addEventListener('click', (e) => {
+                if (e.target.id === 'noticeModalOverlay') {
+                    document.getElementById('noticeModalOverlay').classList.remove('open');
+                    document.body.style.overflow = '';
+                }
+            });
         });
     </script>
 </body>
