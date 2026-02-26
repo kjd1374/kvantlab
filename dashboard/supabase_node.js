@@ -66,7 +66,55 @@ export async function fetchTrending(limit = 50, platform = 'oliveyoung') {
         trendRes = await query('v_trending_7d', `select=*&source=eq.${platform}&order=rank_change.desc&limit=${limit}`);
     }
 
-    if (!trendRes.data || trendRes.data.length === 0) return trendRes;
+    if (!trendRes.data || trendRes.data.length === 0) {
+        // Fallback: Calculate 1-day trend if v_trending_7d is empty (e.g. less than 7 days of data)
+        // [FIX] Two-step date discovery to bypass the 1000-row limit of PostgREST
+        const d1Res = await query('daily_rankings_v2', `select=date&source=eq.${platform}&order=date.desc&limit=1`);
+        const latestDate = d1Res.data?.[0]?.date;
+
+        let dates = [];
+        if (latestDate) {
+            dates.push(latestDate);
+            const d2Res = await query('daily_rankings_v2', `select=date&source=eq.${platform}&date=lt.${latestDate}&order=date.desc&limit=1`);
+            if (d2Res.data?.[0]?.date) {
+                dates.push(d2Res.data[0].date);
+            }
+        }
+
+        if (dates.length > 0) {
+            const latestDate = dates[0];
+            const prevDate = dates.length > 1 ? dates[1] : latestDate;
+
+            // Fetch latest rankings
+            const latestRes = await query('daily_rankings_v2', `select=*,products_master(*)&source=eq.${platform}&date=eq.${latestDate}&order=rank.asc&limit=${limit * 2}`);
+
+            if (dates.length > 1) {
+                // Fetch previous rankings to calculate change
+                const prevRes = await query('daily_rankings_v2', `select=product_id,rank&source=eq.${platform}&date=eq.${prevDate}`);
+                const prevMap = {};
+                (prevRes.data || []).forEach(r => prevMap[r.product_id] = r.rank);
+
+                trendRes.data = (latestRes.data || []).map(r => {
+                    const prevRank = prevMap[r.product_id];
+                    const change = prevRank ? prevRank - r.rank : 0; // positive means rank went up
+                    return {
+                        ...r,
+                        ...(r.products_master || {}),
+                        current_rank: r.rank,
+                        rank_change: change
+                    };
+                }).filter(r => r.rank_change > 0).sort((a, b) => b.rank_change - a.rank_change).slice(0, limit);
+            } else {
+                // Just use top ranks if only 1 day of data exists
+                trendRes.data = (latestRes.data || []).map(r => ({
+                    ...r,
+                    ...(r.products_master || {}),
+                    current_rank: r.rank,
+                    rank_change: 0
+                })).slice(0, limit);
+            }
+        }
+    }
 
     // Fetch/Merge AI Summary
     const productIds = trendRes.data.map(p => p.product_id || p.id).filter(id => id);

@@ -26,13 +26,8 @@ load_dotenv(os.path.join(ROOT, ".env"))
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyAXoonBcBZr6vj5xpF4SzS8PWhcrGXA-v8")
-
-GEMINI_MODEL = "gemini-3-flash-preview"
-GEMINI_URL = (
-    f"https://generativelanguage.googleapis.com/v1beta/models/"
-    f"{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
-)
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "deepseek-r1:8b")
+OLLAMA_URL = "http://localhost:11434/api/generate"
 
 SB_HEADERS = {
     "apikey": SUPABASE_KEY,
@@ -64,7 +59,7 @@ def fetch_latest_keywords(limit=50):
     )
     return rows
 
-# ─── Gemini 태깅 ──────────────────────────────────────────────
+# ─── Ollama 태깅 ──────────────────────────────────────────────
 PROMPT_TEMPLATE = """
 아래는 한국 이커머스 쇼핑 트렌드 검색어 목록입니다.
 각 검색어를 분석해서 다음 JSON 배열 형태로 정확하게 반환해주세요.
@@ -88,27 +83,43 @@ PROMPT_TEMPLATE = """
 JSON만 반환하고 다른 설명은 하지 마세요.
 """
 
-def call_gemini(keywords: list[str]) -> list[dict]:
-    """Gemini에게 키워드 목록을 전달하고 태그 분석 결과를 받습니다."""
+def call_ollama(keywords: list[str]) -> list[dict]:
+    """Ollama에게 키워드 목록을 전달하고 태그 분석 결과를 받습니다."""
     kw_text = "\n".join(f"{i+1}. {kw}" for i, kw in enumerate(keywords))
     prompt = PROMPT_TEMPLATE.format(count=len(keywords), keywords=kw_text)
 
     payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "responseMimeType": "application/json",
+        "model": OLLAMA_MODEL,
+        "prompt": prompt,
+        "stream": False,
+        "options": {
             "temperature": 0.1
         }
     }
 
     try:
-        r = requests.post(GEMINI_URL, json=payload, timeout=60)
+        print("    -> Sending request to Ollama...")
+        r = requests.post(OLLAMA_URL, json=payload, timeout=600)
+        print("    -> Received response. Status:", r.status_code)
         r.raise_for_status()
         data = r.json()
-        text = data["candidates"][0]["content"]["parts"][0]["text"]
-        return json.loads(text)
+        text = data.get("response", "").strip()
+        # Sometimes mistral wraps json in markdown code blocks
+        if text.startswith("```json"):
+            text = text.split("```json")[1].split("```")[0].strip()
+        elif text.startswith("```"):
+            text = text.split("```")[1].split("```")[0].strip()
+            
+        print("    -> Raw text from Ollama:", repr(text[:100]) + "...")
+        parsed = json.loads(text)
+        if isinstance(parsed, dict):
+            # Extract array if mistral wrapped it in an object
+            for key in ["keywords", "tags", "data", "results", "items"]:
+                if key in parsed and isinstance(parsed[key], list):
+                    return parsed[key]
+        return parsed
     except Exception as e:
-        print(f"  ❌ Gemini API 오류: {e}")
+        print(f"  ❌ Ollama API 오류: {e}")
         return []
 
 # ─── 태그 저장 ────────────────────────────────────────────────
@@ -127,7 +138,7 @@ def save_tags(product_id: str, source: str, tags: dict):
 
 # ─── 메인 실행 ────────────────────────────────────────────────
 def enrich_once():
-    print(f"\n[{datetime.now().strftime('%H:%M:%S')}] ▶ Gemini 트렌드 분석 시작...")
+    print(f"\n[{datetime.now().strftime('%H:%M:%S')}] ▶ Ollama (Mistral) 트렌드 분석 시작...")
 
     rows = fetch_latest_keywords(limit=60)
     if not rows:
@@ -137,12 +148,21 @@ def enrich_once():
     keywords = [r["name"] for r in rows]
     print(f"  📋 키워드 {len(keywords)}개 로드 완료")
 
-    # Gemini 호출 (60개 → 한 번에 처리)
-    print(f"  🤖 Gemini ({GEMINI_MODEL}) 에 분석 요청 중...")
-    results = call_gemini(keywords)
+    # Ollama 호출 (20개씩 나누어 처리)
+    print(f"  🤖 Ollama ({OLLAMA_MODEL}) 에 분석 요청 중...")
+    results = []
+    chunk_size = 20
+    for i in range(0, len(keywords), chunk_size):
+        chunk = keywords[i:i + chunk_size]
+        print(f"    -> Chunk {i//chunk_size + 1}/{(len(keywords) + chunk_size - 1)//chunk_size} ({len(chunk)}개)...")
+        chunk_res = call_ollama(chunk)
+        if chunk_res:
+            results.extend(chunk_res)
+        else:
+            print(f"    -> ⚠️ Chunk {i//chunk_size + 1} 응답 없음/파싱 실패")
 
     if not results:
-        print("  ❌ Gemini 응답이 없습니다.")
+        print("  ❌ Ollama 응답이 없거나 파싱에 실패했습니다.")
         return
 
     print(f"  ✅ 분석 완료: {len(results)}개 결과")
@@ -192,13 +212,13 @@ def enrich_once():
             print(f"      - {fs}")
 
 def main():
-    parser = argparse.ArgumentParser(description="Gemini Trend Enricher")
+    parser = argparse.ArgumentParser(description="Ollama Trend Enricher")
     parser.add_argument("--watch", action="store_true", help="1시간마다 반복 실행")
     args = parser.parse_args()
 
     if args.watch:
         print("=" * 60)
-        print("  Gemini Trend Enricher - 1시간 주기 모드")
+        print("  Ollama Trend Enricher - 1시간 주기 모드")
         print("  종료: Ctrl+C")
         print("=" * 60)
         count = 0

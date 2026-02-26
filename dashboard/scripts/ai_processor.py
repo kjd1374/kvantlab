@@ -4,22 +4,19 @@ import asyncio
 import requests
 from datetime import datetime
 from dotenv import load_dotenv
-import google.generativeai as genai
+# Native Python Packages Only
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"))
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "deepseek-r1:8b")
+OLLAMA_URL = "http://localhost:11434/api/generate"
 
-if not all([SUPABASE_URL, SUPABASE_KEY, GEMINI_API_KEY]):
-    print("Error: Missing required environment variables (SUPABASE_URL, SUPABASE_KEY, GEMINI_API_KEY).")
+if not all([SUPABASE_URL, SUPABASE_KEY]):
+    print("Error: Missing required environment variables (SUPABASE_URL, SUPABASE_KEY).")
     exit(1)
-
-# Initialize Gemini
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-3-flash-preview')
 
 HEADERS = {
     "apikey": SUPABASE_KEY,
@@ -49,13 +46,18 @@ async def analyze_product(product):
     """
     
     try:
-        response = model.generate_content(prompt)
-        text = response.text.strip()
-        if "```json" in text:
+        payload = {
+            "model": OLLAMA_MODEL,
+            "prompt": prompt,
+            "stream": False
+        }
+        res = requests.post(OLLAMA_URL, json=payload, timeout=300)
+        res.raise_for_status()
+        text = res.json().get("response", "").strip()
+        if text.startswith("```json"):
             text = text.split("```json")[1].split("```")[0].strip()
-        elif "```" in text:
+        elif text.startswith("```"):
             text = text.split("```")[1].split("```")[0].strip()
-        
         return json.loads(text)
     except Exception as e:
         print(f"  ❌ AI Analysis failed for {name}: {e}")
@@ -81,13 +83,18 @@ async def analyze_trend(keyword_item):
     """
     
     try:
-        response = model.generate_content(prompt)
-        text = response.text.strip()
-        if "```json" in text:
+        payload = {
+            "model": OLLAMA_MODEL,
+            "prompt": prompt,
+            "stream": False
+        }
+        res = requests.post(OLLAMA_URL, json=payload, timeout=300)
+        res.raise_for_status()
+        text = res.json().get("response", "").strip()
+        if text.startswith("```json"):
             text = text.split("```json")[1].split("```")[0].strip()
-        elif "```" in text:
+        elif text.startswith("```"):
             text = text.split("```")[1].split("```")[0].strip()
-        
         return json.loads(text)
     except Exception as e:
         print(f"  ❌ AI Analysis failed for trend {keyword}: {e}")

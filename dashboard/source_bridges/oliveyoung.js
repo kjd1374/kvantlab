@@ -20,14 +20,12 @@ export const OliveYoungBridge = {
         { id: 'trending', icon: '🔥', label: 'tabs.trending' },
         { id: 'deals', icon: '💰', label: 'tabs.deals' },
         { id: 'reviews', icon: '⭐', label: 'tabs.reviews' },
-        { id: 'wishlist', icon: '❤️', label: 'tabs.favorites' },
-        { id: 'insights', icon: '📊', label: 'tabs.insights' },
-        { id: 'logs', icon: '📋', label: 'tabs.crawl_logs' }
+        { id: 'wishlist', icon: '❤️', label: 'tabs.favorites' }
     ],
 
     async getKPIs(currentPlatform) {
         const [trending, dealsCount, reviews, total] = await Promise.all([
-            fetchTrending(1, currentPlatform),
+            fetchTrending(100, currentPlatform),
             fetchDealsCount(currentPlatform),
             fetchReviewGrowth(1, currentPlatform),
             fetchProductCount(currentPlatform)

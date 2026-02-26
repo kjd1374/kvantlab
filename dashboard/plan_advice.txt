@@ -1,0 +1,3 @@
+- Use Vercel or Render for Next.js/Node frontend hosting.
+- Use Supabase for PostgreSQL Database.
+- Use GitHub Actions for cron jobs.

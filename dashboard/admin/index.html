@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Pool Admin - K-Trend Intelligence</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --admin-primary: #0066ff;
+            --admin-secondary: #f8f9fa;
+        }
+
+        body {
+            background: #f4f7f9;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .admin-sidebar {
+            width: 260px;
+            background: #1a1c1e;
+            color: #fff;
+            padding: 30px 20px;
+        }
+
+        .admin-main {
+            flex: 1;
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .admin-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .admin-header {
+            margin-bottom: 40px;
+        }
+
+        .btn-primary {
+            background: var(--admin-primary);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+        }
+
+        .log-viewer {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 12px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-online {
+            background: #e6fffa;
+            color: #2c7a7b;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-layout">
+        <aside class="admin-sidebar">
+            <h2 style="margin-bottom: 40px; font-weight: 700;">DataPool <span
+                    style="font-weight: 300; opacity: 0.6;">Admin</span></h2>
+            <nav>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 20px;"><a href="#" class="nav-link active" data-tab="reports"
+                            style="color: #fff; text-decoration: none; display: flex; align-items: center; gap: 10px;">📊
+                            AI Reports</a></li>
+                    <li style="margin-bottom: 20px;"><a href="#" class="nav-link" data-tab="users"
+                            style="color: #666; text-decoration: none; display: flex; align-items: center; gap: 10px;">👥
+                            User Management</a></li>
+                    <li style="margin-bottom: 20px;"><a href="#" class="nav-link" data-tab="logs"
+                            style="color: #666; text-decoration: none; display: flex; align-items: center; gap: 10px;">📋
+                            Crawler Logs</a></li>
+                    <li style="margin-bottom: 20px;"><a href="#" class="nav-link" data-tab="announcements"
+                            style="color: #666; text-decoration: none; display: flex; align-items: center; gap: 10px;">📢
+                            Announcements</a></li>
+                    <li style="margin-bottom: 20px;"><a href="#" class="nav-link" data-tab="sourcing"
+                            style="color: #666; text-decoration: none; display: flex; align-items: center; gap: 10px;">📦
+                            Sourcing Quotes</a></li>
+                    <li style="margin-top: 50px;"><a href="/"
+                            style="color: var(--admin-primary); text-decoration: none;">← Back to Dashboard</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <!-- 1. AI Reports Section -->
+            <div id="reportsSection" class="tab-content">
+                <header class="admin-header">
+                    <h1>AI Reports & Intelligence</h1>
+                    <p style="color: #666;">데이터 풀 전용 AI 리포트 생성 및 관리 도구입니다.</p>
+                </header>
+
+                <section class="admin-card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <h3>Daily Beauty Insight Report</h3>
+                            <p style="font-size: 14px; color: #888;">최근 수집된 데이터를 바탕으로 AI 트렌드 리포트를 생성합니다.</p>
+                        </div>
+                    </div>
+
+                    <div
+                        style="background: var(--admin-secondary); padding: 25px; border-radius: 12px; display: flex; gap: 15px;">
+                        <button id="generateBtn" class="btn-primary">✨ Generate New Report</button>
+                        <button id="downloadBtn" class="btn-primary" style="background: #28a745;">📥 Download
+                            PDF</button>
+                    </div>
+                    <div id="reportStatus" style="margin-top: 15px; font-size: 14px; display: none;"></div>
+                </section>
+            </div>
+
+            <!-- 2. User Management Section -->
+            <div id="usersSection" class="tab-content" style="display: none;">
+                <header class="admin-header">
+                    <h1>User Management</h1>
+                    <p style="color: #666;">시스템 사용자 및 권한을 관리합니다.</p>
+                </header>
+
+                <section class="admin-card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3>Active Users</h3>
+                        <button id="refreshUsersBtn" class="btn-primary" style="padding: 8px 16px;">🔄 Refresh
+                            List</button>
+                    </div>
+                    <div class="table-container" style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                            <thead>
+                                <tr style="background: #f8f9fa; text-align: left; border-bottom: 2px solid #eee;">
+                                    <th style="padding: 12px;">이메일</th>
+                                    <th style="padding: 12px;">이름 / 소속</th>
+                                    <th style="padding: 12px;">플랫폼 / 카테고리</th>
+                                    <th style="padding: 12px;">권한</th>
+                                    <th style="padding: 12px;">구독 상태</th>
+                                    <th style="padding: 12px;">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTableBody">
+                                <tr>
+                                    <td colspan="6" style="padding: 40px; text-align: center; color: #888;">사용자 목록을 불러오는
+                                        중...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 3. Logs Section -->
+            <div id="logsSection" class="tab-content" style="display: none;">
+                <header class="admin-header">
+                    <h1>Crawler Logs</h1>
+                    <p style="color: #666;">데이터 풀 핵심 엔진의 실행 상태를 모니터링합니다.</p>
+                </header>
+
+                <section class="admin-card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3>Live Crawler Logs</h3>
+                        <select id="logType" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
+                            <option value="ecommerce">🛒 Ecommerce Crawler</option>
+                            <option value="news">📰 Beauty News</option>
+                            <option value="aggregator">📊 Data Aggregator</option>
+                        </select>
+                    </div>
+                    <div class="log-viewer" id="logViewer">로그 파일을 불러오는 중...</div>
+                </section>
+            </div>
+
+            <!-- 4. Announcements Section -->
+            <div id="announcementsSection" class="tab-content" style="display: none;">
+                <header class="admin-header">
+                    <h1>Announcements Management</h1>
+                    <p style="color: #666;">랜딩 페이지와 대시보드에 노출될 공지사항, 리포트, 업데이트를 관리합니다.</p>
+                </header>
+
+                <section class="admin-card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3>Published Announcements</h3>
+                        <button id="createAnnouncementBtn" class="btn-primary" style="padding: 8px 16px;">➕
+                            작성하기</button>
+                    </div>
+                    <div class="table-container" style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                            <thead>
+                                <tr style="background: #f8f9fa; text-align: left; border-bottom: 2px solid #eee;">
+                                    <th style="padding: 12px; width: 10%;">타입</th>
+                                    <th style="padding: 12px; width: 45%;">제목</th>
+                                    <th style="padding: 12px; width: 15%;">상태</th>
+                                    <th style="padding: 12px; width: 15%;">작성일(수정일)</th>
+                                    <th style="padding: 12px; width: 15%;">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="announcementTableBody">
+                                <tr>
+                                    <td colspan="5" style="padding: 40px; text-align: center; color: #888;">공지사항 목록을
+                                        불러오는 중...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 5. Sourcing Section -->
+            <div id="sourcingSection" class="tab-content" style="display: none;">
+                <header class="admin-header">
+                    <h1>B2B Sourcing Requests</h1>
+                    <p style="color: #666;">고객의 B2B 소싱 및 견적 요청 내역을 관리합니다.</p>
+                </header>
+
+                <section class="admin-card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3>Quote Requests</h3>
+                        <button id="refreshSourcingBtn" class="btn-primary" style="padding: 8px 16px;">🔄 Refresh
+                            List</button>
+                    </div>
+                    <div class="table-container" style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                            <thead>
+                                <tr style="background: #f8f9fa; text-align: left; border-bottom: 2px solid #eee;">
+                                    <th style="padding: 12px; width: 20%;">요청자 (이메일)</th>
+                                    <th style="padding: 12px; width: 10%;">상품 수</th>
+                                    <th style="padding: 12px; width: 30%;">고객 메시지</th>
+                                    <th style="padding: 12px; width: 15%;">상태</th>
+                                    <th style="padding: 12px; width: 15%;">요청일</th>
+                                    <th style="padding: 12px; width: 10%;">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sourcingTableBody">
+                                <tr>
+                                    <td colspan="6" style="padding: 40px; text-align: center; color: #888;">요청 내역을 불러오는
+                                        중...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Sourcing Detail Modal -->
+    <div id="sourcingModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>📦 견적 요청 상세 관리</h2>
+                <button class="modal-close" id="closeSourcingModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="sourcingId">
+                <div style="margin-bottom: 15px;">
+                    <strong style="display:block; margin-bottom:5px;">요청자:</strong>
+                    <span id="sourcingUserEmail"></span>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <strong style="display:block; margin-bottom:5px;">고객 메시지:</strong>
+                    <div id="sourcingUserMessage"
+                        style="padding: 10px; background: #f4f7f9; border-radius: 4px; font-size: 14px; white-space: pre-wrap;">
+                    </div>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <strong style="display:block; margin-bottom:5px;">요청 상품 목록:</strong>
+                    <div id="sourcingItemsList"
+                        style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px; font-size: 13px;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>상태 변경</label>
+                    <select id="sourcingStatus" class="form-control"
+                        style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                        <option value="pending">대기중 (Pending)</option>
+                        <option value="quoted">견적 완료 (Quoted - 결제유도)</option>
+                        <option value="completed">발주/배송 완료 (Completed)</option>
+                        <option value="canceled">취소됨 (Canceled)</option>
+                    </select>
+                </div>
+                <div
+                    style="display:flex; justify-content:space-between; gap:10px; margin-top:15px; padding:15px; background:#f8f9fa; border-radius:8px; border:1px solid #eee;">
+                    <div style="flex:1;">
+                        <label style="font-size:13px;">배송비 (Shipping) ₩</label>
+                        <input type="number" id="shippingFee" class="form-control calc-trigger" placeholder="0"
+                            style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc; text-align:right;">
+                    </div>
+                    <div style="flex:1;">
+                        <label style="font-size:13px;">수수료 (Service) ₩</label>
+                        <input type="number" id="serviceFee" class="form-control calc-trigger" placeholder="0"
+                            style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc; text-align:right;">
+                    </div>
+                </div>
+
+                <div class="form-group"
+                    style="margin-top:15px; padding:15px; background:var(--admin-primary); color:white; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                    <label style="margin:0; font-weight:600;">총 예상 견적 (Total Cost)</label>
+                    <div style="font-size:18px; font-weight:700;">
+                        <input type="hidden" id="sourcingCost" value="0">
+                        ₩ <span id="totalCostDisplay">0</span>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top:15px;">
+                    <label>관리자 답변 (Admin Reply)</label>
+                    <textarea id="sourcingAdminReply" class="form-control" rows="4"
+                        placeholder="고객에게 전달할 배송 일정, 조건 등 상세 내용을 적어주세요."
+                        style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                    <button type="button" class="btn-danger"
+                        style="padding: 10px 20px; border-radius: 8px; border: 1px solid #dc3545; background: #fff; color: #dc3545; cursor: pointer; margin-right:auto;"
+                        onclick="if(document.getElementById('sourcingId').value) window.deleteSourcingRequest(document.getElementById('sourcingId').value)">이
+                        요청 삭제 (Delete)</button>
+                    <button type="button" class="btn-secondary" id="cancelSourcingBtn"
+                        style="padding: 10px 20px; border-radius: 8px; border: 1px solid #ddd; background: white; cursor: pointer;">취소</button>
+                    <button type="button" class="btn-primary" id="saveSourcingBtn"
+                        style="padding: 10px 20px; cursor: pointer;">저장 및 상태 업데이트</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subscription Edit Modal -->
+    <div id="subModal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div
+            style="background: white; padding: 30px; border-radius: 16px; width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+            <h3 style="margin-top: 0; margin-bottom: 20px;">구독 정보 수정</h3>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">구독 티어</label>
+                <select id="subTier" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                    <option value="free">FREE</option>
+                    <option value="pro">PRO</option>
+                    <option value="enterprise">ENTERPRISE</option>
+                </select>
+            </div>
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">만료일 설정</label>
+                <input type="date" id="subExpiry"
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button id="closeSubModal"
+                    style="background: #f1f3f5; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">취소</button>
+                <button id="saveSubBtn" class="btn-primary" style="padding: 10px 20px;">저장하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Announcement Edit Modal -->
+    <div id="announcementModal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div
+            style="background: white; padding: 30px; border-radius: 16px; width: 500px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+            <h3 id="announcementModalTitle" style="margin-top: 0; margin-bottom: 20px;">새 공지사항 작성</h3>
+            <input type="hidden" id="announcementId">
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">게시 타입</label>
+                <select id="aType" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                    <option value="notice">공지사항 (Notice)</option>
+                    <option value="report">리포트 (Report)</option>
+                    <option value="update">업데이트 (Update)</option>
+                </select>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">제목</label>
+                <input type="text" id="aTitle" placeholder="공지 제목을 입력하세요"
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">내용 (줄바꿈 허용)</label>
+                <textarea id="aContent" rows="5" placeholder="공지 내용을 입력하세요"
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box; resize:vertical;"></textarea>
+            </div>
+            <div style="margin-bottom: 25px;">
+                <label
+                    style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #666; cursor: pointer;">
+                    <input type="checkbox" id="aPublished" checked> 게시물 공개 (Published)
+                </label>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button id="closeAnnouncementModal"
+                    style="background: #f1f3f5; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">취소</button>
+                <button id="saveAnnouncementBtn" class="btn-primary" style="padding: 10px 20px;">저장하기</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="admin.js"></script>
+</body>
+
+</html>

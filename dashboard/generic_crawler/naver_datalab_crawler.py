@@ -5,24 +5,13 @@ import requests
 from datetime import datetime
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright
+import local_ai_helper as ai
+from config import SUPABASE_URL, HEADERS
 
 # ENV Setup
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"))
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 SOURCE = "naver_datalab"
-
-if not SUPABASE_URL or not SUPABASE_KEY:
-    print("Error: SUPABASE_URL or SUPABASE_KEY not found.")
-    exit(1)
-
-HEADERS = {
-    "apikey": SUPABASE_KEY,
-    "Authorization": f"Bearer {SUPABASE_KEY}",
-    "Content-Type": "application/json",
-    "Prefer": "return=representation,resolution=merge-duplicates"
-}
 
 # Naver Data Lab Shopping Insight Categories
 TARGET_CATEGORIES = [
@@ -46,8 +35,29 @@ def log_crawl(status, metadata=None):
 
 def save_keyword_trend(keyword, rank, category_code):
     try:
-        # 1. Upsert to products_master
         product_id = f"kw_{category_code}_{keyword}"
+
+        # 1. 기존 데이터 먼저 조회 (AI 분석 여부 확인)
+        existing_res = requests.get(
+            f"{SUPABASE_URL}/rest/v1/products_master",
+            headers=HEADERS,
+            params={"product_id": f"eq.{product_id}", "select": "id,tags,ai_summary"},
+            timeout=10
+        )
+        existing = existing_res.json() if existing_res.status_code == 200 else []
+        already_analyzed = existing and existing[0].get("ai_summary") and existing[0].get("tags")
+
+        # 2. AI 분석은 최초 1회만 실행 (이미 있으면 스킵)
+        if already_analyzed:
+            tags = existing[0].get("tags", {})
+            insight = existing[0].get("ai_summary", {})
+            print(f"  ⚡ AI 분석 캐시 사용: {keyword} (API 절약)")
+        else:
+            print(f"  🤖 최초 AI 분석 실행: {keyword}")
+            tags = ai.extract_tags(keyword)
+            insight = ai.generate_insight(keyword, SOURCE)
+            print("  ✨ 분석 완료. DB 저장 준비...")
+
         product_record = {
             "product_id": product_id,
             "source": SOURCE,
@@ -56,6 +66,8 @@ def save_keyword_trend(keyword, rank, category_code):
             "price": 0,
             "image_url": "https://datalab.naver.com/img/footer_logo.png",
             "url": f"https://search.naver.com/search.naver?query={keyword}",
+            "tags": tags,
+            "ai_summary": insight,
             "updated_at": datetime.now().isoformat()
         }
         res = requests.post(

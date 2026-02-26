@@ -26,11 +26,15 @@ import {
   fetchNotifications,
   markNotificationAsRead,
   clearNotifications,
-  searchProductsSemantic
-} from './supabase.js';
-import { setupAuthUI } from './src/auth.js';
-import { i18n } from './src/i18n.js';
-import { OliveYoungBridge } from './source_bridges/oliveyoung.js';
+  searchProductsSemantic,
+  getProfile,
+  getDailyViewCount,
+  incrementDetailViewCount,
+  fetchProductHistory
+} from './supabase.js?v=3';
+import { setupAuthUI } from './src/auth.js?v=11';
+import { i18n } from './src/i18n.js?v=6';
+import { OliveYoungBridge } from './source_bridges/oliveyoung.js?v=2';
 import { MusinsaBridge } from './source_bridges/musinsa.js';
 import { AblyBridge } from './source_bridges/ably.js';
 import { ShinsegaeBridge } from './source_bridges/shinsegae.js';
@@ -78,6 +82,7 @@ async function setPlatform(platform) {
   if (state.currentPlatform === platform) return;
   state.currentPlatform = platform;
   state.activeBridge = bridges[platform] || OliveYoungBridge;
+  document.body.dataset.platform = platform; // CSS-level platform selector
 
   // UI Update
   document.querySelectorAll('.platform-btn').forEach(btn => {
@@ -88,13 +93,16 @@ async function setPlatform(platform) {
   const controls = document.getElementById('platformControls');
   if (controls) {
     controls.innerHTML = state.activeBridge.renderCustomHeader(state);
+    if (state.activeBridge.bindCustomHeaderEvents) {
+      state.activeBridge.bindCustomHeaderEvents(() => loadTab(state.activeTab));
+    }
   }
 
   // Re-attach platform listeners if they were in the controls or bar
   if (window.attachPlatformListeners) window.attachPlatformListeners();
 
   // Reset Category & Search
-  state.activeCategory = '';
+  state.activeCategory = null; // null로 명확히 초기화 (빈 문자열이면 !state.activeCategory가 false 될 수 있음)
   state.searchQuery = '';
   const searchInput = document.getElementById('searchInput');
   if (searchInput) searchInput.value = '';
@@ -176,46 +184,23 @@ function setupEventListeners() {
   });
 
   // Table sort
-  document.querySelectorAll('.data-table th.sortable').forEach(th => {
-    th.addEventListener('click', () => {
-      const sort = th.dataset.sort;
-      if (state.sortBy === sort) {
-        state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
-      } else {
-        state.sortBy = sort;
-        state.sortDir = 'asc';
-      }
-      // Update sort indicators
-      document.querySelectorAll('.data-table th.sortable').forEach(h => h.classList.remove('asc', 'desc'));
-      th.classList.add(state.sortDir);
-      state.currentPage = 1;
-      loadTab('all');
-    });
+  setupSortListeners();
+
+  // Language Change → Re-render product list with localized names/brands & re-render open modal
+  window.addEventListener('languageChanged', () => {
+    loadTab(state.activeTab);
+    // Also re-render the modal if it's currently open
+    if (window.__rerenderModal) window.__rerenderModal();
   });
 
   // Notifications
-  const notifBell = document.getElementById('notifBell');
-  const notifDropdown = document.getElementById('notifDropdown');
-  if (notifBell && notifDropdown) {
-    notifBell.addEventListener('click', (e) => {
+  const notiBtn = document.getElementById('notiBtn');
+  const notiDropdown = document.getElementById('notiDropdown');
+  if (notiBtn && notiDropdown) {
+    notiBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const isOpen = notifDropdown.classList.toggle('open');
-      if (isOpen) {
-        state.unreadCount = 0;
-        updateNotifBadge();
-      }
-    });
-  }
-
-  const clearNotif = document.getElementById('clearNotif');
-  if (clearNotif) {
-    clearNotif.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      if (confirm(window.t('common.confirm_clear_notifs'))) {
-        await clearNotifications();
-        state.notifications = [];
-        renderNotifications();
-      }
+      const isHidden = notiDropdown.style.display === 'none';
+      notiDropdown.style.display = isHidden ? 'block' : 'none';
     });
   }
 
@@ -236,10 +221,10 @@ function setupEventListeners() {
 
   // Click outside to close dropdowns
   document.addEventListener('click', (e) => {
-    const notifDropdown = document.getElementById('notifDropdown');
-    const notifBell = document.getElementById('notifBell');
-    if (notifDropdown && notifBell && !notifDropdown.contains(e.target) && e.target !== notifBell) {
-      notifDropdown.classList.remove('open');
+    const notiDropdown = document.getElementById('notiDropdown');
+    const notiBtn = document.getElementById('notiBtn');
+    if (notiDropdown && notiBtn && !notiDropdown.contains(e.target) && !notiBtn.contains(e.target)) {
+      notiDropdown.style.display = 'none';
     }
     const langDropdown = document.getElementById('langDropdown');
     const langBtn = document.getElementById('langBtn');
@@ -326,6 +311,9 @@ async function loadKPIs() {
       </div>
     `).join('');
 
+    // Apply translations to dynamic content
+    i18n.documentUpdate();
+
     // Update header stats
     const totalKpi = kpis.find(k => k.id === 'total');
     if (totalKpi) {
@@ -390,11 +378,37 @@ async function loadCategories() {
       container.appendChild(btn);
     });
 
+    // Translation for Categories
+    if (i18n.currentLang !== 'ko') {
+      const lang = i18n.currentLang;
+      const needsTr = displayCategories.filter(c => !c[`name_${lang}`] && !localStorage.getItem(`cat_${lang}_${c.category_code}`));
+      if (needsTr.length > 0) {
+        translateKeywords(needsTr.map(c => c.category_name), lang, 'category').then(translated => {
+          if (translated) {
+            needsTr.forEach((c, idx) => {
+              const name = translated[idx];
+              if (name) {
+                localStorage.setItem(`cat_${lang}_${c.category_code}`, name);
+                const btn = container.querySelector(`button[data-code="${c.category_code}"]`);
+                if (btn) btn.textContent = name;
+              }
+            });
+          }
+        });
+      }
+    }
+
     // Set first category as default and load
     if (displayCategories.length > 0 && !state.activeCategory) {
       state.activeCategory = displayCategories[0].category_code;
+      // 첫 번째 칩을 active 로 표시
+      const firstChip = container.querySelector('.chip');
+      if (firstChip) firstChip.classList.add('active');
     }
-    await loadTab(state.activeTab);
+    // k_trend platform handles its own tab loading in setPlatform — skip here to avoid race condition
+    if (state.currentPlatform !== 'k_trend') {
+      await loadTab(state.activeTab);
+    }
   } catch (err) {
     console.error('Category load error:', err);
   }
@@ -427,6 +441,11 @@ async function loadBridgeTab(tabId) {
   // ─── K-Trend: 전용 리스트 뷰 분기 ───
   if (state.currentPlatform === 'k_trend') {
     return await loadKTrendView(tabId);
+  }
+
+  // Ensure table structure exists for non-k-trend platforms in tab-all
+  if (tabId === 'all') {
+    ensureDefaultTableStructure();
   }
 
   const activeTabContent = document.querySelector(`.tab-content#tab-${tabId}`) || document.getElementById('tab-all');
@@ -478,142 +497,155 @@ async function loadBridgeTab(tabId) {
         p.is_saved = savedIds.has(p.product_id || p.id);
         return renderTableRow(p, idx);
       }).join('');
+      // 비-한국어 언어 설정이면 상품명/브랜드 배치 번역 비동기 실행
+      if (i18n.currentLang !== 'ko') {
+        translateProductNames(data, i18n.currentLang);
+        translateBrands(data);
+      }
     } else {
       grid.innerHTML = data.map(p => {
         p.is_saved = savedIds.has(p.product_id || p.id);
         return renderProductCard(p, tabId === 'deals' ? 'deal' : 'normal');
       }).join('');
+
+      // 카드 형태에서도 번역 트리거
+      if (i18n.currentLang !== 'ko') {
+        translateProductNames(data, i18n.currentLang);
+        translateBrands(data);
+      }
     }
 
+    // 최종 UI 텍스트 업데이트 (Keys -> Values)
+    i18n.documentUpdate();
     renderPagination(count);
   } catch (err) {
     console.error('Bridge fetch error:', err);
-    grid.innerHTML = `<div class="error-state">데이터 로딩 중 오류가 발생했습니다: ${err.message}</div>`;
+    const grid = activeTabContent?.querySelector('.products-grid') || document.getElementById('allProductsBody');
+    if (grid) grid.innerHTML = `<div class="error-state">데이터 로딩 중 오류가 발생했습니다: ${err.message}</div>`;
   }
+}
+
+/**
+ * Ensures the standard table structure exists in #tab-all
+ * Restores it if it was overwritten by loadKTrendView
+ */
+function ensureDefaultTableStructure() {
+  const tableContainer = document.querySelector('#tab-all .table-container');
+  if (!tableContainer) return;
+
+  // Check if standard table exists. If not, restore it.
+  if (!tableContainer.querySelector('#allProductsTable')) {
+    tableContainer.innerHTML = `
+      <table class="data-table" id="allProductsTable">
+        <thead>
+          <tr>
+            <th data-i18n="table.rank">순위</th>
+            <th data-i18n="table.image">이미지</th>
+            <th class="sortable" data-sort="name" data-i18n="table.name">상품명</th>
+            <th class="sortable" data-sort="brand" data-i18n="table.brand">브랜드</th>
+            <th class="sortable" data-sort="price" data-i18n="table.price">가격</th>
+            <th data-i18n="table.review">리뷰</th>
+            <th data-i18n="table.rating">평점</th>
+            <th data-i18n="table.link">링크</th>
+          </tr>
+        </thead>
+        <tbody id="allProductsBody">
+          <tr>
+            <td colspan="8" class="loading-cell">데이터 로딩 중...</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+    // Re-attach sort listeners if needed
+    setupSortListeners();
+    // Update translations
+    i18n.documentUpdate();
+  }
+}
+
+function setupSortListeners() {
+  document.querySelectorAll('.data-table th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const sort = th.dataset.sort;
+      if (state.sortBy === sort) {
+        state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        state.sortBy = sort;
+        state.sortDir = 'asc';
+      }
+      document.querySelectorAll('.data-table th.sortable').forEach(h => h.classList.remove('asc', 'desc'));
+      th.classList.add(state.sortDir);
+      state.currentPage = 1;
+      loadTab('all');
+    });
+  });
 }
 
 // ─── K-Trend 전용 뷰 ────────────────────────
 async function loadKTrendView(tabId) {
-  const container = document.getElementById('allProductsBody')?.closest('.table-container') ||
-    document.getElementById('tab-all');
-  if (!container) return;
+  const container = document.getElementById('tab-global_trends');
+  const grid = document.getElementById('global_trendsGrid');
+  if (!container || !grid) return;
 
-  // 타이틀 업데이트
-  const titleEl = document.getElementById('rankingTitle');
-  const descEl = document.getElementById('rankingDesc');
-  const isGoogle = state.activeCategory !== 'naver';
-  const sourceName = isGoogle ? '🔍 구글 트렌드' : '🇳 네이버 데이터랩';
-  const updatedAt = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+  // Ensure the correct tab-content pane is visible (body[data-platform] CSS handles tab-all hiding)
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  container.classList.add('active');
+  state.activeTab = 'global_trends';
 
-  if (titleEl) titleEl.textContent = `${sourceName} – 쇼핑 급상승 키워드`;
-  if (descEl) {
-    descEl.innerHTML = `실시간 이커머스 트렌드 분석 결과 &nbsp;·&nbsp;
-      <span style="color:var(--accent-green);font-weight:600;">● 기준: ${updatedAt} (최신 수집 데이터)</span>`;
-  }
-
-  // 로딩 표시
-  const tableContainer = document.querySelector('#tab-all .table-container');
-  if (tableContainer) {
-    tableContainer.innerHTML = `
-      <div class="ktrend-loading">
-        <div class="ktrend-spinner"></div>
-        <span>${sourceName} 데이터 불러오는 중...</span>
-      </div>`;
-  }
+  grid.innerHTML = '<div class="loading-skeleton"></div>';
 
   try {
     const result = await state.activeBridge.fetchData(tabId, state);
     const data = result.data || [];
 
-    if (!tableContainer) return;
-
     if (data.length === 0) {
-      tableContainer.innerHTML = `<div class="empty-state">
-        <div style="font-size:48px;margin-bottom:12px">📊</div>
-        <h3>트렌드 데이터가 없습니다</h3>
-        <p style="color:var(--text-muted)">크롤러가 데이터를 수집하면 자동으로 갱신됩니다.</p>
-      </div>`;
+      grid.innerHTML = emptyState(window.t('common.no_results') || '트렌드 데이터가 없습니다.');
       return;
     }
 
-    // 전용 리스트 렌더
-    tableContainer.innerHTML = `
-      <div class="ktrend-list-header">
-        <span class="ktrend-col-rank">순위</span>
-        <span class="ktrend-col-keyword">검색어</span>
-        <span class="ktrend-col-change">급상승 지표</span>
-        <span class="ktrend-col-search">바로 검색</span>
-      </div>
-      <div class="ktrend-list" id="ktrendList">
-        ${data.map((p, idx) => renderKTrendRow(p, idx, isGoogle)).join('')}
-      </div>
-    `;
+    // If the bridge provides a custom dashboard renderer, use it
+    if (state.activeBridge.renderTabContent) {
+      const customHtml = state.activeBridge.renderTabContent(tabId, result, state);
+      if (customHtml !== null && customHtml !== undefined) {
+        grid.innerHTML = customHtml;
+        return;
+      }
+    }
+
+    // Fallback: standard product card grid
+    const savedItems = await fetchSavedProducts();
+    const savedIds = new Set(savedItems.data?.map(i => i.product_id) || []);
+
+    grid.innerHTML = data.map(p => {
+      p.is_saved = savedIds.has(p.product_id || p.id);
+      return renderProductCard(p, 'normal', true);
+    }).join('');
+
+    if (i18n.currentLang !== 'ko') {
+      translateProductNames(data, i18n.currentLang);
+    }
   } catch (err) {
     console.error('K-Trend fetch error:', err);
-    if (tableContainer) {
-      tableContainer.innerHTML = `<div class="error-state">트렌드 데이터 로딩 실패: ${err.message}</div>`;
-    }
+    grid.innerHTML = `<div class="error-state">트렌드 데이터 로딩 실패: ${err.message}</div>`;
   }
-}
-
-function renderKTrendRow(p, index, isGoogle) {
-  const rank = index + 1;
-  const keyword = escapeHtml(p.name || '');
-
-  // 급상승 % 파싱 (brand 필드에 "GOOGLE 급상승 (+N%)" 형태로 저장)
-  const brandText = p.brand || '';
-  const pctMatch = brandText.match(/\+?([\d,]+)%/);
-  const pctNum = pctMatch ? parseInt(pctMatch[1].replace(/,/g, '')) : null;
-
-  // 1~3위 특별 스타일
-  const rankClass = rank <= 3 ? `ktrend-rank-top ktrend-rank-${rank}` : 'ktrend-rank-normal';
-
-  // 급상승 배지
-  let changeBadge = '';
-  if (isGoogle && pctNum !== null) {
-    const intensity = pctNum > 100000 ? 'fire' : pctNum > 10000 ? 'hot' : 'warm';
-    changeBadge = `
-      <span class="ktrend-badge ktrend-badge-${intensity}">
-        ↗ +${pctNum >= 10000 ? (pctNum / 10000).toFixed(0) + '만' : pctNum.toLocaleString()}%
-      </span>`;
-  } else if (!isGoogle) {
-    // 네이버: rank 숫자를 카테고리 기반으로 표시
-    changeBadge = `<span class="ktrend-badge ktrend-badge-naver">🛍️ 쇼핑 TOP ${rank}</span>`;
-  }
-
-  const searchUrl = `https://search.naver.com/search.naver?query=${encodeURIComponent(p.name || '')}+${isGoogle ? '쇼핑' : ''}`;
-
-  return `
-    <div class="ktrend-row" style="animation-delay:${index * 0.04}s">
-      <div class="ktrend-col-rank">
-        <span class="${rankClass}">${rank}</span>
-      </div>
-      <div class="ktrend-col-keyword">
-        <span class="ktrend-keyword-text">${keyword}</span>
-        ${isGoogle ? '<span class="ktrend-source-badge google">G</span>' : '<span class="ktrend-source-badge naver">N</span>'}
-      </div>
-      <div class="ktrend-col-change">
-        ${changeBadge}
-      </div>
-      <div class="ktrend-col-search">
-        <a class="ktrend-search-btn" href="${searchUrl}" target="_blank" rel="noopener" title="${keyword} 검색">
-          검색 →
-        </a>
-      </div>
-    </div>
-  `;
 }
 
 function renderTableRow(p, index) {
   const rank = (state.currentPage - 1) * state.perPage + index + 1;
+  const profile = getProfile();
+  const isPro = profile && (profile.subscription_tier === 'pro' || profile.role === 'admin');
+  const isLocked = !isPro && (rank <= 5 || rank > 10);
+
   return `
-      <tr onclick="window.__openProduct(${JSON.stringify(p).replace(/"/g, '&quot;')})" style="cursor:pointer">
+      <tr class="${isLocked ? 'locked-row' : ''}" 
+        onclick="${isLocked ? '' : `window.__openProduct(${JSON.stringify(p).replace(/"/g, '&quot;')})`}" 
+        style="cursor:${isLocked ? 'default' : 'pointer'}">
         <td><span class="rank-num">${rank}</span></td>
         <td><img class="thumb" src="${p.image_url || ''}" alt="" loading="lazy" onerror="this.style.display='none'" /></td>
         <td style="max-width:280px">
-          <div class="product-name" style="-webkit-line-clamp:1">${escapeHtml(getLocalizedName(p))}</div>
+          <div class="product-name" data-pid="${p.product_id || p.id}" style="-webkit-line-clamp:1">${escapeHtml(getLocalizedName(p))}</div>
         </td>
-        <td><span class="product-brand">${escapeHtml(getLocalizedBrand(p))}</span></td>
+        <td><span class="product-brand" data-brand-pid="${p.product_id || p.id}">${escapeHtml(getLocalizedBrand(p))}</span></td>
         <td>${formatPrice(p.price || p.price_current)}</td>
         <td>${formatNumber(p.review_count)}</td>
         <td>${p.review_rating && !isNaN(p.review_rating) ? p.review_rating : '-'}</td>
@@ -654,8 +686,8 @@ async function loadSemanticResults() {
     if (grid.tagName === 'TBODY') {
       grid.innerHTML = data.map((p, idx) => {
         p.is_saved = savedIds.has(p.id);
-        const name = escapeHtml(p.name || '');
-        const brand = escapeHtml(p.brand || '');
+        const name = escapeHtml(getLocalizedName(p));
+        const brand = escapeHtml(getLocalizedBrand(p));
         const price = formatPrice(p.price);
         return `
           <tr onclick="window.__openProduct(${JSON.stringify(p).replace(/"/g, '&quot;')})">
@@ -785,8 +817,10 @@ async function loadReviews() {
 // ─── Wishlist (나의 관심 상품) ───────────────
 async function loadWishlist() {
   const grid = document.getElementById('wishlistGrid');
+  const actionBar = document.getElementById('sourcingActionBar');
   if (!grid) return;
   grid.innerHTML = '<div class="loading-skeleton"></div>';
+  if (actionBar) actionBar.style.display = 'none';
 
   const session = getSession();
   if (!session) {
@@ -806,29 +840,201 @@ async function loadWishlist() {
       return;
     }
 
-    grid.innerHTML = products.map(p => renderProductCard(p)).join('');
+    // `isWishlistTab`을 true로 전달
+    grid.innerHTML = products.map(p => renderProductCard(p, 'normal', false, true)).join('');
+
+    if (actionBar) {
+      actionBar.style.display = 'block';
+      const quoteItemCount = document.getElementById('quoteItemCount');
+      if (quoteItemCount) quoteItemCount.innerText = products.length;
+    }
   } catch (e) {
     grid.innerHTML = `<div class="error-state">관심 상품을 불러오는데 실패했습니다: ${e.message}</div>`;
   }
 }
 
 // ─── Render Helpers ───────────────────────
+
+// Gemini API 배치 번역 (상품명 목록을 한 번에 번역)
+const _translationCache = {};
+async function translateProductNames(products, targetLang) {
+  const langNames = { vi: 'Vietnamese', en: 'English', th: 'Thai', id: 'Indonesian', ja: 'Japanese' };
+  const langName = langNames[targetLang] || targetLang;
+
+  // 번역이 필요한 상품만 필터링
+  const needsTranslation = products.filter(p => {
+    const pid = p.product_id || p.id;
+    const cacheKey = `tr_${targetLang}_${pid}`;
+    if (_translationCache[cacheKey]) return false; // 메모리 캐시 있으면 스킵
+    // localStorage 확인
+    const stored = localStorage.getItem(cacheKey);
+    if (stored) { _translationCache[cacheKey] = stored; return false; }
+    return !p[`name_${targetLang}`]; // DB에 번역 없을 때만
+  });
+
+  if (needsTranslation.length === 0) return;
+
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) return;
+
+  // 배치: 20개씩 나눠서 번역
+  const BATCH = 20;
+  for (let i = 0; i < needsTranslation.length; i += BATCH) {
+    const batch = needsTranslation.slice(i, i + BATCH);
+    const items = batch.map((p, idx) => `${idx + 1}. ${p.name_ko || p.name || ''}`).join('\n');
+
+    try {
+      const prompt = `Translate the following Korean product names to ${langName}.
+Return ONLY a JSON array of translated strings in the same order.
+Keep brand names, product types, and numbers as-is (e.g. "50ml", "SPF50+").
+Make the translation natural and easy to understand for a ${langName}-speaking buyer.
+
+Korean names:
+${items}`;
+
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
+          })
+        }
+      );
+      if (!res.ok) continue;
+      const data = await res.json();
+      let text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '[]';
+      if (text.startsWith('```')) text = text.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+      const translated = JSON.parse(text);
+
+      // 캐시 저장 & DOM 즉시 업데이트
+      batch.forEach((p, idx) => {
+        const name = translated[idx] || p.name || '';
+        const pid = p.product_id || p.id;
+        const cacheKey = `tr_${targetLang}_${pid}`;
+        _translationCache[cacheKey] = name;
+        localStorage.setItem(cacheKey, name);
+
+        // DOM에서 해당 상품명 셀 찾아서 바로 업데이트
+        const cells = document.querySelectorAll(`.product-name[data-pid="${pid}"]`);
+        cells.forEach(cell => { cell.textContent = name; });
+      });
+    } catch (e) {
+      console.warn('Translation batch error:', e);
+    }
+  }
+}
+
+// 브랜드명 배치 번역
+async function translateBrands(products) {
+  const lang = i18n.currentLang;
+  if (lang === 'ko') return;
+
+  const needsTr = products.filter(p => !p.brand_en && !localStorage.getItem(`br_en_${p.product_id || p.id}`));
+  if (needsTr.length === 0) return;
+
+  const batchSize = 30;
+  for (let i = 0; i < needsTr.length; i += batchSize) {
+    const batch = needsTr.slice(i, i + batchSize);
+    const brands = [...new Set(batch.map(p => p.brand_ko || p.brand || '').filter(Boolean))];
+    if (brands.length === 0) continue;
+
+    const translated = await translateKeywords(brands, 'en', 'brand');
+    if (translated) {
+      const brandMap = {};
+      brands.forEach((b, idx) => brandMap[b] = translated[idx]);
+
+      batch.forEach(p => {
+        const koBrand = p.brand_ko || p.brand || '';
+        const enBrand = brandMap[koBrand];
+        if (enBrand) {
+          const pid = p.product_id || p.id;
+          localStorage.setItem(`br_en_${pid}`, enBrand);
+          // DOM 업데이트
+          document.querySelectorAll(`.product-brand[data-brand-pid="${pid}"]`).forEach(el => {
+            el.textContent = enBrand;
+          });
+        }
+      });
+    }
+  }
+}
+
+// Gemini API 배치 번역 (브랜드/카테고리 등 짧은 키워드 번역)
+async function translateKeywords(items, targetLang, targetType = 'category') {
+  if (!items || items.length === 0) return;
+  const langNames = { vi: 'Vietnamese', en: 'English', th: 'Thai', id: 'Indonesian', ja: 'Japanese' };
+  const langName = langNames[targetLang] || targetLang;
+
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) return;
+
+  try {
+    const listString = items.map((it, idx) => `${idx + 1}. ${it}`).join('\n');
+    const prompt = `Translate the following Korean ${targetType} names to ${langName}.
+Return ONLY a JSON array of strings in the same order. Keep it concise.
+Names:
+${listString}`;
+
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
+        })
+      }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    let text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '[]';
+    if (text.startsWith('```')) text = text.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+    return JSON.parse(text);
+  } catch (e) {
+    console.warn(`Keyword translation error (${targetType}):`, e);
+    return null;
+  }
+}
+
 function getLocalizedName(p) {
   const lang = i18n.currentLang;
-  // Priority: Localized name -> English name -> Original/Korean name
-  return p[`name_${lang}`] || p[`${lang}_name`] || p.name_en || p.name_ko || p.name || '';
+  // 1. DB에 해당 언어 번역 있으면 바로 사용
+  const localized = p[`name_${lang}`] || p[`${lang}_name`];
+  if (localized) return localized;
+  // 2. 한국어 설정이면 원본 그대로
+  if (lang === 'ko') return p.name_ko || p.name || '';
+  // 3. 메모리/로컬 캐시에 번역 있으면 사용
+  const pid = p.product_id || p.id;
+  const cacheKey = `tr_${lang}_${pid}`;
+  const cached = _translationCache[cacheKey] || localStorage.getItem(cacheKey);
+  if (cached) { _translationCache[cacheKey] = cached; return cached; }
+  // 4. 영어 번역 있으면 영어 (비동기 번역이 완료되기 전 fallback)
+  return p.name_en || p.name || '';
 }
 
 function getLocalizedBrand(p) {
-  // User request: "Brand in English"
-  // So we prioritize English brand name if available, regardless of current language
-  // But if it's strictly specific:
-  // "Brand in English, Product Name in Target Language"
-  // If English brand is empty, fallback to brand (which usually is Korean/Original)
-  return p.brand_en || p.brand_mj || p.brand || '';
+  const lang = i18n.currentLang;
+
+  // 한국어면 고민 없이 한국어 반환
+  if (lang === 'ko') return p.brand_ko || p.brand || '';
+
+  // 영문/기타 언어: 영문 브랜드명 우선
+  if (p.brand_en) return p.brand_en;
+
+  // 영문 캐시 확인
+  const pid = p.product_id || p.id;
+  const cacheKey = `br_en_${pid}`;
+  const cached = localStorage.getItem(cacheKey);
+  if (cached) return cached;
+
+  return p.brand_ko || p.brand || '';
 }
 
-function renderProductCard(p, mode = 'normal') {
+function renderProductCard(p, mode = 'normal', isGlobalTrend = false, isWishlistTab = false) {
   const isWishlist = !!p.is_saved;
   const productId = p.product_id || p.id;
   const name = escapeHtml(getLocalizedName(p));
@@ -840,16 +1046,26 @@ function renderProductCard(p, mode = 'normal') {
   // If we have an original price and it's higher than current, it's a deal
   const isDeal = originalPrice > currentPrice;
 
-  const priceHtml = isDeal
-    ? `<div class="price-wrapper">
-         <span class="price-original">${formatPrice(originalPrice)}</span>
-         <span class="price-current deal">${formatPrice(currentPrice)}</span>
-         <span class="discount-badge">${p.discount_pct || Math.round((1 - currentPrice / originalPrice) * 100)}%</span>
-       </div>`
-    : `<div class="price-current">${formatPrice(currentPrice)}</div>`;
+  let priceHtml = '';
+  if (isGlobalTrend) {
+    priceHtml = `<div class="price-current" style="color:var(--accent-blue);font-size:16px;">💬 ${formatNumber(currentPrice)}건 언급</div>`;
+  } else {
+    priceHtml = isDeal
+      ? `<div class="price-wrapper">
+             <span class="price-original">${formatPrice(originalPrice)}</span>
+             <span class="price-current deal">${formatPrice(currentPrice)}</span>
+             <span class="discount-badge">${p.discount_pct || Math.round((1 - currentPrice / originalPrice) * 100)}%</span>
+           </div>`
+      : `<div class="price-current">${formatPrice(currentPrice)}</div>`;
+  }
 
-  // Trend Item Check
   const isTrend = ['google_trends', 'naver_datalab'].includes(p.source);
+
+  // Membership Check
+  const profile = getProfile();
+  const isPro = profile && (profile.subscription_tier === 'pro' || profile.role === 'admin');
+  const rank = p.current_rank || p.rank || 999;
+  const isLocked = !isPro && !isGlobalTrend && (rank <= 5 || rank > 10);
 
   let imgHtml = '';
   if (isTrend) {
@@ -858,14 +1074,39 @@ function renderProductCard(p, mode = 'normal') {
     imgHtml = `<div class="product-img" style="display:flex;align-items:center;justify-content:center;font-size:40px;background:${bg};min-height:200px;">${icon}</div>`;
   } else {
     imgHtml = `<img class="product-img" src="${p.image_url || ''}" alt="${name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
-                 <div class="product-img-fallback" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;background:#f5f5f5;color:#ccc;">No Image</div>`;
+                 <div class="product-img-fallback" style="display:none;width:80px;height:80px;border-radius:12px;align-items:center;justify-content:center;background:#f5f5f5;color:#ccc;flex-shrink:0;font-size:12px;">No Image</div>`;
   }
 
+  // AI Benefit Tags (For Global Trends)
+  let aiTagsHtml = '';
+  if (isGlobalTrend && p.ai_tags && Array.isArray(p.ai_tags)) {
+    aiTagsHtml = `<div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+          ${p.ai_tags.map(t => `<span style="background:#eef2ff; color:var(--accent-blue); padding:4px 8px; border-radius:4px; font-size:12px; font-weight:500;">#${escapeHtml(t)}</span>`).join('')}
+      </div>`;
+  }
+
+  // B2B Sourcing Quantity Control (Only in Wishlist Tab)
+  const qtyHtml = isWishlistTab ? `
+    <div class="sourcing-qty-control" onclick="event.stopPropagation();" style="display:flex; align-items:center; justify-content:center; gap:15px; margin-top:10px; padding-top:10px; border-top:1px solid var(--border);">
+      <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+        <input type="checkbox" class="sourcing-item-checkbox" checked style="width:16px; height:16px; accent-color:var(--accent-blue);">
+        <span style="font-size:12px; color:var(--text-muted); font-weight:500;">📦 ${window.t('sourcing.qty_label')}</span>
+      </label>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button onclick="window.__updateSourcingQty(this, -10)" style="width:24px; height:24px; border-radius:4px; border:1px solid var(--border); background:var(--surface); cursor:pointer;">-</button>
+        <input type="number" class="sourcing-qty-input" data-product-id="${productId}" value="100" min="10" step="10" style="width:50px; text-align:center; border:1px solid var(--border); border-radius:4px; font-size:12px; padding:2px; background:var(--background); color:var(--text);" onclick="event.stopPropagation();">
+        <button onclick="window.__updateSourcingQty(this, 10)" style="width:24px; height:24px; border-radius:4px; border:1px solid var(--border); background:var(--surface); cursor:pointer;">+</button>
+      </div>
+    </div>
+  ` : '';
+
   return `
-    <div class="product-card ${isTrend ? 'trend-card' : ''}" onclick="window.__openProduct(${JSON.stringify(p).replace(/"/g, '&quot;')})">
+    <div class="product-card ${isTrend || isGlobalTrend ? 'trend-card' : ''} ${isLocked ? 'locked-card' : ''}" 
+      onclick="${isLocked ? '' : `window.__openProduct(${JSON.stringify(p).replace(/"/g, '&quot;')})`}">
+      ${isLocked ? `<div class="locked-overlay"><span>PRO Only</span></div>` : ''}
       <div class="product-wishlist-pos">
         <button class="btn-wishlist ${isWishlist ? 'active' : ''}"
-          onclick="event.stopPropagation(); window.__toggleWishlist(this, ${productId})">
+          onclick="event.stopPropagation(); window.__toggleWishlist(this, '${p.id || productId}')">
           <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
         </button>
       </div>
@@ -877,12 +1118,14 @@ function renderProductCard(p, mode = 'normal') {
           <div class="product-price-container">
             ${priceHtml}
           </div>
+          ${aiTagsHtml}
         </div>
       </div>
       <div class="product-card-bottom">
-        ${(p.rank_change !== undefined && p.rank_change !== null) ? `<span class="badge ${p.rank_change > 0 ? 'badge-rank-up' : 'badge-rank-down'}">${p.rank_change > 0 ? '▲' : '▼'} ${Math.abs(p.rank_change)}</span>` : ''}
-        ${p.review_count ? `<span class="badge badge-reviews">⭐ ${p.review_rating || '-'} (${formatNumber(p.review_count)})</span>` : ''}
+        ${!isGlobalTrend && (p.rank_change !== undefined && p.rank_change !== null) ? `<span class="badge ${p.rank_change > 0 ? 'badge-rank-up' : 'badge-rank-down'}">${p.rank_change > 0 ? '▲' : '▼'} ${Math.abs(p.rank_change)}</span>` : ''}
+        ${p.review_count ? `<span class="badge badge-reviews">⭐ ${p.review_rating || '-'} (${isGlobalTrend ? '-' : formatNumber(p.review_count)})</span>` : ''}
       </div>
+      ${qtyHtml}
     </div>
   `;
 }
@@ -902,7 +1145,14 @@ window.__toggleWishlist = async function (btn, productId) {
       await removeProduct(productId);
       btn.classList.remove('active');
     } else {
-      await saveProduct(productId);
+      // Find the corresponding product data from global arrays if not in modal
+      let pData = window.currentModalProductData;
+      if (!pData || (pData.id !== productId && pData.product_id !== productId)) {
+        // Attempt to find it from the global data arrays if needed
+        const allItems = [...(window.__cachedProducts || []), ...(window.__cachedDeals || []), ...(window.__cachedTrending || [])];
+        pData = allItems.find(p => p.id === productId || p.product_id === productId) || { product_id: productId };
+      }
+      await saveProduct(productId, pData);
       btn.classList.add('active');
     }
   } catch (err) {
@@ -1011,94 +1261,146 @@ function closeModal() {
 
 // Helper: Fetch AI Summary
 async function fetchAiSummary(product) {
-  // 1. Priority: DB pre-calculated summary
-  if (product.ai_summary) {
+  // 1. Priority: DB pre-calculated summary (avoids API cost on repeat visits)
+  if (product.ai_summary && product.ai_summary.pros) {
     return product.ai_summary;
   }
 
-  // 2. Check Cache
+  // 2. Check LocalStorage cache
   const cacheKey = `ai_summary_${product.product_id || product.id}`;
   const cached = localStorage.getItem(cacheKey);
   if (cached) {
-    return JSON.parse(cached);
+    try { return JSON.parse(cached); } catch (e) { }
   }
 
-  // 2. Fetch from Gemini API directly (Client-side implementation due to deployment issues)
-  try {
-    const reviews = product.reviews || [
-      `${product.name} 써보니까 진짜 좋아요.`,
-      `가격 대비 성능이 뛰어납니다.`,
-      `배송이 빠르고 포장이 꼼꼼해요.`,
-      `재구매 의사 있습니다.`,
-      `약간 아쉬운 점도 있지만 전반적으로 만족.`,
-      `발림성이 너무 부드럽고 촉촉해서 겨울에 쓰기 딱이에요.`,
-      `향이 좀 강한 편이라 호불호가 갈릴 수 있겠네요.`,
-      `트러블 없이 순해서 민감성 피부에도 잘 맞아요.`,
-      `용량이 좀 적은게 흠이지만 제품력은 인정.`
-    ];
-
-    const prompt = `
-      Analyze the following reviews for the product "${product.name}".
-      Provide a summary in JSON format with the following fields:
-      - "sentiment_pos": (integer 0-100) percentage of positive sentiment
-      - "keywords": (array of strings) top 5 key phrases in Korean
-      - "pros": (array of strings) top 3 advantages in Korean
-      - "cons": (array of strings) top 3 disadvantages in Korean
-
-      Reviews:
-      ${reviews.join('\n').substring(0, 3000)}
-    `;
-
-    // Using Gemini 3.0 Flash Preview (as requested by user)
-    // Direct API call for immediate verification without deployment
-    const API_KEY = 'AIzaSyAXoonBcBZr6vj5xpF4SzS8PWhcrGXA-v8';
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: "application/json" }
-      })
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Gemini API Error: ${errText}`);
-    }
-
-    const data = await response.json();
-    const textResponse = data.candidates[0].content.parts[0].text;
-    const result = JSON.parse(textResponse);
-
-    // 3. Save to Cache
-    localStorage.setItem(cacheKey, JSON.stringify(result));
-
-    // 4. Background Persistence: Save to DB if we have a valid product_id
-    const pId = product.product_id || product.id;
-    if (pId) {
-      fetch('https://hgxblbbjlnsfkffwvfao.supabase.co/functions/v1/analyze-reviews', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: pId, productName: product.name, reviews, persist: true })
-      }).catch(e => console.error("Background persistence failed:", e));
-    }
-
-    return result;
-
-  } catch (err) {
-    console.error('AI Summary fetch error:', err);
-    alert('AI 분석에 실패했습니다. (Gemini API Error)\n' + err.message);
-    return null;
+  // 3. Call Gemini 3.0 Flash API directly
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('VITE_GEMINI_API_KEY not set in .env');
   }
+
+  const reviews = product.reviews || [
+    `${product.name} 써보니까 진짜 좋아요.`,
+    `가격 대비 성능이 뛰어납니다.`,
+    `발림성이 부드럽고 촉촉해요.`,
+    `재구매 의사 있습니다.`,
+    `약간 아쉬운 점도 있지만 전반적으로 만족.`
+  ];
+
+  const prompt = `Analyze the following Korean product reviews for "${product.name}".
+Return ONLY valid JSON matching this exact schema:
+{
+  "sentiment_pos": (integer 0-100),
+  "keywords": ["키워드1", "키워드2", "키워드3", "키워드4", "키워드5"],
+  "pros": ["장점1", "장점2", "장점3"],
+  "cons": ["단점1", "단점2", "단점3"]
+}
+
+CRITICAL INSTRUCTION FOR CONS (단점): 
+Never use vague or generic statements like "일부 아쉬운 점이 있음", "호불호가 갈릴 수 있음", or "개인차가 존재함". 
+Extract highly specific product flaws mentioned by users (e.g., "펌프가 잘 고장남", "건성 피부에는 건조함", "향이 인공적임"). 
+If the reviews do not contain any specific negative feedback, simply output ["특별하게 언급된 단점이 없음"].
+
+Reviews:
+${reviews.join('\n').substring(0, 2000)}`;
+
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+  const response = await fetch(geminiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.1,
+        responseMimeType: 'application/json'
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Gemini API Error: ${errText}`);
+  }
+
+  const data = await response.json();
+  let textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+  if (textResponse.startsWith('```json')) {
+    textResponse = textResponse.split('```json')[1].split('```')[0].trim();
+  } else if (textResponse.startsWith('```')) {
+    textResponse = textResponse.split('```')[1].split('```')[0].trim();
+  }
+  const result = JSON.parse(textResponse);
+
+  // 4. Save to local cache
+  localStorage.setItem(cacheKey, JSON.stringify(result));
+
+  // 5. Persist to Supabase DB (fire & forget) so next user doesn't trigger API again
+  const pId = product.product_id || product.id;
+  if (pId) {
+    const { SUPABASE_URL, SUPABASE_KEY } = {
+      SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || 'https://hgxblbbjlnsfkffwvfao.supabase.co',
+      SUPABASE_KEY: import.meta.env.VITE_SUPABASE_KEY
+    };
+    // Use the supabase client from supabase.js to update
+    try {
+      await saveProduct({ id: pId, ai_summary: result });
+    } catch (e) {
+      console.warn('DB persist of AI summary failed (non-critical):', e);
+    }
+  }
+
+  return result;
 }
 
 // ─── Modal ──────────────────────────────────
 let rankChart = null;
 
+/**
+ * 전용 멤버십 알림 모달 출력 (사용자 확인 필요)
+ */
+function showMembershipAlert() {
+  const modal = document.getElementById('modalOverlay');
+  const body = document.getElementById('modalBody');
+  if (!modal || !body) return;
+
+  const title = window.t('membership.limit_reached');
+  const desc = window.t('membership.limit_desc');
+  const btnText = window.t('membership.confirm');
+
+  body.innerHTML = `
+    <div class="membership-alert-modal">
+      <div class="alert-icon">🔒</div>
+      <h2>${title}</h2>
+      <p>${desc}</p>
+      <div class="alert-actions">
+        <button class="btn-confirm" onclick="document.getElementById('modalOverlay').classList.remove('open'); document.body.classList.remove('one-page');">${btnText}</button>
+      </div>
+    </div>
+  `;
+
+  modal.classList.add('open');
+  document.body.classList.add('one-page');
+}
+
 window.__openProduct = async function (product) {
-  window.currentModalProductId = product.product_id || product.id;
+  // Membership & Usage Guard
+  const profile = getProfile();
+  const isPro = profile && (profile.subscription_tier === 'pro' || profile.role === 'admin');
+
+  if (!isPro) {
+    const viewCount = getDailyViewCount();
+    if (viewCount >= 10) {
+      showMembershipAlert();
+      return;
+    }
+    // Increment count on open
+    incrementDetailViewCount();
+  }
+
+  // Ensure we use the numeric DB ID for daily_rankings_v2
+  window.currentModalProductId = product.id || product.product_id;
+  window.currentModalProductData = product;
   const modal = document.getElementById('modalOverlay');
   const body = document.getElementById('modalBody');
   if (!modal || !body) return;
@@ -1107,6 +1409,9 @@ window.__openProduct = async function (product) {
   const displayPrice = product.special_price || product.price || product.price_current || product.deal_price;
   const productUrl = product.url || product.product_url;
   const isDeal = !!product.special_price;
+
+  // Check true wishlist status from DB
+  window.currentModalIsSaved = await checkIfSaved(window.currentModalProductId);
 
   // Initial State: Use pre-calculated summary if available
   let aiData = product.ai_summary || null;
@@ -1135,6 +1440,11 @@ window.__openProduct = async function (product) {
     // Dynamic Modal Content based on Type
     let modalContent = '';
 
+    // Prepare "View on [Platform]" text based on current source
+    const sourceKey = product.source || ((typeof state !== 'undefined') ? state.currentPlatform : 'oliveyoung') || 'oliveyoung';
+    const platformName = window.t('platforms.' + sourceKey) || sourceKey;
+    const ctaText = isDeal ? window.t('modal.cta_check_price') : ('🔗 ' + window.t('modal.view_in').replace('{platform}', platformName));
+
     if (isTrendItem) {
       // --- TREND ITEM LAYOUT ---
       modalContent = `
@@ -1155,7 +1465,7 @@ window.__openProduct = async function (product) {
         </div>
 
         <div class="modal-lower">
-          <div class="modal-section-title">✨ AI 트렌드 인사이트 (Gemini)</div>
+          <div class="modal-section-title">✨ AI 트렌드 인사이트 (AI)</div>
           <div class="ai-summary trend-mode">
              ${!aiData ? '<div class="loading-skeleton">AI 분석 데이터를 불러오는 중...</div>' : `
              <div class="trend-insight-grid">
@@ -1215,7 +1525,7 @@ window.__openProduct = async function (product) {
           <!-- Glassmorphism Metrics Grid -->
           <div class="modal-metrics-glass">
             <div class="metric-glass-card ${isDeal ? 'deal-active' : ''}">
-              <div class="metric-label">${isDeal ? '🔥 특가' : window.t('modal.price')}</div>
+              <div class="metric-label">${isDeal ? window.t('modal.special_price') : window.t('modal.price')}</div>
               <div class="metric-value price-val">${formatPrice(displayPrice)}</div>
               ${product.original_price ? `<div class="metric-sub original-price">${formatPrice(product.original_price)}</div>` : ''}
               ${product.discount_pct ? `<div class="metric-badge discount-badge">${product.discount_pct}% OFF</div>` : ''}
@@ -1230,8 +1540,8 @@ window.__openProduct = async function (product) {
             
             ${product.current_rank !== undefined ? `
             <div class="metric-glass-card">
-              <div class="metric-label">${window.t('modal.rank')}</div>
-              <div class="metric-value rank-val">#${product.current_rank}</div>
+              <div class="metric-label" style="font-size:0.8rem;">${window.t('modal.rank_category')}</div>
+              <div class="metric-value rank-val" style="font-size:1.4rem;">${window.t('modal.rank_value').replace('{rank}', product.current_rank)}</div>
               ${product.rank_change !== undefined ? `
                 <div class="metric-sub rank-change ${product.rank_change > 0 ? 'up' : 'down'}">
                   ${product.rank_change > 0 ? '▲' : '▼'} ${Math.abs(product.rank_change)}
@@ -1239,17 +1549,37 @@ window.__openProduct = async function (product) {
             </div>` : ''}
           </div>
 
-          <!-- CTA Button Moved Here -->
-          ${productUrl ? `<a class="btn-store-premium" href="${productUrl}" target="_blank" rel="noopener">${isDeal ? '🛒 최신 가격 확인하기' : '🔗 올리브영에서 보기'}</a>` : ''}
-
+          <!-- Action Buttons (Wishlist & Sourcing) -->
+          <div style="display:flex; gap:10px; margin-bottom:15px; width:100%; position:relative; z-index:9999; pointer-events:auto;">
+            <button class="btn-store-premium ${window.currentModalIsSaved ? 'active' : ''}" style="flex:1; background:#fff; color:var(--accent-blue); border:1px solid var(--accent-blue); padding:12px; border-radius:12px; font-weight:700; cursor:pointer;" onclick="window.__modalToggleWishlist(this, '${product.id || product.product_id}')">
+               ${window.currentModalIsSaved ? window.t('modal.wishlist_saved') : window.t('modal.wishlist_add')}
+            </button>
+            <button class="btn-store-premium" style="flex:1; background:#fff; color:#f06595; border:1px solid #f06595; padding:12px; border-radius:12px; font-weight:700; cursor:pointer;" onclick="document.getElementById('productDetailModalOverlay').classList.remove('open'); window.openMyPageModal(); setTimeout(() => { document.querySelector('.auth-tab[data-mypage-tab=\\'sourcing\\']').click(); }, 100);">
+               ${window.t('modal.sourcing_req')}
+            </button>
+          </div>
+          <!-- External Store Link -->
+          ${productUrl ? `\u003ca class="btn-store-premium" href="${productUrl}" target="_blank" rel="noopener" style="margin-bottom:0px;"\u003e${ctaText}\u003c/a\u003e` : ''}
           <!-- Price & Rank Charts (Simplified) -->
           <div class="chart-section-premium">
-            <div class="modal-section-title">📉 최근 30일 가격 및 순위 변동</div>
+            <div class="modal-chart-header" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <div class="modal-section-title" style="margin-bottom:0; white-space:nowrap;">${window.t('modal.rank_trend')}</div>
+                <span id="bestRankBadge" style="display:none; background:rgba(59, 130, 246, 0.1); color:var(--accent-blue); font-size:11px; font-weight:700; padding:3px 10px; border-radius:12px; border:1px solid rgba(59, 130, 246, 0.2); white-space:nowrap;">
+                  ${window.t('modal.best_rank')} #-
+                </span>
+              </div>
+              <div id="chartTabsModal" style="display:flex; gap:6px;">
+                <button id="chartBtn_all" class="chart-tab-btn active" onclick="window.__setChartTab('all')">${window.t('tabs.all')}</button>
+                <button id="chartBtn_7" class="chart-tab-btn" onclick="window.__setChartTab(7)">7${window.t('modal.days_30').replace('30', '')}</button>
+                <button id="chartBtn_30" class="chart-tab-btn" onclick="window.__setChartTab(30)">30${window.t('modal.days_30').replace('30', '')}</button>
+              </div>
+            </div>
             <div id="chartContainerModal" class="chart-container-modal">
               <canvas id="rankChart"></canvas>
             </div>
-            <div id="chartPlaceholderModal" style="display:none; height: 250px; align-items: center; justify-content: center; background: var(--surface-light); border-radius: 12px; color: var(--text-muted); font-size: 14px; font-weight: 500;">
-              📈 데이터 수집 중입니다. (최소 2일치 데이터 필요)
+            <div id="chartPlaceholderModal" style="display:none; height: 120px; align-items: center; justify-content: center; background: var(--surface-light); border-radius: 12px; color: var(--text-muted); font-size: 14px; font-weight: 500;">
+              ${window.t('modal.no_rank_data')}
             </div>
           </div>
         </div>
@@ -1257,30 +1587,30 @@ window.__openProduct = async function (product) {
 
       <!-- LOWER: AI Review Analysis -->
       <div class="modal-lower">
-        <div class="modal-section-title">✨ AI 리뷰 인사이트 (Gemini)</div>
+        <div class="modal-section-title">${window.t('modal.ai_insight_title')}</div>
         <div class="ai-summary premium-ai">
           <div class="ai-header">
             <span class="ai-icon">🤖</span>
-            <span class="ai-title">Gemini 3.0 Flash 리뷰 분석</span>
+            <span class="ai-title">${window.t('modal.ai_review_analysis')}</span>
             <span class="ai-badge">${aiData ? 'LIVE' : 'BETA'}</span>
           </div>
 
           ${!aiData && !isAiLoading ? `
           <div class="ai-action-area">
-            <button class="btn-ai-generate" onclick="loadAiData()">✨ AI 분석 실행하기</button>
+            <button class="btn-ai-generate" onclick="loadAiData()">${window.t('modal.run_analysis')}</button>
           </div>` : ''}
 
           ${isAiLoading ? `
           <div class="ai-loading-area">
             <div class="loading-spinner"></div>
-            <p>Gemini가 리뷰 데이터를 분석하고 있습니다...</p>
+            <p>${window.t('modal.ai_analyzing')}</p>
           </div>` : ''}
 
           ${aiData ? `
           <div class="sentiment-container">
             <div class="sentiment-labels">
-              <span class="pos-label">긍정 ${sentimentPos}%</span>
-              <span class="neg-label">부정 ${sentimentNeg}%</span>
+              <span class="pos-label">${window.t('modal.sentiment_pos')} ${sentimentPos}%</span>
+              <span class="neg-label">${window.t('modal.sentiment_neg')} ${sentimentNeg}%</span>
             </div>
             <div class="sentiment-bar-premium">
               <div class="sentiment-pos" style="width:${sentimentPos}%"></div>
@@ -1307,7 +1637,7 @@ window.__openProduct = async function (product) {
             </div>
           </div>
           <p class="ai-disclaimer">
-            * 이 요약은 Google Gemini AI가 실제 리뷰를 바탕으로 분석한 자동 생성 결과입니다.
+            * ${window.t('modal.ai_disclaimer')}
           </p>` : ''}
         </div>
       </div>
@@ -1317,6 +1647,12 @@ window.__openProduct = async function (product) {
     body.innerHTML = modalContent;
   }
 
+  // Expose re-renderer so languageChanged listener can trigger it
+  window.__rerenderModal = () => {
+    renderModal();
+    // Re-apply chart after re-render
+    setTimeout(() => window.__setChartTab && window.__setChartTab('all'), 100);
+  };
 
   // Initial Render
   renderModal();
@@ -1324,17 +1660,17 @@ window.__openProduct = async function (product) {
   modal.classList.add('open');
   document.body.style.overflow = 'hidden';
 
-  // Auto-load rank chart after DOM is ready
+  // Auto-load rank chart after DOM is ready (with tab highlighting & best rank badge)
   setTimeout(() => {
-    loadRankChart(window.currentModalProductId, 30);
-  }, 100);
+    window.__setChartTab('all');
+  }, 400);
 
   // AI Load Handler (no tab switching needed in new layout)
   window.loadAiData = async () => {
     isAiLoading = true;
     renderModal();
     // Re-load chart after re-render
-    setTimeout(() => loadRankChart(window.currentModalProductId, 30), 100);
+    setTimeout(() => window.__setChartTab('all'), 50);
 
     try {
       aiData = await fetchAiSummary(product);
@@ -1343,7 +1679,7 @@ window.__openProduct = async function (product) {
     } finally {
       isAiLoading = false;
       renderModal();
-      setTimeout(() => loadRankChart(window.currentModalProductId, 30), 100);
+      setTimeout(() => window.__setChartTab('all'), 50);
     }
   };
 
@@ -1352,7 +1688,7 @@ window.__openProduct = async function (product) {
     window.loadAiData(false);
   } else {
     // Re-render chart once after modal is open
-    setTimeout(() => loadRankChart(window.currentModalProductId, 30), 100);
+    setTimeout(() => window.__setChartTab('all'), 100);
   }
 
   // Modal Tab Switching Logic (Legacy support if needed)
@@ -1366,6 +1702,11 @@ async function loadRankChart(productId, days = 30) {
   const ctx = document.getElementById('rankChart');
   if (!ctx) return;
 
+  // Destroy previous chart instance if it exists to prevent "Canvas is already in use" error
+  if (window.__rankChartInstance) {
+    window.__rankChartInstance.destroy();
+    window.__rankChartInstance = null;
+  }
   if (rankChart) {
     rankChart.destroy();
     rankChart = null;
@@ -1374,13 +1715,25 @@ async function loadRankChart(productId, days = 30) {
   try {
     const { ranks, prices } = await fetchProductHistory(productId, days);
 
-    // Sort and merge data points by date for a unified X-axis
-    const allDates = [...new Set([...ranks.map(r => r.date), ...prices.map(p => p.date)])].sort();
+    // Filter out invalid timestamps and parse them for sorting and display
+    const parseTs = (ts) => new Date(ts).getTime();
+
+    const validRanks = ranks.filter(r => r.timestamp && !isNaN(parseTs(r.timestamp)));
+    const validPrices = prices.filter(p => p.timestamp && !isNaN(parseTs(p.timestamp)));
+
+    // Extract unique format-agnostic timestamps for unified X-axis
+    let allTimestamps = [...validRanks.map(r => r.timestamp), ...validPrices.map(p => p.timestamp)];
+    // Remove duplicates based on parsed time
+    const uniqueMap = new Map();
+    allTimestamps.forEach(ts => uniqueMap.set(parseTs(ts), ts));
+
+    // Sort chronologically
+    const sortedTimestamps = Array.from(uniqueMap.values()).sort((a, b) => parseTs(a) - parseTs(b));
 
     const chartContainer = document.getElementById('chartContainerModal');
     const chartPlaceholder = document.getElementById('chartPlaceholderModal');
 
-    if (allDates.length < 2) {
+    if (sortedTimestamps.length < 1) {
       if (chartContainer) chartContainer.style.display = 'none';
       if (chartPlaceholder) chartPlaceholder.style.display = 'flex';
       return;
@@ -1389,30 +1742,34 @@ async function loadRankChart(productId, days = 30) {
       if (chartPlaceholder) chartPlaceholder.style.display = 'none';
     }
 
-    const rankData = allDates.map(date => {
-      const item = ranks.find(r => r.date === date);
-      return item ? item.rank : null;
+    const rankData = sortedTimestamps.map(ts => {
+      // Find exact or closest within a small window if needed. For now exact timestamp match.
+      const match = validRanks.find(r => parseTs(r.timestamp) === parseTs(ts));
+      return match ? match.rank : null;
     });
 
-    const priceData = allDates.map(date => {
-      const item = prices.find(r => r.date === date);
-      return item ? item.price : null;
+    const priceData = sortedTimestamps.map(ts => {
+      const match = validPrices.find(p => parseTs(p.timestamp) === parseTs(ts));
+      return match ? match.price : null;
     });
 
-    // Extract original price for accurate discount calculation
-    const originalPriceData = allDates.map(date => {
-      const item = prices.find(r => r.date === date);
-      return item ? item.original_price : null;
+    // Extract original price for accurate discount calculation in tooltips
+    const originalPriceData = sortedTimestamps.map(ts => {
+      const match = validPrices.find(p => parseTs(p.timestamp) === parseTs(ts));
+      return match ? match.original_price : null;
     });
 
     const hasRanks = rankData.some(r => r !== null);
     const hasPrices = priceData.some(p => p !== null);
 
+    // Store rank data globally for best rank badge computation
+    window.__currentChartRanks = rankData;
+
     const datasets = [];
 
     if (hasRanks) {
       datasets.push({
-        label: '순위',
+        label: i18n.t('charts.rank'),
         data: rankData,
         borderColor: '#4dabf7', // Vivid blue for rank
         backgroundColor: 'rgba(77, 171, 247, 0.1)',
@@ -1428,7 +1785,7 @@ async function loadRankChart(productId, days = 30) {
 
     if (hasPrices) {
       datasets.push({
-        label: '가격(원)',
+        label: i18n.t('charts.price'),
         data: priceData,
         borderColor: '#ff6b6b', // Soft red for price
         backgroundColor: 'rgba(255, 107, 107, 0.1)',
@@ -1442,10 +1799,34 @@ async function loadRankChart(productId, days = 30) {
       });
     }
 
-    rankChart = new Chart(ctx, {
+    // Format Labels (MM/DD HH:mm)
+    const labels = sortedTimestamps.map(ts => {
+      const d = new Date(ts);
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      // If time is exactly 00:00 (legacy data without time), just show date
+      if (hh === '00' && min === '00') {
+        return `${mm}/${dd}`;
+      }
+      return `${mm}/${dd} ${hh}:${min}`;
+    });
+
+    // Ensure chart dots are always visible even for 1 data point
+    const pointRadius = sortedTimestamps.length <= 1 ? 5 : 3;
+    const pointHoverRadius = sortedTimestamps.length <= 1 ? 7 : 5;
+
+    if (hasRanks) datasets[0].pointRadius = pointRadius;
+    if (hasRanks) datasets[0].pointHoverRadius = pointHoverRadius;
+    if (hasPrices) datasets[hasRanks ? 1 : 0].pointRadius = pointRadius;
+    if (hasPrices) datasets[hasRanks ? 1 : 0].pointHoverRadius = pointHoverRadius;
+
+    // Create new chart and store instance globally
+    window.__rankChartInstance = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: allDates.map(d => d.slice(5)), // Show MM-DD
+        labels: labels,
         datasets: datasets
       },
       options: {
@@ -1457,6 +1838,7 @@ async function loadRankChart(productId, days = 30) {
         },
         plugins: {
           legend: {
+            display: false,
             position: 'top',
             labels: {
               usePointStyle: true,
@@ -1501,16 +1883,29 @@ async function loadRankChart(productId, days = 30) {
         scales: {
           x: {
             grid: { display: false, drawBorder: false },
-            ticks: { font: { family: "'Inter', sans-serif", size: 11 }, color: '#adb5bd' }
+            ticks: {
+              font: { family: "'Inter', sans-serif", size: 11 },
+              color: '#adb5bd',
+              maxRotation: 45,
+              minRotation: 0
+            }
           },
           y: {
             type: 'linear',
             display: hasRanks,
             position: 'left',
             reverse: true, // Rank 1 is at the top
-            grid: { color: 'rgba(0,0,0,0.03)', drawBorder: false },
+            min: 1,
+            max: 100,
+            title: {
+              display: true,
+              text: i18n.t('charts.rank'),
+              font: { family: "'Inter', sans-serif", size: 12, weight: '500' },
+              color: '#adb5bd'
+            },
+            grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
             ticks: {
-              stepSize: 1,
+              stepSize: 20,
               font: { family: "'Inter', sans-serif", size: 11 },
               color: '#adb5bd'
             }
@@ -1519,9 +1914,20 @@ async function loadRankChart(productId, days = 30) {
             type: 'linear',
             display: hasPrices,
             position: 'right',
-            grid: { display: false, drawBorder: false },
+            title: {
+              display: true,
+              text: i18n.t('charts.price'),
+              font: { family: "'Inter', sans-serif", size: 12, weight: '500' },
+              color: '#adb5bd'
+            },
+            grid: {
+              drawOnChartArea: false, // Ensure grid lines don't overlap
+              drawBorder: false
+            },
             ticks: {
-              callback: v => v.toLocaleString() + '원',
+              callback: function (value) {
+                return value.toLocaleString() + '원';
+              },
               font: { family: "'Inter', sans-serif", size: 11 },
               color: '#adb5bd'
             }
@@ -1531,7 +1937,7 @@ async function loadRankChart(productId, days = 30) {
     });
 
   } catch (err) {
-    console.error('Failed to load history chart:', err);
+    console.error('Failed to load chart history:', err);
     // Display placeholder if data load fails
     const chartContainer = document.getElementById('chartContainerModal');
     const chartPlaceholder = document.getElementById('chartPlaceholderModal');
@@ -1539,6 +1945,34 @@ async function loadRankChart(productId, days = 30) {
     if (chartPlaceholder) chartPlaceholder.style.display = 'flex';
   }
 }
+
+// Expose loadRankChart globally for inline HTML onclick handlers
+window.loadRankChart = loadRankChart;
+
+// Helper: switch chart tab with active button highlighting & best rank badge
+window.__setChartTab = async function (days) {
+  // Update button active states
+  const btnMap = { 'all': 'chartBtn_all', 7: 'chartBtn_7', 30: 'chartBtn_30' };
+  Object.entries(btnMap).forEach(([key, btnId]) => {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    const isActive = String(key) === String(days);
+    btn.classList.toggle('active', isActive);
+  });
+
+  // Load chart
+  await loadRankChart(window.currentModalProductId, days);
+
+  // Update best rank badge
+  const badge = document.getElementById('bestRankBadge');
+  if (badge && window.__currentChartRanks && window.__currentChartRanks.length > 0) {
+    const bestRank = Math.min(...window.__currentChartRanks.filter(r => r !== null));
+    if (isFinite(bestRank)) {
+      badge.textContent = `${window.t('modal.best_rank')} #${bestRank}`;
+      badge.style.display = 'inline-block';
+    }
+  }
+};
 
 
 
@@ -1600,7 +2034,7 @@ async function loadKTrendInsights() {
   if (!insightGrid) return;
 
   insightGrid.innerHTML = `<div class="ktrend-loading" style="grid-column:1/-1">
-    <div class="ktrend-spinner"></div><span>🤖 Gemini 트렌드 태그 분석 중...</span>
+    <div class="ktrend-spinner"></div><span>🤖 AI 트렌드 태그 분석 중...</span>
   </div>`;
 
   try {
@@ -1616,7 +2050,7 @@ async function loadKTrendInsights() {
       insightGrid.innerHTML = `<div style="grid-column:1/-1;padding:60px;text-align:center;color:var(--text-muted)">
         <div style="font-size:48px;margin-bottom:12px">📊</div>
         <h3>분석 데이터가 없습니다</h3>
-        <p>크롤러와 Gemini 태거를 실행하면 자동으로 채워집니다.</p>
+        <p>크롤러와 AI 태거를 실행하면 자동으로 채워집니다.</p>
       </div>`;
       return;
     }
@@ -1650,8 +2084,8 @@ async function loadKTrendInsights() {
     const hasGeminiTags = taggedCount > 0;
 
     const geminiStatusBadge = hasGeminiTags
-      ? `<span style="color:var(--accent-green);font-weight:600;font-size:12px">● Gemini 태그 ${taggedCount}건 분석 완료</span>`
-      : `<span style="color:var(--accent-orange);font-weight:600;font-size:12px">⚠ Gemini 태그 없음 – trend_enricher.py를 먼저 실행해주세요</span>`;
+      ? `<span style="color:var(--accent-green);font-weight:600;font-size:12px">● AI 태그 ${taggedCount}건 분석 완료</span>`
+      : `<span style="color:var(--accent-orange);font-weight:600;font-size:12px">⚠ AI 태그 없음 – trend_enricher.py를 먼저 실행해주세요</span>`;
 
     insightGrid.innerHTML = `
       <!-- 카드 1: 출처 도넛 + 태그 상태 -->
@@ -1669,18 +2103,18 @@ async function loadKTrendInsights() {
         <h3>🏷️ 트렌드 유형 분포</h3>
         ${hasGeminiTags && Object.keys(typeCount).length > 0
         ? `<div class="chart-wrapper"><canvas id="ktrendTypeChart"></canvas></div>`
-        : `<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:13px">Gemini 태깅 후 자동 생성됩니다</div>`
+        : `<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:13px">AI 태깅 후 자동 생성됩니다</div>`
       }
       </div>
 
       <!-- 카드 3: 화장품 성분 TOP (full-width) -->
       <div class="insight-card full-width">
-        <h3>🧪 화장품 성분 트렌드 ${hasGeminiTags ? `<span style="font-size:12px;font-weight:400;color:var(--text-muted)">(Gemini 분석)</span>` : ''}</h3>
+        <h3>🧪 화장품 성분 트렌드 ${hasGeminiTags ? `<span style="font-size:12px;font-weight:400;color:var(--text-muted)">(AI 분석)</span>` : ''}</h3>
         ${topIngredients.length > 0
         ? `<div class="chart-wrapper" style="height:280px"><canvas id="ktrendIngredientChart"></canvas></div>`
         : `<div style="padding:40px;text-align:center;color:var(--text-muted)">
               <div style="font-size:32px;margin-bottom:8px">🧪</div>
-              <p>Gemini가 아직 성분을 추출하지 않았습니다.</p>
+              <p>AI가 아직 성분을 추출하지 않았습니다.</p>
               <code style="font-size:11px;background:#f5f5f7;padding:4px 8px;border-radius:4px">python scripts/trend_enricher.py</code> 를 실행해주세요.
              </div>`
       }
@@ -1688,19 +2122,19 @@ async function loadKTrendInsights() {
 
       <!-- 카드 4: 브랜드 언급 TOP (full-width) -->
       <div class="insight-card full-width">
-        <h3>🏷️ 브랜드 언급 TOP ${hasGeminiTags ? `<span style="font-size:12px;font-weight:400;color:var(--text-muted)">(Gemini 분석)</span>` : ''}</h3>
+        <h3>🏷️ 브랜드 언급 TOP ${hasGeminiTags ? `<span style="font-size:12px;font-weight:400;color:var(--text-muted)">(AI 분석)</span>` : ''}</h3>
         ${topBrands.length > 0
         ? `<div class="chart-wrapper" style="height:300px"><canvas id="ktrendBrandChart"></canvas></div>`
         : `<div style="padding:40px;text-align:center;color:var(--text-muted)">
               <div style="font-size:32px;margin-bottom:8px">🏷️</div>
-              <p>Gemini 태깅 후 브랜드가 자동 추출됩니다.</p>
+              <p>AI 태깅 후 브랜드가 자동 추출됩니다.</p>
              </div>`
       }
       </div>
 
       <!-- 카드 5: 패션 트렌드 키워드 cloud -->
       <div class="insight-card full-width">
-        <h3>👗 패션 트렌드 키워드 ${hasGeminiTags ? `<span style="font-size:12px;font-weight:400;color:var(--text-muted)">(Gemini 분석)</span>` : ''}</h3>
+        <h3>👗 패션 트렌드 키워드 ${hasGeminiTags ? `<span style="font-size:12px;font-weight:400;color:var(--text-muted)">(AI 분석)</span>` : ''}</h3>
         ${topFashion.length > 0
         ? `<div class="ktrend-insight-pills">
               ${topFashion.map(([style, cnt], i) => `
@@ -1711,7 +2145,7 @@ async function loadKTrendInsights() {
              </div>`
         : `<div style="padding:40px;text-align:center;color:var(--text-muted)">
               <div style="font-size:32px;margin-bottom:8px">👗</div>
-              <p>Gemini 태깅 후 패션 스타일이 자동 추출됩니다.</p>
+              <p>AI 태깅 후 패션 스타일이 자동 추출됩니다.</p>
              </div>`
       }
       </div>
@@ -2072,68 +2506,69 @@ function emptyState(title, subtitle = '') {
 
 // ─── Notification Logic ─────────────────────
 async function initNotificationSystem() {
-  await loadNotifications();
-
-  // Poll for new notifications every 60 seconds
-  // (In a real app, use Supabase Realtime subscription)
-  setInterval(loadNotifications, 60000);
+  const session = getSession();
+  if (!session) return;
+  fetchAndRenderNotifications();
+  // Poll every 60 seconds
+  setInterval(fetchAndRenderNotifications, 60000);
 }
 
-async function loadNotifications() {
+async function fetchAndRenderNotifications() {
+  const session = getSession();
+  if (!session) return;
+
   try {
-    const { data } = await fetchNotifications(10);
-    const prevCount = state.notifications.length;
-    state.notifications = data || [];
+    const res = await fetch(`http://localhost:6002/api/notifications?user_id=${session.user.id}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.success && data.notifications) {
+      const badge = document.getElementById('notiBadge');
+      const listBody = document.getElementById('notiListBody');
+      if (!badge || !listBody) return;
 
-    // Simple unread count
-    if (state.notifications.length > prevCount && prevCount > 0) {
-      state.unreadCount += (state.notifications.length - prevCount);
-      updateNotifBadge();
-    } else if (prevCount === 0 && state.notifications.some(n => !n.is_read)) {
-      state.unreadCount = state.notifications.filter(n => !n.is_read).length;
-      updateNotifBadge();
+      if (data.notifications.length > 0) {
+        badge.style.display = 'block';
+        badge.innerText = data.notifications.length > 99 ? '99+' : data.notifications.length;
+
+        listBody.innerHTML = data.notifications.map(n => `
+          <div class="noti-item" style="padding:12px; border-bottom:1px solid var(--border); cursor:pointer; background:var(--surface);" onclick="handleNotiClick('${n.id}', '${n.link}')">
+            <div style="font-weight:700; font-size:13px; color:var(--text); margin-bottom:4px;">${escapeHtml(n.title)}</div>
+            <div style="font-size:12px; color:var(--text-muted); line-height:1.4;">${escapeHtml(n.message)}</div>
+            <div style="font-size:10px; color:#aaa; margin-top:6px;">${new Date(n.created_at).toLocaleString('ko-KR')}</div>
+          </div>
+        `).join('');
+      } else {
+        badge.style.display = 'none';
+        listBody.innerHTML = `<div style="color:var(--text-muted); font-size:12px; text-align:center; padding:20px 0;">새로운 알림이 없습니다.</div>`;
+      }
     }
-
-    renderNotifications();
-  } catch (err) {
-    console.error('Fetch notif fail:', err);
+  } catch (e) {
+    console.error("Failed to fetch notifications:", e);
   }
 }
 
-function renderNotifications() {
-  const container = document.getElementById('notifList');
-  if (!container) return;
+window.handleNotiClick = async function (id, link) {
+  try {
+    // Mark as read immediately
+    await fetch(`http://localhost:6002/api/notifications/${id}/read`, { method: 'PUT' });
+  } catch (e) { console.error(e); }
 
-  if (state.notifications.length === 0) {
-    container.innerHTML = `<div class="notif-empty">${window.t('notifications.empty')}</div>`;
-    return;
+  // Refresh badge
+  fetchAndRenderNotifications();
+  const dropdown = document.getElementById('notiDropdown');
+  if (dropdown) dropdown.style.display = 'none';
+
+  // Navigate Action based on link target
+  if (link === 'sourcing') {
+    if (typeof window.openMyPageModal === 'function') {
+      window.openMyPageModal();
+      setTimeout(() => {
+        const tab = document.querySelector('.auth-tab[data-mypage-tab="sourcing"]');
+        if (tab) tab.click();
+      }, 100);
+    }
   }
-
-  container.innerHTML = state.notifications.map(n => {
-    const time = new Date(n.created_at).toLocaleTimeString(i18n.currentLang === 'ko' ? 'ko-KR' : 'en-US', { hour: '2-digit', minute: '2-digit' });
-    const typeLabel = n.type === 'price_drop' ? window.t('notifications.price_drop') : window.t('notifications.rank_up');
-
-    return `
-      <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="handleNotifClick('${n.id}', ${JSON.stringify(n.products_master).replace(/"/g, '&quot;')})">
-        <div class="notif-title">${typeLabel}</div>
-        <div class="notif-message">${n.message}</div>
-        <div class="notif-time">${time}</div>
-      </div>
-    `;
-  }).join('');
-}
-
-function updateNotifBadge() {
-  const badge = document.getElementById('notifBadge');
-  if (!badge) return;
-
-  if (state.unreadCount > 0) {
-    badge.textContent = state.unreadCount > 9 ? '9+' : state.unreadCount;
-    badge.style.display = 'flex';
-  } else {
-    badge.style.display = 'none';
-  }
-}
+};
 
 window.handleNotifClick = async function (id, product) {
   if (id) {
@@ -2159,3 +2594,358 @@ window.setGender = (gender) => {
 
   loadTab(state.activeTab);
 };
+
+// ─── My Page & Wishlist Shortcuts ─────────────────────
+window.openMyPageModal = async function () {
+  const session = getSession();
+  if (!session) return; // Should not happen, element is only rendered for logged in users
+
+  const modal = document.getElementById('myPageModalOverlay');
+  if (!modal) return;
+
+  // Fetch basic info
+  const profile = await getProfile() || {};
+
+  // Fill Account Tab
+  const emailInput = document.getElementById('myPageEmail');
+  const roleInput = document.getElementById('myPageRole');
+  if (emailInput) emailInput.value = session.user.email || '';
+  if (roleInput) roleInput.value = profile.role === 'admin' ? 'Admin (최고 관리자)' : 'User (일반 사용자)';
+
+  // Fill Billing Tab
+  const planBadge = document.getElementById('myPagePlanBadge');
+  const planDesc = document.getElementById('myPagePlanDesc');
+  const expiresAt = document.getElementById('myPageExpiresAt');
+
+  const tier = (profile.subscription_tier || 'free').toLowerCase();
+
+  if (planBadge) {
+    planBadge.textContent = tier === 'pro' ? 'Pro' : 'Free';
+    planBadge.className = `plan-badge ${tier === 'pro' ? 'pro' : ''}`;
+  }
+
+  if (planDesc) {
+    if (profile.role === 'admin') {
+      planDesc.textContent = '최고 관리자 권한으로 모든 기능을 무제한 이용할 수 있습니다.';
+    } else if (tier === 'pro') {
+      planDesc.textContent = '현재 Pro 플랜을 이용 중입니다. (모든 데이터 무제한 조회)';
+    } else {
+      planDesc.textContent = '현재 무료 플랜을 이용 중입니다. (일일 상세 조회 10회 제한)';
+    }
+  }
+
+  if (expiresAt) {
+    if (profile.role === 'admin') {
+      expiresAt.textContent = '무제한 (Admin)';
+    } else if (profile.expires_at) {
+      expiresAt.textContent = new Date(profile.expires_at).toLocaleDateString(i18n.currentLang === 'ko' ? 'ko-KR' : 'en-US');
+    } else {
+      expiresAt.textContent = '기간 제한 없음';
+    }
+  }
+
+  // Set default tab to account
+  switchMyPageTab('account');
+
+  // Open modal
+  modal.classList.add('open');
+  document.body.classList.add('one-page');
+};
+
+function switchMyPageTab(tabName) {
+  const accountTab = document.getElementById('myPageAccountTab');
+  const billingTab = document.getElementById('myPageBillingTab');
+  const sourcingTab = document.getElementById('myPageSourcingTab');
+  const tabBtns = document.querySelectorAll('#myPageModal .auth-tab');
+
+  tabBtns.forEach(btn => {
+    if (btn.dataset.mypageTab === tabName) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  if (accountTab) accountTab.style.display = tabName === 'account' ? 'block' : 'none';
+  if (billingTab) billingTab.style.display = tabName === 'billing' ? 'block' : 'none';
+  if (sourcingTab) sourcingTab.style.display = tabName === 'sourcing' ? 'block' : 'none';
+
+  if (tabName === 'sourcing') {
+    window.loadSourcingHistory();
+  }
+}
+
+// Global Event Listeners for My Page Modal
+document.addEventListener('DOMContentLoaded', () => {
+  const myPageCloseBtn = document.getElementById('myPageModalClose');
+  if (myPageCloseBtn) {
+    myPageCloseBtn.addEventListener('click', () => {
+      document.getElementById('myPageModalOverlay').classList.remove('open');
+      document.body.classList.remove('one-page');
+    });
+  }
+
+  const myPageTabs = document.querySelectorAll('#myPageModal .auth-tab');
+  myPageTabs.forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      const tabName = e.target.dataset.mypageTab;
+      if (tabName) switchMyPageTab(tabName);
+    });
+  });
+
+  // Event delegation for dynamic dropdown buttons
+  document.addEventListener('click', (e) => {
+    const target = e.target.closest('.dropdown-item');
+    if (!target) return;
+
+    if (target.id === 'myPageBtn') {
+      window.openMyPageModal();
+    } else if (target.id === 'wishlistNavBtn') {
+      const wishlistTabBtn = document.querySelector('.tab[data-tab="wishlist"]');
+      if (wishlistTabBtn) {
+        wishlistTabBtn.click(); // This will trigger switchTab and scrolling
+        window.scrollTo({ top: document.querySelector('.tab-bar').offsetTop - 80, behavior: 'smooth' });
+      }
+    }
+  });
+});
+
+// ─── Sourcing Quote Request ────────────────
+window.openQuoteModal = function () {
+  const inputs = document.querySelectorAll('#wishlistGrid .sourcing-qty-input');
+  const items = [];
+
+  inputs.forEach(input => {
+    const card = input.closest('.product-card');
+    const checkbox = card ? card.querySelector('.sourcing-item-checkbox') : null;
+    if (checkbox && !checkbox.checked) return;
+
+    const qty = parseInt(input.value) || 0;
+    if (qty > 0) {
+      const name = card ? (card.querySelector('.product-name')?.innerText || 'Unknown') : 'Unknown';
+      const brand = card ? (card.querySelector('.product-brand')?.innerText || '') : '';
+      items.push({ name, brand, qty });
+    }
+  });
+
+  if (items.length === 0) {
+    alert(window.t('sourcing.alert_empty_cart') || '장바구니가 비어 있습니다.');
+    return;
+  }
+
+  let listHtml = '';
+  items.forEach(item => {
+    listHtml += `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(0,0,0,0.05);">
+        <div style="flex:1; padding-right:10px; overflow:hidden;">
+          <div style="font-size:12px; font-weight:700; color:var(--accent-blue); margin-bottom:2px;">${item.brand}</div>
+          <div style="font-size:14px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.name}</div>
+        </div>
+        <div style="font-weight:700; font-size:14px; color:var(--text); background:#fff; padding:6px 12px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1); white-space:nowrap;">
+          ${item.qty}개
+        </div>
+      </div>
+    `;
+  });
+
+  const listContainer = document.getElementById('quoteProductList');
+  if (listContainer) {
+    listContainer.innerHTML = listHtml;
+    // Remove last border bottom
+    if (listContainer.lastElementChild) {
+      listContainer.lastElementChild.style.borderBottom = 'none';
+    }
+  }
+
+  const overlay = document.getElementById('quoteModalOverlay');
+  if (overlay) overlay.classList.add('open');
+};
+
+window.closeQuoteModal = function () {
+  const overlay = document.getElementById('quoteModalOverlay');
+  if (overlay) overlay.classList.remove('open');
+};
+
+window.__updateSourcingQty = function (btn, delta) {
+  const input = btn.parentNode.querySelector('.sourcing-qty-input');
+  if (input) {
+    let val = parseInt(input.value) || 0;
+    val += delta;
+    if (val < 10) val = 10;
+    input.value = val;
+  }
+};
+
+window.submitQuoteRequest = async function () {
+  const btn = document.getElementById('btnSubmitQuote');
+  const msgInput = document.getElementById('quoteMessage');
+  const message = msgInput ? msgInput.value : '';
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = window.t('sourcing.btn_submitting');
+  }
+
+  try {
+    const session = getSession();
+    if (!session) throw new Error(window.t('sourcing.alert_login'));
+
+    // Scrape items from DOM (in wishlist grid)
+    const inputs = document.querySelectorAll('#wishlistGrid .sourcing-qty-input');
+    const items = [];
+    inputs.forEach(input => {
+      const card = input.closest('.product-card');
+      const checkbox = card ? card.querySelector('.sourcing-item-checkbox') : null;
+      if (checkbox && !checkbox.checked) return;
+
+      const qty = parseInt(input.value) || 0;
+      if (qty <= 0) return;
+
+      const name = card.querySelector('.product-name')?.innerText || '';
+      const brand = card.querySelector('.product-brand')?.innerText || '';
+      const pid = input.getAttribute('data-product-id');
+      const img = card.querySelector('img')?.src || '';
+      items.push({ product_id: pid, name, brand, quantity: qty, image: img });
+    });
+
+    if (items.length === 0) {
+      throw new Error(window.t('sourcing.alert_empty_cart'));
+    }
+
+    const payload = {
+      user_id: session.user.id,
+      user_email: session.user.email,
+      items: items,
+      user_message: message
+    };
+
+    const res = await fetch('http://localhost:6002/api/sourcing/request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || window.t('sourcing.alert_fail'));
+
+    alert(window.t('sourcing.alert_success'));
+    closeQuoteModal();
+    if (msgInput) msgInput.value = '';
+  } catch (e) {
+    console.error("Quote Submit Error:", e);
+    alert("❌ Error: " + e.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = window.t('sourcing.btn_submit');
+    }
+  }
+};
+
+// ─── My Page Sourcing History ────────────────
+window.loadSourcingHistory = async function () {
+  const list = document.getElementById('sourcingHistoryList');
+  if (!list) return;
+  list.innerHTML = '<div class="loading-skeleton"></div>';
+  const session = getSession();
+  if (!session) return;
+
+  try {
+    const res = await fetch(`http://localhost:6002/api/sourcing/history/${session.user.id}`);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+
+    if (!data.requests || data.requests.length === 0) {
+      list.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted);">${window.t('sourcing.history_empty')}</div>`;
+      return;
+    }
+
+    list.innerHTML = data.requests.map(req => {
+      const date = new Date(req.created_at).toLocaleString('ko-KR');
+      const itemCount = (req.items && Array.isArray(req.items)) ? req.items.length : 0;
+      let statusBadge = '';
+      if (req.status === 'pending') statusBadge = `<span style="background:#fff3cd; color:#856404; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:600;">${window.t('sourcing.status_pending')}</span>`;
+      else if (req.status === 'quoted') statusBadge = `<span style="background:#d4edda; color:#155724; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:600;">${window.t('sourcing.status_quoted')}</span>`;
+      else if (req.status === 'canceled') statusBadge = `<span style="background:#f8d7da; color:#721c24; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:600;">${window.t('sourcing.status_canceled')}</span>`;
+      else statusBadge = `<span style="background:#e2e3e5; color:#383d41; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:600;">${req.status}</span>`;
+
+      let breakdownHtml = '';
+      if (req.estimated_cost) {
+        let itemsBreakdown = '';
+        if (req.items && Array.isArray(req.items)) {
+          itemsBreakdown = req.items.map(item => {
+            const up = item.unit_price || 0;
+            const lineTotal = up * (item.quantity || 0);
+            return `
+               <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:var(--text);">
+                 <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:10px;">- ${item.name} (${item.quantity}개)</span>
+                 <span>${up > 0 ? `₩${up.toLocaleString()} /개` : '단가 미정'}</span>
+               </div>
+             `;
+          }).join('');
+        }
+
+        const sFee = req.shipping_fee || 0;
+        const svFee = req.service_fee || 0;
+        const totalCost = req.estimated_cost || 0;
+
+        breakdownHtml = `
+          <div style="margin-top:10px; padding:12px; background:var(--background); border-radius:6px; border:1px solid var(--border);">
+            <div style="font-weight:600; font-size:13px; margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:4px;">견적 상세 내역 (Breakdown)</div>
+            ${itemsBreakdown}
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:var(--text); margin-top:8px;">
+               <span>배송비 (Shipping)</span>
+               <span>${sFee > 0 ? `₩${sFee.toLocaleString()}` : '-'}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:var(--text);">
+               <span>수수료 (Service Fee)</span>
+               <span>${svFee > 0 ? `₩${svFee.toLocaleString()}` : '-'}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:700; color:var(--primary); margin-top:8px; border-top:1px solid var(--border); padding-top:6px;">
+               <span>총 예상 견적</span>
+               <span>₩${totalCost.toLocaleString()}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      let replyHtml = '';
+      if (req.admin_reply) {
+        replyHtml = `<div style="margin-top:10px; padding:12px; background:var(--background); border-radius:6px; border-left:3px solid var(--primary);">
+          <div style="font-weight:600; font-size:13px; margin-bottom:5px;">${window.t('sourcing.admin_reply_title')}</div>
+          ${req.admin_reply ? `<div style="font-size:13px; color:var(--text); white-space:pre-wrap; line-height:1.4;">${escapeHtml(req.admin_reply)}</div>` : ''}
+        </div>`;
+      }
+
+      return `
+        <div style="border:1px solid var(--border); border-radius:8px; padding:15px; background:var(--surface);">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+            <div>
+              <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">${date}</div>
+              <div style="font-weight:600; font-size:14px;">${window.t('sourcing.total_items').replace('{count}', itemCount)}</div>
+            </div>
+            ${statusBadge}
+          </div>
+          ${req.user_message ? `<div style="font-size:13px; color:var(--text-muted); padding:8px; background:#f5f5f5; border-radius:4px; margin-bottom:10px;">💬 ${escapeHtml(req.user_message)}</div>` : ''}
+          ${breakdownHtml}
+          ${replyHtml}
+        </div>
+      `;
+    }).join('');
+
+  } catch (e) {
+    console.error(e);
+    list.innerHTML = `<div style="color:var(--text); font-size:13px; text-align:center; padding:20px;">${window.t('sourcing.history_error')}<br>(${e.message})</div>`;
+  }
+};
+
+window.__modalToggleWishlist = async function (btn, productId) {
+  await window.__toggleWishlist(btn, productId);
+  window.currentModalIsSaved = btn.classList.contains('active');
+  if (window.currentModalIsSaved) {
+    btn.innerHTML = window.t('modal.wishlist_saved');
+  } else {
+    btn.innerHTML = window.t('modal.wishlist_add');
+  }
+};
+

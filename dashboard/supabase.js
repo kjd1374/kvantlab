@@ -37,8 +37,40 @@ export async function query(table, params = '') {
 }
 
 /**
- * Fetch trending products (7-day rank change)
+ * Fetch Global Shopping Trends by country and category
  */
+export async function fetchGlobalShoppingTrends(country_code = 'VN', category = 'Skincare', source_type = 'ALL') {
+    let params = `select=*&order=mention_count.desc`;
+    if (country_code && country_code !== 'ALL') {
+        params += `&country_code=eq.${country_code}`;
+    }
+    if (category && category !== 'ALL') {
+        params += `&main_category=eq.${category}`;
+    }
+
+    return await query('global_shopping_trends', params);
+}
+
+/**
+ * Look up Olive Young products matching a global trend brand (Korean name search)
+ */
+export async function fetchOyProductByBrand(brandKo, nameKeyword = '') {
+    let params = `select=product_id,name,brand,image_url,url,review_rating,review_count&source=eq.oliveyoung`;
+    if (brandKo) {
+        params += `&brand=ilike.%${brandKo}%`;
+    }
+    if (nameKeyword) {
+        // PostgREST does not support multiple ilike on same field, use or param instead
+        params += `&name=ilike.%${nameKeyword.split(' ')[0]}%`;
+    }
+    params += `&limit=3`;
+    try {
+        return await query('products_master', params);
+    } catch (e) {
+        return { data: [], count: 0 };
+    }
+}
+
 /**
  * Fetch trending products (7-day rank change)
  */
@@ -68,8 +100,18 @@ export async function fetchTrending(limit = 50, platform = 'oliveyoung') {
 
     if (!trendRes.data || trendRes.data.length === 0) {
         // Fallback: Calculate 1-day trend if v_trending_7d is empty (e.g. less than 7 days of data)
-        const datesRes = await query('daily_rankings_v2', `select=date&source=eq.${platform}&order=date.desc&limit=2`);
-        const dates = [...new Set((datesRes.data || []).map(d => d.date))];
+        // [FIX] Two-step date discovery to bypass the 1000-row limit of PostgREST
+        const d1Res = await query('daily_rankings_v2', `select=date&source=eq.${platform}&order=date.desc&limit=1`);
+        const latestDate = d1Res.data?.[0]?.date;
+
+        let dates = [];
+        if (latestDate) {
+            dates.push(latestDate);
+            const d2Res = await query('daily_rankings_v2', `select=date&source=eq.${platform}&date=lt.${latestDate}&order=date.desc&limit=1`);
+            if (d2Res.data?.[0]?.date) {
+                dates.push(d2Res.data[0].date);
+            }
+        }
 
         if (dates.length > 0) {
             const latestDate = dates[0];
@@ -103,6 +145,8 @@ export async function fetchTrending(limit = 50, platform = 'oliveyoung') {
                     rank_change: 0
                 })).slice(0, limit);
             }
+            // Update count after fallback calculation
+            trendRes.count = trendRes.data.length;
         }
     }
 
@@ -255,15 +299,26 @@ export async function fetchRankedProducts({ page = 1, perPage = 20, search = '',
     const latestDate = dateResult.data?.[0]?.date;
 
     if (latestDate) {
-        let rankParams = `select=product_id,rank,category_code&source=eq.${platform}&date=eq.${latestDate}&order=rank.asc`;
+        // Fetch all rankings for the date, ordered by created_at DESC to get latest intraday data first
+        let rankParams = `select=product_id,rank,category_code,created_at&source=eq.${platform}&date=eq.${latestDate}&order=created_at.desc`;
         if (categoryCode && categoryCode !== 'all') {
             rankParams += `&category_code=eq.${categoryCode}`;
         }
 
         const rankResult = await query('daily_rankings_v2', rankParams);
-        const rankRows = rankResult.data || [];
+        const allRows = rankResult.data || [];
 
-        if (rankRows.length > 0) {
+        if (allRows.length > 0) {
+            // Deduplicate intraday data: keep only the latest record (first one encountered since we sorted by created_at desc)
+            const latestRankMap = new Map();
+            allRows.forEach(row => {
+                if (!latestRankMap.has(row.product_id)) {
+                    latestRankMap.set(row.product_id, row);
+                }
+            });
+
+            // Convert back to array and sort by rank ASC
+            const rankRows = Array.from(latestRankMap.values()).sort((a, b) => a.rank - b.rank);
             const productIds = rankRows.map(r => r.product_id);
 
             if (productIds.length > 0) {
@@ -341,23 +396,36 @@ export async function fetchCategories(platform = 'oliveyoung') {
  * Fetch rank and price history for a product
  */
 export async function fetchProductHistory(productId, days = 30) {
-    const today = new Date();
-    const startDate = new Date(today);
-    startDate.setDate(today.getDate() - days);
-    const dateStr = startDate.toISOString().split('T')[0];
+    let dateFilterRank = '';
+    let dateFilterPrice = '';
 
-    // 1. Fetch Rank History
-    const rankPromise = query('daily_rankings_v2', `select=rank,date&product_id=eq.${productId}&date=gte.${dateStr}&order=date.asc`);
+    if (days !== 'all') {
+        const today = new Date();
+        const startDate = new Date(today);
+        startDate.setDate(today.getDate() - parseInt(days));
+        const dateStr = startDate.toISOString().split('T')[0];
+        dateFilterRank = `&date=gte.${dateStr}`;
+        dateFilterPrice = `&snapshot_date=gte.${dateStr}`;
+    }
+
+    // 1. Fetch Rank History (order by created_at to capture intraday data)
+    // Coalesce created_at to date if created_at is missing.
+    const rankPromise = query('daily_rankings_v2', `select=rank,date,created_at&product_id=eq.${productId}${dateFilterRank}&order=created_at.asc`);
 
     // 2. Fetch Price History (from deals_snapshots)
-    const pricePromise = query('deals_snapshots', `select=deal_price,original_price,snapshot_date&product_id=eq.${productId}&snapshot_date=gte.${dateStr}&order=snapshot_date.asc`);
+    const pricePromise = query('deals_snapshots', `select=deal_price,original_price,snapshot_date&product_id=eq.${productId}${dateFilterPrice}&order=snapshot_date.asc`);
+
 
     const [ranks, prices] = await Promise.all([rankPromise, pricePromise]);
 
+    // Map to consistently use a 'timestamp' property
     return {
-        ranks: ranks.data || [],
+        ranks: (ranks.data || []).map(r => ({
+            timestamp: r.created_at || `${r.date}T00:00:00.000Z`,
+            rank: r.rank
+        })),
         prices: (prices.data || []).map(p => ({
-            date: p.snapshot_date,
+            timestamp: p.created_at || `${p.snapshot_date}T00:00:00.000Z`,
             price: p.deal_price,
             original_price: p.original_price
         }))
@@ -398,13 +466,97 @@ export async function fetchProductCount(platform = 'oliveyoung') {
  * AUTH FUNCTIONS
  */
 
-export async function signUp(email, password) {
+export async function signUp(email, password, metadata = {}) {
     const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
         method: 'POST',
         headers: headers,
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({
+            email,
+            password,
+            options: {
+                data: metadata
+            }
+        })
     });
     return await res.json();
+}
+
+export async function sendOtp(email) {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/otp`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ email, create_user: true })
+    });
+    // Supabase OTP returns empty body on success (200), need to handle it safely
+    if (res.ok) return {};
+    return await res.json();
+}
+
+export async function verifyOtp(email, token) {
+    let res = await fetch(`${SUPABASE_URL}/auth/v1/verify`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ email, token, type: 'signup' })
+    });
+    let data = await res.json();
+
+    // If signup token fails, it might be an existing user receiving a magiclink token
+    if (!res.ok && data.msg === 'Token has expired or is invalid') {
+        res = await fetch(`${SUPABASE_URL}/auth/v1/verify`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({ email, token, type: 'magiclink' })
+        });
+        data = await res.json();
+    }
+
+    // Fallback to email OTP just in case
+    if (!res.ok && data.msg === 'Token has expired or is invalid') {
+        res = await fetch(`${SUPABASE_URL}/auth/v1/verify`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({ email, token, type: 'email' })
+        });
+        data = await res.json();
+    }
+
+    if (!res.ok) {
+        return { error: data.msg || data.message || data.error_description || '유효하지 않거나 만료된 인증번호입니다.' };
+    }
+    // Auto-login on successful verification
+    if (data.access_token) {
+        localStorage.setItem('sb-token', data.access_token);
+        localStorage.setItem('sb-user', JSON.stringify(data.user));
+        try {
+            const profile = await fetchUserProfile(data.user.id);
+            if (profile) localStorage.setItem('sb-profile', JSON.stringify(profile));
+        } catch (e) { }
+    }
+    return data;
+}
+
+export async function updateUserPassword(password) {
+    const token = localStorage.getItem('sb-token');
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        method: 'PUT',
+        headers: { ...headers, Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ password })
+    });
+    return await res.json();
+}
+
+export async function updateUserProfile(userId, profileData) {
+    const token = localStorage.getItem('sb-token');
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+        method: 'PATCH',
+        headers: { ...headers, Authorization: `Bearer ${token}`, 'Prefer': 'return=representation' },
+        body: JSON.stringify(profileData)
+    });
+    const data = await res.json();
+    if (res.ok && data && data.length > 0) {
+        localStorage.setItem('sb-profile', JSON.stringify(data[0]));
+    }
+    return { data, error: !res.ok ? data : null };
 }
 
 export async function signIn(email, password) {
@@ -414,11 +566,57 @@ export async function signIn(email, password) {
         body: JSON.stringify({ email, password })
     });
     const data = await res.json();
+    if (!res.ok) {
+        return { error: data.msg || data.message || data.error_description || '이메일 또는 비밀번호가 올바르지 않습니다.' };
+    }
     if (data.access_token) {
         localStorage.setItem('sb-token', data.access_token);
         localStorage.setItem('sb-user', JSON.stringify(data.user));
+
+        // Fetch and store profile (membership tier)
+        try {
+            const profile = await fetchUserProfile(data.user.id);
+            if (profile) localStorage.setItem('sb-profile', JSON.stringify(profile));
+        } catch (e) {
+            console.error('Failed to fetch profile on signin:', e);
+        }
     }
     return data;
+}
+
+export async function fetchUserProfile(userId) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=*`, {
+        headers: headers
+    });
+    const data = await res.json();
+    return data?.[0] || null;
+}
+
+export function getProfile() {
+    return JSON.parse(localStorage.getItem('sb-profile') || 'null');
+}
+
+/**
+ * DAILY USAGE TRACKING
+ */
+export function getDailyViewCount() {
+    const today = new Date().toISOString().split('T')[0];
+    const usage = JSON.parse(localStorage.getItem('usage-tracker') || '{}');
+    if (usage.date !== today) {
+        return 0;
+    }
+    return usage.count || 0;
+}
+
+export function incrementDetailViewCount() {
+    const today = new Date().toISOString().split('T')[0];
+    let usage = JSON.parse(localStorage.getItem('usage-tracker') || '{}');
+    if (usage.date !== today) {
+        usage = { date: today, count: 0 };
+    }
+    usage.count = (usage.count || 0) + 1;
+    localStorage.setItem('usage-tracker', JSON.stringify(usage));
+    return usage.count;
 }
 
 export function signOut() {
@@ -430,7 +628,75 @@ export function signOut() {
 export function getSession() {
     const token = localStorage.getItem('sb-token');
     const user = JSON.parse(localStorage.getItem('sb-user') || 'null');
-    return token ? { token, user } : null;
+    return token ? { access_token: token, user } : null;
+}
+
+/**
+ * ANNOUNCEMENT FUNCTIONS
+ */
+
+export async function fetchPublishedAnnouncements(limit = 3) {
+    return await query('board_announcements', `is_published=eq.true&order=created_at.desc&limit=${limit}`);
+}
+
+export async function fetchAnnouncements() {
+    return await query('board_announcements', 'order=created_at.desc');
+}
+
+export async function insertAnnouncement(title, content, type, is_published) {
+    const session = getSession();
+    if (!session) return { error: 'Not authenticated' };
+
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/board_announcements`, {
+        method: 'POST',
+        headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({ title, content, type, is_published })
+    });
+    if (!response.ok) {
+        const err = await response.json();
+        return { error: err.message || 'Server error' };
+    }
+    return await response.json();
+}
+
+export async function updateAnnouncement(id, title, content, type, is_published) {
+    const session = getSession();
+    if (!session) return { error: 'Not authenticated' };
+
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/board_announcements?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({ title, content, type, is_published })
+    });
+    if (!response.ok) {
+        const err = await response.json();
+        return { error: err.message || 'Server error' };
+    }
+    return await response.json();
+}
+
+export async function deleteAnnouncement(id) {
+    const session = getSession();
+    if (!session) return { error: 'Not authenticated' };
+
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/board_announcements?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${session.access_token}`
+        }
+    });
+    return response.ok;
 }
 
 /**
@@ -441,25 +707,67 @@ export async function fetchSavedProducts() {
     const session = getSession();
     if (!session) return { data: [], count: 0 };
 
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_products?select=*,products_master(*)`, {
-        headers: authHeaders(session.token)
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_products?select=*,products_master(*)&user_id=eq.${session.user.id}`, {
+        headers: authHeaders(session.access_token)
     });
     const data = await res.json();
     const finalData = Array.isArray(data) ? data : [];
     return { data: finalData, count: finalData.length };
 }
 
-export async function saveProduct(productId, memo = '') {
+async function resolveMasterId(productId, productData = null, autoInsert = false) {
+    // If productId is already a numeric BigInt string or number
+    if (!isNaN(Number(productId))) return Number(productId);
+
+    const searchId = (productData && productData.product_id) ? productData.product_id : productId;
+
+    // Check if it exists in products_master
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/products_master?product_id=eq.${encodeURIComponent(searchId)}&select=id`, {
+        headers: headers
+    });
+    const data = await res.json();
+    if (data && data.length > 0) return data[0].id;
+
+    if (!autoInsert) return null;
+
+    if (!productData || !productData.name) {
+        throw new Error('해당 상품 정보를 가져올 수 없어 장바구니에 담을 수 없습니다.');
+    }
+
+    // Upsert into products_master dynamically for crawler-only products
+    const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/products_master`, {
+        method: 'POST',
+        headers: { ...headers, 'Prefer': 'return=representation' },
+        body: JSON.stringify({
+            product_id: searchId,
+            name: productData.name,
+            brand: productData.brand || '',
+            price: productData.special_price || productData.price || 0,
+            image_url: productData.image_url || '',
+            url: productData.url || '',
+            source: productData.source || 'oliveyoung',
+            category_code: productData.category_code || 'all'
+        })
+    });
+    const insertData = await insertRes.json();
+    if (insertData && insertData.length > 0) return insertData[0].id;
+
+    throw new Error('상품 마스터 등록에 실패했습니다.');
+}
+
+export async function saveProduct(productId, pData = null) {
     const session = getSession();
     if (!session) throw new Error('Authentication required');
 
+    const masterId = await resolveMasterId(productId, pData, true);
+
     const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_products`, {
         method: 'POST',
-        headers: { ...authHeaders(session.token), 'Prefer': 'return=representation' },
+        headers: { ...authHeaders(session.access_token), 'Prefer': 'return=representation' },
         body: JSON.stringify({
             user_id: session.user.id,
-            product_id: productId,
-            memo: memo
+            product_id: masterId,
+            memo: pData?.memo || ''
         })
     });
     return await res.json();
@@ -469,9 +777,12 @@ export async function removeProduct(productId) {
     const session = getSession();
     if (!session) throw new Error('Authentication required');
 
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_products?product_id=eq.${productId}&user_id=eq.${session.user.id}`, {
+    const masterId = await resolveMasterId(productId, null, false);
+    if (!masterId) return true; // Already removed or doesn't exist
+
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_products?product_id=eq.${masterId}&user_id=eq.${session.user.id}`, {
         method: 'DELETE',
-        headers: authHeaders(session.token)
+        headers: authHeaders(session.access_token)
     });
     return res.ok;
 }
@@ -480,11 +791,14 @@ export async function checkIfSaved(productId) {
     const session = getSession();
     if (!session) return false;
 
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_products?product_id=eq.${productId}&user_id=eq.${session.user.id}&select=id`, {
-        headers: authHeaders(session.token)
+    const masterId = await resolveMasterId(productId, null, false);
+    if (!masterId) return false;
+
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_products?product_id=eq.${masterId}&user_id=eq.${session.user.id}&select=id`, {
+        headers: authHeaders(session.access_token)
     });
     const data = await res.json();
-    return data.length > 0;
+    return data && data.length > 0;
 }
 
 /**

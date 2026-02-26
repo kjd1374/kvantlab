@@ -163,7 +163,9 @@ async def crawl_ably_category(page, category):
 
     # 메인 페이지 이동
     try:
-        await page.goto("https://m.a-bly.com/", wait_until="networkidle", timeout=60000)
+        # wait_until="commit" 으로 로딩 방식을 완화하여 무한 로딩/타임아웃을 방지
+        await page.goto("https://m.a-bly.com/", wait_until="commit", timeout=30000)
+        await page.wait_for_load_state("domcontentloaded")
         print(f"  🚩 메인 접근: {await page.title()}")
     except Exception as e:
         print(f"  ❌ 메인 페이지 로드 실패: {e}")
@@ -393,17 +395,29 @@ async def ably_crawl():
     total_saved = 0
     
     async with async_playwright() as p:
-        # 모바일 뷰포트 설정 (에이블리는 모바일 웹 최적화)
+        # 모바일 뷰포트 설정 (에이블리는 모바일 웹 최적화) 및 봇 차단 우회
         browser = await p.chromium.launch(
             headless=True,
-            args=['--disable-blink-features=AutomationControlled']
+            args=[
+                '--disable-blink-features=AutomationControlled',
+                '--disable-web-security',
+                '--no-sandbox',
+                '--disable-setuid-sandbox'
+            ]
         )
         context = await browser.new_context(
-            user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1",
+            user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
             viewport={"width": 390, "height": 844},
+            device_scale_factor=3,
             is_mobile=True,
-            has_touch=True
+            has_touch=True,
+            locale="ko-KR",
+            timezone_id="Asia/Seoul",
         )
+        
+        # navigator.webdriver 속성을 지워서 봇 탐지 회피
+        await context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+        
         page = await context.new_page()
         
         for category in TARGET_CATEGORIES:
