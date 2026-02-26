@@ -2679,61 +2679,90 @@ function switchMyPageTab(tabName) {
     const profile = getProfile() || {};
     const tier = (profile.subscription_tier || 'free').toLowerCase();
 
-    if (tier !== 'pro' && !window.__paypalRendered && window.paypal) {
-      const container = document.getElementById('paypal-button-container');
-      if (container) {
-        container.innerHTML = ''; // Clear just in case
-        window.paypal.Buttons({
-          createOrder: (data, actions) => {
-            return actions.order.create({
-              purchase_units: [{
-                description: 'K-Trend Intelligence Pro Plan (1 Month)',
-                amount: {
-                  currency_code: 'USD',
-                  value: '29.99'
-                }
-              }]
-            });
-          },
-          onApprove: async (data, actions) => {
-            const session = getSession();
-            if (!session) {
-              alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
-              return;
-            }
-            try {
-              // Secure backend verification
-              const response = await fetch('/api/paypal/capture', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  orderID: data.orderID,
-                  userId: session.user.id
-                })
+    // Map K-Vant language to PayPal locale
+    const siteLang = localStorage.getItem('app_lang') || 'ko';
+    let ppLocale = 'en_US';
+    if (siteLang === 'ko') ppLocale = 'ko_KR';
+    else if (siteLang === 'ja') ppLocale = 'ja_JP';
+    else if (siteLang === 'th') ppLocale = 'th_TH';
+    else if (siteLang === 'id') ppLocale = 'id_ID';
+
+    // If language changed, force reload of PayPal SDK
+    if (window.__paypalLocale && window.__paypalLocale !== ppLocale) {
+      const oldScript = document.getElementById('paypal-sdk-script');
+      if (oldScript) oldScript.remove();
+      delete window.paypal;
+      window.__paypalRendered = false;
+    }
+    window.__paypalLocale = ppLocale;
+
+    const renderPayPal = () => {
+      if (tier !== 'pro' && !window.__paypalRendered && window.paypal) {
+        const container = document.getElementById('paypal-button-container');
+        if (container) {
+          container.innerHTML = ''; // Clear just in case
+          window.paypal.Buttons({
+            createOrder: (data, actions) => {
+              return actions.order.create({
+                purchase_units: [{
+                  description: 'K-Trend Intelligence Pro Plan (1 Month)',
+                  amount: {
+                    currency_code: 'USD',
+                    value: '29.99'
+                  }
+                }]
               });
-              const result = await response.json();
-              if (result.success) {
-                alert('결제가 성공적으로 완료되었습니다. Pro 멤버십으로 업그레이드 되었습니다.');
-                // Refresh page or modal state
-                window.location.reload();
-              } else {
-                alert('결제 검증에 실패했습니다. 관리자에게 문의해주세요.');
+            },
+            onApprove: async (data, actions) => {
+              const session = getSession();
+              if (!session) {
+                alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
+                return;
               }
-            } catch (error) {
-              console.error('PayPal capture error:', error);
-              alert('결제 처리 중 오류가 발생했습니다.');
+              try {
+                // Secure backend verification
+                const response = await fetch('/api/paypal/capture', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    orderID: data.orderID,
+                    userId: session.user.id
+                  })
+                });
+                const result = await response.json();
+                if (result.success) {
+                  alert('결제가 성공적으로 완료되었습니다. Pro 멤버십으로 업그레이드 되었습니다.');
+                  // Refresh page or modal state
+                  window.location.reload();
+                } else {
+                  alert('결제 검증에 실패했습니다. 관리자에게 문의해주세요.');
+                }
+              } catch (error) {
+                console.error('PayPal capture error:', error);
+                alert('결제 처리 중 오류가 발생했습니다.');
+              }
+            },
+            onError: (err) => {
+              console.error('PayPal Error:', err);
+              // Optionally notify user
             }
-          },
-          onError: (err) => {
-            console.error('PayPal Error:', err);
-            // Optionally notify user
-          }
-        }).render('#paypal-button-container');
-        window.__paypalRendered = true;
+          }).render('#paypal-button-container');
+          window.__paypalRendered = true;
+        }
+      } else if (tier === 'pro') {
+        const container = document.getElementById('paypal-button-container');
+        if (container) container.innerHTML = ''; // hide if already pro
       }
-    } else if (tier === 'pro') {
-      const container = document.getElementById('paypal-button-container');
-      if (container) container.innerHTML = ''; // hide if already pro
+    };
+
+    if (!window.paypal) {
+      const script = document.createElement('script');
+      script.src = `https://www.paypal.com/sdk/js?client-id=AUBMODXT3_l9gMM39RZjBu7sUoqRSH5VmrZCge5exB1lPLtITzAXOCJQQVNAUYWXPJFpCexnirAhFttV&currency=USD&locale=${ppLocale}`;
+      script.id = 'paypal-sdk-script';
+      script.onload = () => renderPayPal();
+      document.head.appendChild(script);
+    } else {
+      renderPayPal();
     }
   }
 }

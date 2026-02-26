@@ -2020,6 +2020,8 @@ body {
   width: 90%;
   max-width: 480px;
   padding: 32px;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .my-page-title {
