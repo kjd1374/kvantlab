@@ -393,6 +393,83 @@ app.put('/api/notifications/:id/read', async (req, res) => {
     }
 });
 
+// --- PayPal Integration ---
+// Verify payment and update subscription
+app.post('/api/paypal/capture', async (req, res) => {
+    const { orderID, userId } = req.body;
+
+    if (!orderID || !userId) {
+        return res.status(400).json({ success: false, error: 'Missing orderID or userId' });
+    }
+
+    try {
+        // 1. Get PayPal Access Token
+        const clientId = process.env.PAYPAL_CLIENT_ID;
+        const secret = process.env.PAYPAL_SECRET;
+
+        if (!clientId || !secret) {
+            throw new Error("PayPal API credentials are not configured on the server.");
+        }
+
+        const auth = Buffer.from(`${clientId}:${secret}`).toString('base64');
+        const tokenResponse = await fetch('https://api-m.sandbox.paypal.com/v1/oauth2/token', {
+            method: 'POST',
+            body: 'grant_type=client_credentials',
+            headers: {
+                'Authorization': `Basic ${auth}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+
+        const tokenData = await tokenResponse.json();
+        if (!tokenResponse.ok) {
+            throw new Error(`PayPal auth failed: ${tokenData.error_description || tokenData.message}`);
+        }
+
+        const accessToken = tokenData.access_token;
+
+        // 2. Capture the Order
+        const captureResponse = await fetch(`https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderID}/capture`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        const captureData = await captureResponse.json();
+
+        if (captureResponse.ok && captureData.status === 'COMPLETED') {
+            // 3. Update User Subscription in Supabase
+            // Calculate expiration (e.g., 30 days from now)
+            const expiresAt = new Date();
+            expiresAt.setDate(expiresAt.getDate() + 30);
+
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({
+                    subscription_tier: 'pro',
+                    expires_at: expiresAt.toISOString()
+                })
+                .eq('id', userId);
+
+            if (updateError) {
+                console.error("Failed to update user profile in Supabase after successful payment:", updateError);
+                // In a robust system, you'd want a webhook or manual retry queue here.
+                throw new Error("Payment verified, but failed to update user profile.");
+            }
+
+            res.json({ success: true, message: 'Payment captured and subscription updated.' });
+        } else {
+            console.error("PayPal capture failed:", captureData);
+            res.status(400).json({ success: false, error: 'Payment capture failed or not completed.' });
+        }
+    } catch (error) {
+        console.error("PayPal Capture Error:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Data Pool Admin Backend running on http://localhost:${PORT}`);
 });

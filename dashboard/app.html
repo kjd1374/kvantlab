@@ -25,6 +25,9 @@
     rel="stylesheet">
   <link rel="stylesheet" href="/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- PayPal SDK -->
+  <script
+    src="https://www.paypal.com/sdk/js?client-id=AUBMODXT3_l9gMM39RZjBu7sUoqRSH5VmrZCge5exB1lPLtITzAXOCJQQVNAUYWXPJFpCexnirAhFttV&currency=USD"></script>
 </head>
 
 <body>
@@ -398,8 +401,7 @@
         </div>
 
         <div class="billing-actions" style="margin-top: 24px; text-align:center;">
-          <button class="btn-submit" onclick="alert('결제 시스템 준비 중입니다.')" style="width:100%;"
-            data-i18n="mypage.upgrade">플랜 업그레이드</button>
+          <div id="paypal-button-container" style="max-width: 400px; margin: 0 auto;"></div>
         </div>
       </div>
 
