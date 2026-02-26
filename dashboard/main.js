@@ -2708,7 +2708,7 @@ function switchMyPageTab(tabName) {
                   description: 'K-Trend Intelligence Pro Plan (1 Month)',
                   amount: {
                     currency_code: 'USD',
-                    value: '29.99'
+                    value: '19.99'
                   }
                 }]
               });
