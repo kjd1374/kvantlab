@@ -396,7 +396,8 @@ app.put('/api/notifications/:id/read', async (req, res) => {
 // --- PayPal Integration ---
 // Verify payment and update subscription
 app.post('/api/paypal/capture', async (req, res) => {
-    const { orderID, userId } = req.body;
+    const body = req.body || {};
+    const { orderID, userId } = body;
 
     if (!orderID || !userId) {
         return res.status(400).json({ success: false, error: 'Missing orderID or userId' });
