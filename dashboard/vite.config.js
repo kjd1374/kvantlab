@@ -31,7 +31,12 @@ export default defineConfig({
         rollupOptions: {
             input: {
                 main: 'index.html',
-                admin: 'admin/index.html'
+                admin: 'admin/index.html',
+                app: 'app.html',
+                privacy: 'privacy.html',
+                privacy_en: 'privacy_en.html',
+                terms: 'terms.html',
+                terms_en: 'terms_en.html'
             }
         }
     }
