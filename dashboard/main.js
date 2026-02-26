@@ -1261,48 +1261,65 @@ function closeModal() {
 
 // Helper: Fetch AI Summary
 async function fetchAiSummary(product) {
-  // 1. Priority: DB pre-calculated summary (avoids API cost on repeat visits)
-  if (product.ai_summary && product.ai_summary.pros) {
-    return product.ai_summary;
-  }
+  const langCode = window.i18n && window.i18n.currentLang ? window.i18n.currentLang : 'ko';
+  const langNameMap = { 'ko': 'Korean', 'en': 'English', 'vi': 'Vietnamese', 'th': 'Thai', 'id': 'Indonesian', 'ja': 'Japanese' };
+  const targetLang = langNameMap[langCode] || 'Korean';
 
-  // 2. Check LocalStorage cache
-  const cacheKey = `ai_summary_${product.product_id || product.id}`;
+  // 1. Check LocalStorage cache with language-specific key
+  const cacheKey = `ai_summary_${product.product_id || product.id}_${langCode}`;
   const cached = localStorage.getItem(cacheKey);
   if (cached) {
     try { return JSON.parse(cached); } catch (e) { }
   }
 
-  // 3. Call Gemini 3.0 Flash API directly
+  // 2. Priority: DB pre-calculated summary (avoids API cost if Korean)
+  if (product.ai_summary && product.ai_summary.pros && langCode === 'ko') {
+    return product.ai_summary;
+  }
+
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error('VITE_GEMINI_API_KEY not set in .env');
   }
 
-  const reviews = product.reviews || [
-    `${product.name} 써보니까 진짜 좋아요.`,
-    `가격 대비 성능이 뛰어납니다.`,
-    `발림성이 부드럽고 촉촉해요.`,
-    `재구매 의사 있습니다.`,
-    `약간 아쉬운 점도 있지만 전반적으로 만족.`
-  ];
+  let prompt = '';
 
-  const prompt = `Analyze the following Korean product reviews for "${product.name}".
-Return ONLY valid JSON matching this exact schema:
+  if (product.ai_summary && product.ai_summary.pros && langCode !== 'ko') {
+    // 3. Translate existing DB summary to target language efficiently
+    prompt = `Translate the following JSON object's string arrays ('keywords', 'pros', 'cons') into ${targetLang}. 
+Keep the exact same JSON schema and do not change the 'sentiment_pos' integer.
+Return ONLY valid JSON.
+
+JSON to translate:
+${JSON.stringify(product.ai_summary)}
+`;
+  } else {
+    // 4. Analyze from raw reviews into target language
+    const reviews = product.reviews || [
+      `${product.name} 써보니까 진짜 좋아요.`,
+      `가격 대비 성능이 뛰어납니다.`,
+      `발림성이 부드럽고 촉촉해요.`,
+      `재구매 의사 있습니다.`,
+      `약간 아쉬운 점도 있지만 전반적으로 만족.`
+    ];
+
+    prompt = `Analyze the following Korean product reviews for "${product.name}".
+Return ONLY valid JSON matching this exact schema. All string values (keywords, pros, cons) MUST BE WRITTEN IN ${targetLang}.
 {
   "sentiment_pos": (integer 0-100),
-  "keywords": ["키워드1", "키워드2", "키워드3", "키워드4", "키워드5"],
-  "pros": ["장점1", "장점2", "장점3"],
-  "cons": ["단점1", "단점2", "단점3"]
+  "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
+  "pros": ["pro1", "pro2", "pro3"],
+  "cons": ["con1", "con2", "con3"]
 }
 
 CRITICAL INSTRUCTION FOR CONS (단점): 
-Never use vague or generic statements like "일부 아쉬운 점이 있음", "호불호가 갈릴 수 있음", or "개인차가 존재함". 
-Extract highly specific product flaws mentioned by users (e.g., "펌프가 잘 고장남", "건성 피부에는 건조함", "향이 인공적임"). 
-If the reviews do not contain any specific negative feedback, simply output ["특별하게 언급된 단점이 없음"].
+Never use vague or generic statements. 
+Extract highly specific product flaws mentioned by users. 
+If the reviews do not contain any specific negative feedback, simply output a statement in ${targetLang} saying no specific cons mentioned.
 
 Reviews:
 ${reviews.join('\n').substring(0, 2000)}`;
+  }
 
   const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
@@ -1332,23 +1349,8 @@ ${reviews.join('\n').substring(0, 2000)}`;
   }
   const result = JSON.parse(textResponse);
 
-  // 4. Save to local cache
+  // Save to language-specific local cache
   localStorage.setItem(cacheKey, JSON.stringify(result));
-
-  // 5. Persist to Supabase DB (fire & forget) so next user doesn't trigger API again
-  const pId = product.product_id || product.id;
-  if (pId) {
-    const { SUPABASE_URL, SUPABASE_KEY } = {
-      SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || 'https://hgxblbbjlnsfkffwvfao.supabase.co',
-      SUPABASE_KEY: import.meta.env.VITE_SUPABASE_KEY
-    };
-    // Use the supabase client from supabase.js to update
-    try {
-      await saveProduct({ id: pId, ai_summary: result });
-    } catch (e) {
-      console.warn('DB persist of AI summary failed (non-critical):', e);
-    }
-  }
 
   return result;
 }
@@ -1413,8 +1415,20 @@ window.__openProduct = async function (product) {
   // Check true wishlist status from DB
   window.currentModalIsSaved = await checkIfSaved(window.currentModalProductId);
 
-  // Initial State: Use pre-calculated summary if available
-  let aiData = product.ai_summary || null;
+  // Initial State: Use localized cache, or pre-calculated summary if Korean
+  const langCode = window.i18n && window.i18n.currentLang ? window.i18n.currentLang : 'ko';
+  const cacheKey = `ai_summary_${product.product_id || product.id}_${langCode}`;
+  let aiData = null;
+
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) aiData = JSON.parse(cached);
+  } catch (e) { }
+
+  if (!aiData && product.ai_summary && langCode === 'ko') {
+    aiData = product.ai_summary;
+  }
+
   let isAiLoading = false;
 
   const renderModal = () => {
