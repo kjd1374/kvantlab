@@ -397,10 +397,10 @@ app.put('/api/notifications/:id/read', async (req, res) => {
 // Verify payment and update subscription
 app.post('/api/paypal/capture', async (req, res) => {
     const body = req.body || {};
-    const { orderID, userId } = body;
+    const { subscriptionID, userId } = body;
 
-    if (!orderID || !userId) {
-        return res.status(400).json({ success: false, error: 'Missing orderID or userId' });
+    if (!subscriptionID || !userId) {
+        return res.status(400).json({ success: false, error: 'Missing subscriptionID or userId' });
     }
 
     try {
@@ -408,12 +408,18 @@ app.post('/api/paypal/capture', async (req, res) => {
         const clientId = process.env.PAYPAL_CLIENT_ID;
         const secret = process.env.PAYPAL_SECRET;
 
+        // Determine if Sandbox or Live environment
+        // Default to Sandbox, but switch to Live if process.env.PAYPAL_MODE is 'live'
+        const environmentUrl = process.env.PAYPAL_MODE === 'live'
+            ? 'https://api-m.paypal.com'
+            : 'https://api-m.sandbox.paypal.com';
+
         if (!clientId || !secret) {
             throw new Error("PayPal API credentials are not configured on the server.");
         }
 
         const auth = Buffer.from(`${clientId}:${secret}`).toString('base64');
-        const tokenResponse = await fetch('https://api-m.sandbox.paypal.com/v1/oauth2/token', {
+        const tokenResponse = await fetch(`${environmentUrl}/v1/oauth2/token`, {
             method: 'POST',
             body: 'grant_type=client_credentials',
             headers: {
@@ -429,9 +435,9 @@ app.post('/api/paypal/capture', async (req, res) => {
 
         const accessToken = tokenData.access_token;
 
-        // 2. Capture the Order
-        const captureResponse = await fetch(`https://api-m.sandbox.paypal.com/v2/checkout/orders/${orderID}/capture`, {
-            method: 'POST',
+        // 2. Fetch Subscription Details
+        const captureResponse = await fetch(`${environmentUrl}/v1/billing/subscriptions/${subscriptionID}`, {
+            method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${accessToken}`
@@ -440,33 +446,113 @@ app.post('/api/paypal/capture', async (req, res) => {
 
         const captureData = await captureResponse.json();
 
-        if (captureResponse.ok && captureData.status === 'COMPLETED') {
+        // Active status means the trial started successfully or payment went through.
+        if (captureResponse.ok && captureData.status === 'ACTIVE') {
             // 3. Update User Subscription in Supabase
-            // Calculate expiration (e.g., 30 days from now)
-            const expiresAt = new Date();
-            expiresAt.setDate(expiresAt.getDate() + 30);
+            // Use PayPal's next_billing_time to set the true expiration date
+            let expiresAt = new Date();
+
+            if (captureData.billing_info && captureData.billing_info.next_billing_time) {
+                // Parse PayPal's ISO string (e.g. "2026-03-12T10:00:00Z")
+                expiresAt = new Date(captureData.billing_info.next_billing_time);
+            } else {
+                // Fallback: 1 month Trial / Cycle
+                expiresAt.setDate(expiresAt.getDate() + 30);
+            }
 
             const { error: updateError } = await supabase
                 .from('profiles')
                 .update({
                     subscription_tier: 'pro',
+                    subscription_id: subscriptionID, // Store the Sub ID for cancellations later
                     expires_at: expiresAt.toISOString()
                 })
                 .eq('id', userId);
 
             if (updateError) {
-                console.error("Failed to update user profile in Supabase after successful payment:", updateError);
-                // In a robust system, you'd want a webhook or manual retry queue here.
-                throw new Error("Payment verified, but failed to update user profile.");
+                console.error("Failed to update user profile in Supabase after successful subscription:", updateError);
+                throw new Error("Subscription verified, but failed to update user profile.");
             }
 
-            res.json({ success: true, message: 'Payment captured and subscription updated.' });
+            res.json({ success: true, message: 'Subscription captured and profile updated.' });
         } else {
-            console.error("PayPal capture failed:", captureData);
-            res.status(400).json({ success: false, error: 'Payment capture failed or not completed.' });
+            console.error("PayPal subscription capture failed:", captureData);
+            res.status(400).json({ success: false, error: 'Subscription not ACTIVE or failed.' });
         }
     } catch (error) {
         console.error("PayPal Capture Error:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Cancel existing subscription
+app.post('/api/paypal/cancel', async (req, res) => {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ success: false, error: 'Missing userId' });
+
+    try {
+        // 1. Get profile from Supabase to find subscription_id
+        const { data: profile, error: profileErr } = await supabase
+            .from('profiles')
+            .select('subscription_id')
+            .eq('id', userId)
+            .single();
+
+        if (profileErr || !profile || !profile.subscription_id) {
+            return res.status(400).json({ success: false, error: 'No active subscription found for this user.' });
+        }
+
+        const subId = profile.subscription_id;
+
+        // 2. Get PayPal Access Token
+        const clientId = process.env.PAYPAL_CLIENT_ID;
+        const secret = process.env.PAYPAL_SECRET;
+        const environmentUrl = process.env.PAYPAL_MODE === 'live'
+            ? 'https://api-m.paypal.com'
+            : 'https://api-m.sandbox.paypal.com';
+
+        const auth = Buffer.from(`${clientId}:${secret}`).toString('base64');
+        const tokenResponse = await fetch(`${environmentUrl}/v1/oauth2/token`, {
+            method: 'POST',
+            body: 'grant_type=client_credentials',
+            headers: {
+                'Authorization': `Basic ${auth}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+
+        const tokenData = await tokenResponse.json();
+        if (!tokenResponse.ok) throw new Error("Failed to get PayPal token");
+        const accessToken = tokenData.access_token;
+
+        // 3. Cancel Subscription via PayPal API
+        const cancelResponse = await fetch(`${environmentUrl}/v1/billing/subscriptions/${subId}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({ reason: "User requested cancellation via dashboard" })
+        });
+
+        // 204 No Content is success for cancellation
+        if (cancelResponse.ok || cancelResponse.status === 204 || cancelResponse.status === 200) {
+            // 4. Update Supabase: remove subscription_id so it doesn't auto-renew
+            // But KEEP expires_at intact so they can use it for the remainder of the month!
+            const { error: updateErr } = await supabase
+                .from('profiles')
+                .update({ subscription_id: null })
+                .eq('id', userId);
+
+            if (updateErr) throw updateErr;
+
+            res.json({ success: true, message: 'Subscription cancelled. Pro access remains until the end of the current cycle.' });
+        } else {
+            const errData = await cancelResponse.json();
+            throw new Error(`PayPal Cancel failed: ${errData.message || 'Unknown error'}`);
+        }
+    } catch (error) {
+        console.error("PayPal Cancel Error:", error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

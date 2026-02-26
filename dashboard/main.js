@@ -2628,7 +2628,11 @@ window.openMyPageModal = async function () {
     if (profile.role === 'admin') {
       planDesc.textContent = '최고 관리자 권한으로 모든 기능을 무제한 이용할 수 있습니다.';
     } else if (tier === 'pro') {
-      planDesc.textContent = '현재 Pro 플랜을 이용 중입니다. (모든 데이터 무제한 조회)';
+      if (profile.subscription_id) {
+        planDesc.textContent = '현재 Pro 구독을 이용 중입니다. (자유 무제한 풀 엑세스)';
+      } else {
+        planDesc.textContent = '구독이 해지 처리되었습니다. 남은 기간 동안 Pro 혜택이 유지됩니다.';
+      }
     } else {
       planDesc.textContent = '현재 무료 플랜을 이용 중입니다. (일일 상세 조회 10회 제한)';
     }
@@ -2638,7 +2642,18 @@ window.openMyPageModal = async function () {
     if (profile.role === 'admin') {
       expiresAt.textContent = '무제한 (Admin)';
     } else if (profile.expires_at) {
-      expiresAt.textContent = new Date(profile.expires_at).toLocaleDateString(i18n.currentLang === 'ko' ? 'ko-KR' : 'en-US');
+      const d = new Date(profile.expires_at);
+      const isExpired = d < new Date();
+      const dateStr = d.toLocaleDateString(i18n?.currentLang === 'ko' ? 'ko-KR' : 'en-US');
+
+      if (isExpired) {
+        expiresAt.textContent = `만료됨 (${dateStr})`;
+        expiresAt.style.color = 'var(--text-danger)';
+      } else if (profile.subscription_id) {
+        expiresAt.textContent = `${dateStr} (이후 자동 연장)`;
+      } else {
+        expiresAt.textContent = `${dateStr} 까지 (연장 안 됨)`;
+      }
     } else {
       expiresAt.textContent = '기간 제한 없음';
     }
@@ -2702,15 +2717,9 @@ function switchMyPageTab(tabName) {
         if (container) {
           container.innerHTML = ''; // Clear just in case
           window.paypal.Buttons({
-            createOrder: (data, actions) => {
-              return actions.order.create({
-                purchase_units: [{
-                  description: 'K-Trend Intelligence Pro Plan (1 Month)',
-                  amount: {
-                    currency_code: 'USD',
-                    value: '19.99'
-                  }
-                }]
+            createSubscription: (data, actions) => {
+              return actions.subscription.create({
+                plan_id: 'P-3RH73504PP547441MNGP7TPY'
               });
             },
             onApprove: async (data, actions) => {
@@ -2720,12 +2729,12 @@ function switchMyPageTab(tabName) {
                 return;
               }
               try {
-                // Secure backend verification
+                // Secure backend verification for subscription
                 const response = await fetch('/api/paypal/capture', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
-                    orderID: data.orderID,
+                    subscriptionID: data.subscriptionID,
                     userId: session.user.id
                   })
                 });
@@ -2749,15 +2758,33 @@ function switchMyPageTab(tabName) {
           }).render('#paypal-button-container');
           window.__paypalRendered = true;
         }
+
+        // Hide cancel button if we are showing subscribe button
+        const cancelBtn = document.getElementById('cancelSubscriptionBtn');
+        if (cancelBtn) cancelBtn.style.display = 'none';
+
       } else if (tier === 'pro') {
         const container = document.getElementById('paypal-button-container');
         if (container) container.innerHTML = ''; // hide if already pro
+
+        const cancelBtn = document.getElementById('cancelSubscriptionBtn');
+        const planDesc = document.getElementById('myPagePlanDesc');
+
+        if (profile.subscription_id) {
+          // Active recurring subscription
+          if (cancelBtn) cancelBtn.style.display = 'block';
+          if (planDesc) planDesc.textContent = '현재 Pro 구독 이용 중입니다. (자유 무제한 풀 엑세스)';
+        } else {
+          // Cancelled but still PRO until expires_at
+          if (cancelBtn) cancelBtn.style.display = 'none';
+          if (planDesc) planDesc.textContent = '구독이 해지되었습니다. 남은 기간 동안 Pro 혜택이 유지됩니다.';
+        }
       }
     };
 
     if (!window.paypal) {
       const script = document.createElement('script');
-      script.src = `https://www.paypal.com/sdk/js?client-id=AUBMODXT3_l9gMM39RZjBu7sUoqRSH5VmrZCge5exB1lPLtITzAXOCJQQVNAUYWXPJFpCexnirAhFttV&currency=USD&locale=${ppLocale}`;
+      script.src = `https://www.paypal.com/sdk/js?client-id=AUBMODXT3_l9gMM39RZjBu7sUoqRSH5VmrZCge5exB1lPLtITzAXOCJQQVNAUYWXPJFpCexnirAhFttV&currency=USD&locale=${ppLocale}&vault=true&intent=subscription`;
       script.id = 'paypal-sdk-script';
       script.onload = () => renderPayPal();
       document.head.appendChild(script);
@@ -2800,6 +2827,51 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
+
+  // Cancel Subscription Handler
+  const cancelBtn = document.getElementById('cancelSubscriptionBtn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', async () => {
+      const siteLang = localStorage.getItem('app_lang') || 'ko';
+      const msg = siteLang === 'ko'
+        ? '정말로 구독을 취소하시겠습니까?\n이번 결제 주기(만료일)까지만 Pro 혜택이 유지되며 이후에는 더 이상 자동 연장 결제되지 않습니다.'
+        : 'Are you sure you want to cancel your subscription?\nPro benefits will remain until the end of the current billing cycle, and you will not be charged again.';
+
+      if (!confirm(msg)) {
+        return;
+      }
+
+      const session = getSession();
+      if (!session) return alert('로그인이 필요합니다. / Login required.');
+
+      cancelBtn.disabled = true;
+      cancelBtn.textContent = '처리 중... / Processing...';
+      cancelBtn.style.opacity = '0.5';
+
+      try {
+        const res = await fetch('/api/paypal/cancel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: session.user.id })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          alert('구독 취소가 완료되었습니다. / Cancelled successfully.');
+          window.location.reload();
+        } else {
+          alert(data.error || '취소 실패. 관리자에게 문의하세요. / Cancellation failed.');
+        }
+      } catch (err) {
+        alert('오류가 발생했습니다. / An error occurred.');
+        console.error(err);
+      } finally {
+        cancelBtn.disabled = false;
+        cancelBtn.textContent = '구독 취소 (Cancel Subscription)';
+        cancelBtn.style.opacity = '1';
+      }
+    });
+  }
 });
 
 // ─── Sourcing Quote Request ────────────────
