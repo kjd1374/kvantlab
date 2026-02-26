@@ -395,16 +395,13 @@ function setupAuthModals() {
         if (!sessionStr) throw new Error(window.t('auth.err_session') || '세션 정보를 찾을 수 없습니다. 다시 시도해주세요.');
 
         const userObj = JSON.parse(sessionStr);
-        const expiresAt = new Date();
-        expiresAt.setMonth(expiresAt.getMonth() + 1);
-
         const profileUpdateResult = await updateUserProfile(userObj.id, {
           name: name,
           company: company,
           primary_platform: platform,
           primary_category: category,
-          subscription_tier: 'pro', // 1-month free trial
-          subscription_expires_at: expiresAt.toISOString(),
+          subscription_tier: 'free',
+          subscription_expires_at: null,
           daily_usage: 0
         });
 
@@ -413,7 +410,7 @@ function setupAuthModals() {
           // Non-blocking warning
         }
 
-        alert(window.t('auth.signup_success') || '회원가입이 완료되었습니다! 1개월 무료 체험이 시작됩니다.');
+        alert(window.t('auth.signup_success') || '회원가입이 완료되었습니다!');
 
         // Auto-redirect to dashboard
         window.location.href = '/app.html';
