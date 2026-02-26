@@ -92,8 +92,8 @@ async function renderAuthButton(container, session) {
     });
   }
 
-  if (window.i18nInstance) {
-    window.i18nInstance.documentUpdate();
+  if (window.i18n) {
+    window.i18n.documentUpdate();
   }
 }
 
@@ -195,8 +195,8 @@ function setupAuthModals() {
   document.body.insertAdjacentHTML('beforeend', modalHtml);
 
   // Trigger i18n translation immediately after injecting into the DOM
-  if (window.i18nInstance) {
-    window.i18nInstance.documentUpdate();
+  if (window.i18n) {
+    window.i18n.documentUpdate();
   }
 
   const modal = document.getElementById('authModal');
