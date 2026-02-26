@@ -1665,21 +1665,22 @@ window.__openProduct = async function (product) {
     window.__setChartTab('all');
   }, 400);
 
-  // AI Load Handler (no tab switching needed in new layout)
+  // AI Load Handler
   window.loadAiData = async () => {
     isAiLoading = true;
     renderModal();
     // Re-load chart after re-render
-    setTimeout(() => window.__setChartTab('all'), 50);
+    setTimeout(() => window.__setChartTab && window.__setChartTab('all'), 50);
 
     try {
       aiData = await fetchAiSummary(product);
     } catch (e) {
       console.error(e);
+      alert('AI 분석 중 오류가 발생했습니다: ' + (e.message || 'API Key 확인 또는 할당량 초과'));
     } finally {
       isAiLoading = false;
       renderModal();
-      setTimeout(() => window.__setChartTab('all'), 50);
+      setTimeout(() => window.__setChartTab && window.__setChartTab('all'), 50);
     }
   };
 
@@ -1699,21 +1700,21 @@ window.__openProduct = async function (product) {
 
 // Helper: Load Chart
 async function loadRankChart(productId, days = 30) {
-  const ctx = document.getElementById('rankChart');
-  if (!ctx) return;
-
-  // Destroy previous chart instance if it exists to prevent "Canvas is already in use" error
-  if (window.__rankChartInstance) {
-    window.__rankChartInstance.destroy();
-    window.__rankChartInstance = null;
-  }
-  if (rankChart) {
-    rankChart.destroy();
-    rankChart = null;
-  }
-
   try {
     const { ranks, prices } = await fetchProductHistory(productId, days);
+
+    const ctx = document.getElementById('rankChart');
+    if (!ctx) return;
+
+    // Destroy previous chart instance if it exists to prevent "Canvas is already in use" error
+    if (window.__rankChartInstance) {
+      window.__rankChartInstance.destroy();
+      window.__rankChartInstance = null;
+    }
+    if (rankChart) {
+      rankChart.destroy();
+      rankChart = null;
+    }
 
     // Filter out invalid timestamps and parse them for sorting and display
     const parseTs = (ts) => new Date(ts).getTime();
