@@ -48,9 +48,51 @@ export const SteadySellerBridge = {
 
     renderCustomHeader(state) {
         return `
-            <div style="margin-bottom: 20px; text-align: center;">
-                <h2 style="font-size: 24px; font-weight: 700; color: #333; margin-bottom: 5px;">🔥 Steady Sellers</h2>
-                <p style="color: #666; font-size: 14px;">데이터 풀이 엄선한 최고의 스테디 셀러 상품들입니다.</p>
+            <div class="steady-sellers-hero">
+                <h1>🏆 Steady Sellers</h1>
+                <p>K-Vant가 엄선한 대한민국 대표 스테디 셀러 브랜드입니다.</p>
+            </div>
+        `;
+    },
+
+    renderTabContent(tabId, result, state) {
+        const data = result.data || [];
+        if (data.length === 0) return null;
+
+        // Group by brand
+        const grouped = data.reduce((acc, item) => {
+            const brand = item.brand || 'Other Brands';
+            if (!acc[brand]) acc[brand] = [];
+            acc[brand].push(item);
+            return acc;
+        }, {});
+
+        return `
+            <div class="steady-sellers-container">
+                ${Object.entries(grouped).map(([brand, products]) => `
+                    <div class="brand-group">
+                        <div class="brand-group-header">
+                            <h3 class="brand-title">${brand}</h3>
+                            <span class="brand-count">${products.length} Products</span>
+                        </div>
+                        <div class="brand-products-grid">
+                            ${products.map(p => `
+                                <div class="ss-product-card" onclick="window.__openProduct(${JSON.stringify(p).replace(/"/g, '&quot;')})">
+                                    <div class="ss-product-img-wrapper">
+                                        <img src="${p.image_url}" alt="${p.name}" class="ss-product-img" loading="lazy">
+                                    </div>
+                                    <div class="ss-product-info">
+                                        <h4 class="ss-product-name">${p.name}</h4>
+                                        <div class="ss-product-price">
+                                            <span class="currency">₩</span>
+                                            <span class="amount">${new Intl.NumberFormat().format(p.special_price)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('')}
             </div>
         `;
     }

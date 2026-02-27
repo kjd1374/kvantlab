@@ -484,6 +484,17 @@ async function loadBridgeTab(tabId) {
     const data = result.data || [];
     const count = result.count || data.length;
 
+    // Custom Renderer Support (e.g. Steady Sellers brand grouping)
+    if (state.activeBridge.renderTabContent) {
+      const customHtml = state.activeBridge.renderTabContent(tabId, result, state);
+      if (customHtml) {
+        grid.innerHTML = customHtml;
+        i18n.documentUpdate();
+        renderPagination(0); // Custom renderers handle their own pagination/grouping usually
+        return;
+      }
+    }
+
     if (data.length === 0) {
       if (grid.tagName === 'TBODY') {
         grid.innerHTML = `<tr><td colspan="8" class="empty-cell">${window.t('common.no_results')}</td></tr>`;
