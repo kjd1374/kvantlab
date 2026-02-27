@@ -370,7 +370,12 @@ async function loadCategories() {
         // Re-render controls to maintain active state for gender buttons
         if (state.activeBridge && state.activeBridge.renderCustomHeader) {
           const controls = document.getElementById('platformControls');
-          if (controls) controls.innerHTML = state.activeBridge.renderCustomHeader(state);
+          if (controls) {
+            controls.innerHTML = state.activeBridge.renderCustomHeader(state);
+            if (state.activeBridge.bindCustomHeaderEvents) {
+              state.activeBridge.bindCustomHeaderEvents(() => loadTab(state.activeTab));
+            }
+          }
         }
 
         loadTab(state.activeTab);
@@ -874,7 +879,7 @@ async function translateProductNames(products, targetLang) {
 
   if (needsTranslation.length === 0) return;
 
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  const apiKey = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
   if (!apiKey) return;
 
   // 배치: 20개씩 나눠서 번역
@@ -884,30 +889,24 @@ async function translateProductNames(products, targetLang) {
     const items = batch.map((p, idx) => `${idx + 1}. ${p.name_ko || p.name || ''}`).join('\n');
 
     try {
-      const prompt = `Translate the following Korean product names to ${langName}.
-Return ONLY a JSON array of translated strings in the same order.
-Keep brand names, product types, and numbers as-is (e.g. "50ml", "SPF50+").
-Make the translation natural and easy to understand for a ${langName}-speaking buyer.
-
-Korean names:
-${items}`;
+      const qArray = batch.map(p => p.name_ko || p.name || '');
 
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
+            q: qArray,
+            target: targetLang,
+            source: 'ko',
+            format: 'text'
           })
         }
       );
       if (!res.ok) continue;
       const data = await res.json();
-      let text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '[]';
-      if (text.startsWith('```')) text = text.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
-      const translated = JSON.parse(text);
+      const translated = data?.data?.translations?.map(t => t.translatedText) || [];
 
       // 캐시 저장 & DOM 즉시 업데이트
       batch.forEach((p, idx) => {
@@ -962,38 +961,34 @@ async function translateBrands(products) {
   }
 }
 
-// Gemini API 배치 번역 (브랜드/카테고리 등 짧은 키워드 번역)
+// Google Cloud Translation API 배치 번역 (브랜드/카테고리 등 짧은 키워드 번역)
 async function translateKeywords(items, targetLang, targetType = 'category') {
   if (!items || items.length === 0) return;
-  const langNames = { vi: 'Vietnamese', en: 'English', th: 'Thai', id: 'Indonesian', ja: 'Japanese' };
-  const langName = langNames[targetLang] || targetLang;
+  // Cloud Translation API expects language codes like 'en', 'vi', 'th'
 
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  const apiKey = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
   if (!apiKey) return;
 
   try {
-    const listString = items.map((it, idx) => `${idx + 1}. ${it}`).join('\n');
-    const prompt = `Translate the following Korean ${targetType} names to ${langName}.
-Return ONLY a JSON array of strings in the same order. Keep it concise.
-Names:
-${listString}`;
-
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.1, responseMimeType: 'application/json' }
+          q: items,
+          target: targetLang,
+          source: 'ko',
+          format: 'text'
         })
       }
     );
     if (!res.ok) return null;
     const data = await res.json();
-    let text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '[]';
-    if (text.startsWith('```')) text = text.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
-    return JSON.parse(text);
+    if (data && data.data && data.data.translations) {
+      return data.data.translations.map(t => t.translatedText);
+    }
+    return null;
   } catch (e) {
     console.warn(`Keyword translation error (${targetType}):`, e);
     return null;

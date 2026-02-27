@@ -113,6 +113,9 @@
                     <li style="margin-bottom: 20px;"><a href="#" class="nav-link" data-tab="sourcing"
                             style="color: #666; text-decoration: none; display: flex; align-items: center; gap: 10px;">📦
                             Sourcing Quotes</a></li>
+                    <li style="margin-bottom: 20px;"><a href="#" class="nav-link" data-tab="steadysellers"
+                            style="color: #666; text-decoration: none; display: flex; align-items: center; gap: 10px;">🏆
+                            Steady Sellers</a></li>
                     <li style="margin-top: 50px;"><a href="/"
                             style="color: var(--admin-primary); text-decoration: none;">← Back to Dashboard</a></li>
                 </ul>
@@ -278,6 +281,43 @@
                     </div>
                 </section>
             </div>
+
+            <!-- 6. Steady Sellers Section -->
+            <div id="steadysellersSection" class="tab-content" style="display: none;">
+                <header class="admin-header">
+                    <h1>Steady Sellers Management</h1>
+                    <p style="color: #666;">데이터 풀 메인 화면의 스테디 셀러 탭에 노출될 상품을 관리합니다.</p>
+                </header>
+
+                <section class="admin-card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3>Registered Products</h3>
+                        <button id="createSteadySellerBtn" class="btn-primary" style="padding: 8px 16px;">➕ 상품
+                            등록</button>
+                    </div>
+                    <div class="table-container" style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                            <thead>
+                                <tr style="background: #f8f9fa; text-align: left; border-bottom: 2px solid #eee;">
+                                    <th style="padding: 12px; width: 5%;">순위</th>
+                                    <th style="padding: 12px; width: 15%;">이미지</th>
+                                    <th style="padding: 12px; width: 30%;">상품명 (브랜드)</th>
+                                    <th style="padding: 12px; width: 15%;">가격</th>
+                                    <th style="padding: 12px; width: 15%;">노출 상태</th>
+                                    <th style="padding: 12px; width: 20%;">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="steadySellerTableBody">
+                                <tr>
+                                    <td colspan="6" style="padding: 40px; text-align: center; color: #888;">데이터를 불러오는
+                                        중...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
         </main>
     </div>
 
@@ -420,6 +460,60 @@
                 <button id="closeAnnouncementModal"
                     style="background: #f1f3f5; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">취소</button>
                 <button id="saveAnnouncementBtn" class="btn-primary" style="padding: 10px 20px;">저장하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Steady Seller Edit Modal -->
+    <div id="steadySellerModal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div
+            style="background: white; padding: 30px; border-radius: 16px; width: 500px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;">
+            <h3 id="ssModalTitle" style="margin-top: 0; margin-bottom: 20px;">스테디 셀러 상품 등록</h3>
+            <input type="hidden" id="ssId">
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">상품명 (Product
+                    Name)</label>
+                <input type="text" id="ssName" placeholder="예: 구달 청귤 비타C 잡티 케어 세럼"
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">브랜드 (Brand)</label>
+                <input type="text" id="ssBrand" placeholder="예: goodal"
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">노출 순위 (Rank)</label>
+                <input type="number" id="ssRank" value="999"
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">가격 (Price - 원)</label>
+                <input type="number" id="ssPrice" value="0"
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">이미지 URL (Image
+                    Link)</label>
+                <input type="text" id="ssImageUrl" placeholder="https://..."
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">상세 페이지 링크 (Product
+                    Link)</label>
+                <input type="text" id="ssLink" placeholder="https://..."
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom: 25px;">
+                <label
+                    style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #666; cursor: pointer;">
+                    <input type="checkbox" id="ssActive" checked> 활성화 (목록에 노출)
+                </label>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button id="closeSsModal"
+                    style="background: #f1f3f5; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">취소</button>
+                <button id="saveSsBtn" class="btn-primary" style="padding: 10px 20px;">저장하기</button>
             </div>
         </div>
     </div>

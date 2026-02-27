@@ -1,7 +1,7 @@
 /**
  * Ably Source Bridge
  */
-import { fetchRankedProducts, fetchProductCount, fetchCategories } from '../supabase.js';
+import { fetchRankedProducts, fetchProductCount, fetchCategories, fetchTrending } from '../supabase.js';
 
 export const AblyBridge = {
     id: 'ably',
@@ -13,10 +13,13 @@ export const AblyBridge = {
     ],
 
     async getKPIs(currentPlatform) {
-        const total = await fetchProductCount(currentPlatform);
+        const [total, trending] = await Promise.all([
+            fetchProductCount(currentPlatform),
+            fetchTrending(100, currentPlatform)
+        ]);
         return [
             { id: 'total', icon: '📦', value: total || '0', label: 'kpi.total', format: true },
-            { id: 'trending', icon: '🔥', value: '-', label: 'kpi.trending' }
+            { id: 'trending', icon: '🔥', value: trending.count || '0', label: 'kpi.trending' }
         ];
     },
 

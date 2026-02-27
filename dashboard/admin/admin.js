@@ -53,6 +53,7 @@ async function initAdmin() {
             if (tabId === 'logs') loadLogs();
             if (tabId === 'announcements') loadAnnouncements();
             if (tabId === 'sourcing') loadSourcingRequests();
+            if (tabId === 'steadysellers') loadSteadySellers();
         });
     });
 
@@ -591,6 +592,157 @@ async function initAdmin() {
         } finally {
             btn.disabled = false;
             btn.innerText = originalText;
+        }
+    });
+
+    // 6. Steady Sellers Management Logic
+    const ssTableBody = document.getElementById('steadySellerTableBody');
+    const createSsBtn = document.getElementById('createSteadySellerBtn');
+    const ssModal = document.getElementById('steadySellerModal');
+    const closeSsModal = document.getElementById('closeSsModal');
+    const saveSsBtn = document.getElementById('saveSsBtn');
+
+    // Form elements
+    const ssIdInput = document.getElementById('ssId');
+    const ssNameInput = document.getElementById('ssName');
+    const ssBrandInput = document.getElementById('ssBrand');
+    const ssRankInput = document.getElementById('ssRank');
+    const ssPriceInput = document.getElementById('ssPrice');
+    const ssImageUrlInput = document.getElementById('ssImageUrl');
+    const ssLinkInput = document.getElementById('ssLink');
+    const ssActiveInput = document.getElementById('ssActive');
+    const ssModalTitle = document.getElementById('ssModalTitle');
+
+    async function loadSteadySellers() {
+        if (!ssTableBody) return;
+        ssTableBody.innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: #888;">데이터를 불러오는 중...</td></tr>';
+
+        try {
+            const res = await fetch('/api/admin/steady-sellers');
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error);
+
+            if (!data.steady_sellers || data.steady_sellers.length === 0) {
+                ssTableBody.innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: #888;">등록된 상품이 없습니다.</td></tr>';
+                return;
+            }
+
+            window.__steadySellers = data.steady_sellers;
+
+            ssTableBody.innerHTML = data.steady_sellers.map(item => {
+                return `
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 12px; font-weight: 600;">${item.rank}</td>
+                    <td style="padding: 12px;">
+                        <img src="${item.image_url}" alt="Product" style="width: 50px; height: 50px; object-fit: contain; border-radius: 4px; border: 1px solid #eee;">
+                    </td>
+                    <td style="padding: 12px;">
+                        <div style="font-weight: 600; font-size: 13px; color: #333;">${item.brand}</div>
+                        <div style="font-size: 14px; margin-top: 4px;">${item.product_name}</div>
+                    </td>
+                    <td style="padding: 12px; font-weight: 600;">₩${item.price.toLocaleString()}</td>
+                    <td style="padding: 12px;">
+                        <span style="font-weight:700; color:${item.is_active ? '#28a745' : '#999'}">
+                            ${item.is_active ? '노출중' : '숨김'}
+                        </span>
+                    </td>
+                    <td style="padding: 12px;">
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="window.adminActions.editSteadySeller('${item.id}')" style="background: #e7f5ff; border: 1px solid #a5d8ff; color: #1971c2; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">수정</button>
+                            <button onclick="window.adminActions.deleteSteadySeller('${item.id}')" style="background: #fff5f5; border: 1px solid #ffc9c9; color: #fa5252; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">삭제</button>
+                        </div>
+                    </td>
+                </tr>
+            `}).join('');
+        } catch (err) {
+            ssTableBody.innerHTML = `<tr><td colspan="6" style="padding: 40px; text-align: center; color: #dc3545;">에러: ${err.message}</td></tr>`;
+        }
+    }
+
+    // Modal Actions
+    if (!window.adminActions) window.adminActions = {};
+
+    window.adminActions.editSteadySeller = (id) => {
+        const item = window.__steadySellers?.find(x => x.id === id);
+        if (!item) return;
+
+        ssModalTitle.innerText = '스테디 셀러 수정';
+        ssIdInput.value = item.id;
+        ssNameInput.value = item.product_name;
+        ssBrandInput.value = item.brand;
+        ssRankInput.value = item.rank;
+        ssPriceInput.value = item.price;
+        ssImageUrlInput.value = item.image_url;
+        ssLinkInput.value = item.link;
+        ssActiveInput.checked = item.is_active;
+
+        ssModal.style.display = 'flex';
+    };
+
+    window.adminActions.deleteSteadySeller = async (id) => {
+        if (!confirm('정말로 이 상품을 삭제하시겠습니까?')) return;
+        try {
+            const res = await fetch(`/api/admin/steady-sellers/${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error);
+            alert('삭제되었습니다.');
+            loadSteadySellers();
+        } catch (err) {
+            alert('삭제 실패: ' + err.message);
+        }
+    };
+
+    createSsBtn?.addEventListener('click', () => {
+        ssModalTitle.innerText = '새 스테디 셀러 등록';
+        ssIdInput.value = '';
+        ssNameInput.value = '';
+        ssBrandInput.value = '';
+        ssRankInput.value = '999';
+        ssPriceInput.value = '0';
+        ssImageUrlInput.value = '';
+        ssLinkInput.value = '';
+        ssActiveInput.checked = true;
+        ssModal.style.display = 'flex';
+    });
+
+    closeSsModal?.addEventListener('click', () => {
+        ssModal.style.display = 'none';
+    });
+
+    saveSsBtn?.addEventListener('click', async () => {
+        const id = ssIdInput.value;
+        const payload = {
+            product_name: ssNameInput.value.trim(),
+            brand: ssBrandInput.value.trim(),
+            rank: parseInt(ssRankInput.value) || 999,
+            price: parseInt(ssPriceInput.value) || 0,
+            image_url: ssImageUrlInput.value.trim(),
+            link: ssLinkInput.value.trim(),
+            is_active: ssActiveInput.checked
+        };
+
+        if (!payload.product_name || !payload.brand) return alert('상품명과 브랜드를 필수 입력사항입니다.');
+
+        saveSsBtn.disabled = true;
+        try {
+            const endpoint = id ? `/api/admin/steady-sellers/${id}` : '/api/admin/steady-sellers';
+            const method = id ? 'PUT' : 'POST';
+
+            const res = await fetch(endpoint, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error);
+
+            alert(id ? '업데이트 성공' : '등록 성공');
+            ssModal.style.display = 'none';
+            loadSteadySellers();
+        } catch (err) {
+            alert('저장 실패: ' + err.message);
+        } finally {
+            saveSsBtn.disabled = false;
         }
     });
 

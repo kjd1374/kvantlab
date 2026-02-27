@@ -21,8 +21,7 @@ load_dotenv()
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://hgxblbbjlnsfkffwvfao.supabase.co")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
-OLLAMA_API_URL = "http://localhost:11434/api/generate"
-MODEL_NAME = os.getenv("OLLAMA_MODEL", "deepseek-r1:8b")
+MODEL_NAME = "gemini-3-flash-preview"
 
 if not SUPABASE_KEY:
     print("Error: SUPABASE_KEY is missing from environment.")
@@ -140,15 +139,40 @@ def get_mock_youtube_data(query: str, lang: str):
             ]
     return []
 
-def get_mock_google_data(query: str, lang: str):
-    """Provides mock web search results."""
-    return [
-        {
-            'title': 'The best Korean skincare for 2026 - Global Trends',
-            'description': 'Many bloggers mention ANUA Heartleaf 77 Toner as the #1 Skincare product in Southeast Asia.',
-            'url': 'https://blog.example.com/k-beauty-trends'
-        }
-    ]
+SERPAPI_KEY = os.getenv("SERPAPI_KEY")
+
+def search_google_serpapi(query: str, country_code: str, lang: str):
+    """Provides real web search results using SerpApi."""
+    if not SERPAPI_KEY:
+        print("Warning: SERPAPI_KEY is not set. Using mock data.")
+        return []
+
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] Searching Google via SerpApi for: '{query}'")
+    url = f"https://serpapi.com/search.json"
+    params = {
+        "q": query,
+        "gl": country_code.lower(),
+        "hl": lang,
+        "api_key": SERPAPI_KEY
+    }
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+        
+        results = []
+        # Return top 3 organic results to save LLM context
+        for item in data.get('organic_results', [])[:3]:
+            results.append({
+                'title': item.get('title', ''),
+                'description': item.get('snippet', ''),
+                'url': item.get('link', '')
+            })
+        return results
+    except Exception as e:
+        print(f"Error fetching Google data via SerpApi: {e}")
+        return []
 
 def get_google_image(query):
     """Scrapes the first image thumbnail from Google Images."""
@@ -174,7 +198,7 @@ def get_video_captions(video_id: str):
     """
     return ""
 
-import ollama
+from google import genai
 from pydantic import BaseModel
 from typing import List
 
@@ -187,8 +211,21 @@ class ProductMention(BaseModel):
 class ProductExtraction(BaseModel):
     products: List[ProductMention]
 
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+# Initialize genai client once
+genai_client = None
+if GEMINI_API_KEY:
+    try:
+        genai_client = genai.Client(api_key=GEMINI_API_KEY)
+    except Exception as e:
+        print(f"Warning: Failed to initialize genai client: {e}")
+
 def prompt_local_llm(text: str, country: str) -> list:
-    """Send text to local DeepSeek R1 to extract product lists using Structured Outputs."""
+    """Send text to Gemini 3 Flash to extract product lists using Structured Outputs."""
+    if not genai_client:
+        print("Error: Gemini client not initialized. Check GEMINI_API_KEY in .env")
+        return []
     
     prompt = f"""
 Analyze the following media text about Korean cosmetics/shopping lists from {country}.
@@ -198,23 +235,24 @@ For each product, identify its brand, the primary category (e.g., Skincare, Make
 Text context:
 {text}
 """
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Asking Local LLM ({MODEL_NAME}) to extract products using Structured JSON...")
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] Asking Gemini ({MODEL_NAME}) to extract products using Structured JSON...")
     
     try:
         start_time = time.time()
         
-        response = ollama.chat(
+        response = genai_client.models.generate_content(
             model=MODEL_NAME,
-            messages=[
-                {"role": "user", "content": prompt}
-            ],
-            format=ProductExtraction.model_json_schema(),
-            options={"temperature": 0.0}
+            contents=prompt,
+            config=genai.types.GenerateContentConfig(
+                temperature=0.0,
+                response_schema=ProductExtraction,
+                response_mime_type="application/json",
+            )
         )
         
         print(f"[{datetime.now().strftime('%H:%M:%S')}] LLM replied in {time.time() - start_time:.1f}s")
         
-        response_text = response['message']['content']
+        response_text = response.text
         
         # Parse Pydantic response
         try:
@@ -235,7 +273,7 @@ Text context:
              return []
              
     except Exception as e:
-        print(f"Error communicating with local ollama library: {e}")
+        print(f"Error communicating with Gemini library: {e}")
         return []
 
 
@@ -337,7 +375,7 @@ def run_pipeline():
 
             # B. Search Google (Simulated)
             print(f"[{datetime.now().strftime('%H:%M:%S')}] Searching Google for: '{query}'")
-            articles = get_mock_google_data(query, lang)
+            articles = search_google_serpapi(query, country_code, lang)
             for art in articles:
                 full_text = f"Title: {art['title']}\nDescription: {art['description']}"
                 print(f"Analyzing Google Article: {art['title'][:50]}...")

@@ -557,6 +557,75 @@ app.post('/api/paypal/cancel', async (req, res) => {
     }
 });
 
+// --- Steady Sellers Management APIs ---
+// 1. List Steady Sellers
+app.get('/api/admin/steady-sellers', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('steady_sellers')
+            .select('*')
+            .order('rank', { ascending: true });
+
+        if (error) throw error;
+        res.json({ success: true, steady_sellers: data });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 2. Create Steady Seller
+app.post('/api/admin/steady-sellers', async (req, res) => {
+    try {
+        const { product_name, brand, price, image_url, link, rank, is_active } = req.body;
+        const { data, error } = await supabase
+            .from('steady_sellers')
+            .insert([{ product_name, brand, price, image_url, link, rank, is_active }])
+            .select()
+            .single();
+
+        if (error) throw error;
+        res.json({ success: true, steady_seller: data });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 3. Update Steady Seller
+app.put('/api/admin/steady-sellers/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { product_name, brand, price, image_url, link, rank, is_active } = req.body;
+
+        const { data, error } = await supabase
+            .from('steady_sellers')
+            .update({ product_name, brand, price, image_url, link, rank, is_active, updated_at: new Date() })
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        res.json({ success: true, steady_seller: data });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 4. Delete Steady Seller
+app.delete('/api/admin/steady-sellers/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { error } = await supabase
+            .from('steady_sellers')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
         console.log(`Data Pool Admin Backend running on http://localhost:${PORT}`);

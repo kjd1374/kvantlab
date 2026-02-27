@@ -35,7 +35,7 @@ export const KoreaTrendBridge = {
     ],
 
     filterState: {
-        country: 'VN',
+        country: 'ALL',
         category: 'ALL'
     },
 

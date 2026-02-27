@@ -72,6 +72,13 @@ export async function fetchOyProductByBrand(brandKo, nameKeyword = '') {
 }
 
 /**
+ * Fetch Steady Sellers list
+ */
+export async function fetchSteadySellers() {
+    return await query('steady_sellers', 'select=*&is_active=eq.true&order=rank.asc,created_at.desc');
+}
+
+/**
  * Fetch trending products (7-day rank change)
  */
 export async function fetchTrending(limit = 50, platform = 'oliveyoung') {

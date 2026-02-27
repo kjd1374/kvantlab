@@ -29,13 +29,17 @@
         "favorites": "Interests",
         "crawl_logs": "Crawl Logs",
         "apply": "Apply",
-        "global_trends": "Korea Trend"
+        "global_trends": "Korea Trend",
+        "musinsa_ranking": "Musinsa Ranking"
     },
     "kpi": {
         "trending": "Real-time Trending",
         "deals": "Daily Best Deals",
         "reviews": "Rising Reviews",
-        "total": "Total Products"
+        "total": "Total Products",
+        "total_musinsa": "Musinsa Products",
+        "style_trends": "Style Trends",
+        "musinsa_brands": "Partner Brands"
     },
     "filters": {
         "category": "Category",
