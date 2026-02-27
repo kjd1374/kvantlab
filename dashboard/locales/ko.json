@@ -228,6 +228,11 @@
         "my": "🇲🇾 말레이시아 (Malaysia)",
         "all": "🌏 글로벌 (Global)"
     },
+    "categories": {
+        "all": "전체 카테고리",
+        "skincare": "스킨케어 (Skincare)",
+        "makeup": "메이크업 (Makeup)"
+    },
     "support": {
         "title": "고객센터",
         "inquiry": "1:1 문의",

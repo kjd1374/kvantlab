@@ -16,7 +16,13 @@ window.t = window.t || ((key) => {
     'auth.email': '이메일',
     'auth.password': '비밀번호',
     'auth.logging_in': '로그인 중...',
-    'auth.signing_up': '가입 중...'
+    'auth.signing_up': '가입 중...',
+    'mypage.billing': '결제 / 플랜 관리',
+    'sourcing.mypage_tab': '견적 / 소싱 장바구니',
+    'support.title': '고객센터',
+    'support.inquiry': '1:1 문의',
+    'support.faq': 'FAQ',
+    'support.feedback': '건의 & 요청사항'
   };
   return fallbacks[key] || key.split('.').pop();
 });

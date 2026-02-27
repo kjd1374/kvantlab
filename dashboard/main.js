@@ -909,7 +909,7 @@ async function loadWishlist() {
     let expiredCount = 0;
     const activeProducts = [];
 
-    for (const p of products) {
+    for (const p of savedItems.data || []) {
       // If the item is in today's deals and it has expired
       if (p.platform === 'oliveyoung' && todayDealIds.has(p.product_id) && isDealExpired) {
         // Auto-remove from wishlist

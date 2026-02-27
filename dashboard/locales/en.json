@@ -222,6 +222,11 @@
         "my": "🇲🇾 Malaysia",
         "all": "🌏 Global"
     },
+    "categories": {
+        "all": "All Categories",
+        "skincare": "Skincare",
+        "makeup": "Makeup"
+    },
     "support": {
         "title": "Customer Center",
         "inquiry": "1:1 Inquiry",

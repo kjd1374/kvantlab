@@ -65,7 +65,6 @@ export const SteadySellerBridge = {
         return `
             <div class="steady-sellers-compact-header">
                 <h2>🏆 Steady Sellers</h2>
-                <p>K-Vant 엄선 브랜드</p>
             </div>
         `;
     },
