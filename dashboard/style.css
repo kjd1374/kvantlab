@@ -3354,6 +3354,7 @@ body[data-platform="k_trend"] #tab-global_trends {
   line-height: 1.2;
   word-break: break-word;
 }
+
 /* ============================================
    Steady Sellers Brand Grouping
    ============================================ */
@@ -3481,7 +3482,7 @@ body[data-platform="k_trend"] #tab-global_trends {
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
   }
-  
+
   .brand-title {
     font-size: 20px;
   }
@@ -3559,7 +3560,7 @@ body[data-platform="k_trend"] #tab-global_trends {
   left: 0;
   right: 0;
   padding: 16px;
-  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.4) 60%, transparent 100%);
   color: white;
   border-bottom-left-radius: var(--radius-md);
   border-bottom-right-radius: var(--radius-md);
@@ -3576,13 +3577,13 @@ body[data-platform="k_trend"] #tab-global_trends {
   line-height: 1.2;
   height: auto;
   -webkit-line-clamp: 2;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .ss-product-overlay .ss-product-price {
   color: #fff;
   font-weight: 800;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .ss-product-overlay .ss-product-price .amount {
@@ -3598,5 +3599,95 @@ body[data-platform="k_trend"] #tab-global_trends {
 @media (max-width: 480px) {
   .brand-products-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ============================================
+   Tablet Responsiveness Optimizations (768px - 1024px)
+   ============================================ */
+
+/* 1. KPI Grid: 2x2 for Tablet Portrait */
+@media (max-width: 900px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* 2. Header Improvements for Narrow Devices */
+@media (max-width: 850px) {
+  .header-stats {
+    display: none !important;
+    /* Hide stats chips to save space */
+  }
+
+  .search-box {
+    max-width: 200px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0 12px !important;
+  }
+
+  .header-inner {
+    gap: 12px !important;
+    max-width: 100% !important;
+  }
+
+  .header-auth {
+    flex-shrink: 0 !important;
+    margin-left: 8px !important;
+  }
+
+  .btn-login {
+    white-space: nowrap !important;
+    min-width: fit-content !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+  }
+
+  /* 3. Table Column Widths & Scroll Fix */
+  .table-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  .data-table {
+    min-width: 800px !important;
+    /* Ensure enough room for columns */
+  }
+
+  .data-table th:nth-child(3),
+  .data-table td:nth-child(3) {
+    min-width: 250px !important;
+    /* Give 'Product Name' enough space */
+  }
+
+  /* 4. Platform Bar wrapping & responsive */
+  .platform-bar {
+    padding: 12px 16px 0 !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 12px !important;
+    flex-wrap: nowrap !important;
+    /* Allow side scroll if many items */
+  }
+
+  .platform-switcher {
+    flex-wrap: nowrap !important;
+    /* Force single row with scroll in parent */
+  }
+
+  .platform-btn {
+    min-width: 110px !important;
+    /* Slightly smaller on tablets */
+    padding: 10px 16px !important;
+  }
+
+  .platform-bar::-webkit-scrollbar {
+    height: 0px !important;
+    /* Hide scrollbar for cleaner look */
   }
 }
