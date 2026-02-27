@@ -718,7 +718,15 @@ export async function fetchSavedProducts() {
         headers: authHeaders(session.access_token)
     });
     const data = await res.json();
-    const finalData = Array.isArray(data) ? data : [];
+    const finalData = Array.isArray(data) ? data.map(d => {
+        const p = d.products_master || {};
+        return {
+            ...p,
+            ...d,
+            platform: p.source || '기타',
+            is_saved: true
+        };
+    }) : [];
     return { data: finalData, count: finalData.length };
 }
 
