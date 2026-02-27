@@ -3078,75 +3078,88 @@ window.loadSourcingHistory = async function () {
       return;
     }
 
-    list.innerHTML = data.requests.map(req => {
-      const date = new Date(req.created_at).toLocaleString('ko-KR');
-      const itemCount = (req.items && Array.isArray(req.items)) ? req.items.length : 0;
-      let statusBadge = '';
-      if (req.status === 'pending') statusBadge = `<span style="background:#fff3cd; color:#856404; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:600;">${window.t('sourcing.status_pending')}</span>`;
-      else if (req.status === 'quoted') statusBadge = `<span style="background:#d4edda; color:#155724; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:600;">${window.t('sourcing.status_quoted')}</span>`;
-      else if (req.status === 'canceled') statusBadge = `<span style="background:#f8d7da; color:#721c24; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:600;">${window.t('sourcing.status_canceled')}</span>`;
-      else statusBadge = `<span style="background:#e2e3e5; color:#383d41; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:600;">${req.status}</span>`;
+    const reqId = (req) => req.id || req.created_at;
 
+    list.innerHTML = data.requests.map(req => {
+      const date = new Date(req.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const itemCount = (req.items && Array.isArray(req.items)) ? req.items.length : 0;
+      const totalCost = req.estimated_cost || 0;
+      const uid = btoa(req.created_at || Math.random()).replace(/[^a-z0-9]/gi, '').slice(0, 8);
+
+      // Status badge
+      let statusColor = '#e2e3e5'; let statusText = req.status; let statusTxt = '#383d41';
+      if (req.status === 'pending') { statusColor = '#fff3cd'; statusTxt = '#856404'; statusText = window.t('sourcing.status_pending'); }
+      else if (req.status === 'quoted') { statusColor = '#d4edda'; statusTxt = '#155724'; statusText = window.t('sourcing.status_quoted'); }
+      else if (req.status === 'canceled') { statusColor = '#f8d7da'; statusTxt = '#721c24'; statusText = window.t('sourcing.status_canceled'); }
+      const statusBadge = `<span style="background:${statusColor}; color:${statusTxt}; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; white-space:nowrap;">${statusText}</span>`;
+
+      // Simple item preview (just names, no prices crowding)
+      const itemPreview = req.items && Array.isArray(req.items)
+        ? req.items.slice(0, 3).map(i => `<span style="font-size:12px; background:#f0f0f5; padding:2px 8px; border-radius:12px; color:#555;">${i.name && i.name.length > 20 ? i.name.slice(0, 20) + '…' : (i.name || '상품')}</span>`).join('')
+        + (req.items.length > 3 ? `<span style="font-size:12px; color:var(--text-muted);">+${req.items.length - 3}개</span>` : '')
+        : '';
+
+      // Collapsible breakdown
       let breakdownHtml = '';
       if (req.estimated_cost) {
-        let itemsBreakdown = '';
-        if (req.items && Array.isArray(req.items)) {
-          itemsBreakdown = req.items.map(item => {
-            const up = item.unit_price || 0;
-            const lineTotal = up * (item.quantity || 0);
-            return `
-               <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:var(--text);">
-                 <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:10px;">- ${item.name} (${item.quantity}개)</span>
-                 <span>${up > 0 ? `₩${up.toLocaleString()} /개` : '단가 미정'}</span>
-               </div>
-             `;
-          }).join('');
-        }
-
         const sFee = req.shipping_fee || 0;
         const svFee = req.service_fee || 0;
-        const totalCost = req.estimated_cost || 0;
+        const itemLines = (req.items || []).map(item => {
+          const up = item.unit_price || 0;
+          return `<div style="display:flex; justify-content:space-between; font-size:12px; padding:3px 0; border-bottom:1px solid #f0f0f0; color:#444;">
+            <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-right:8px;">${item.name || ''} (×${item.quantity || 0})</span>
+            <span style="flex-shrink:0;">${up > 0 ? `₩${up.toLocaleString()}` : '미정'}</span>
+          </div>`;
+        }).join('');
 
         breakdownHtml = `
-          <div style="margin-top:10px; padding:12px; background:var(--background); border-radius:6px; border:1px solid var(--border);">
-            <div style="font-weight:600; font-size:13px; margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:4px;">견적 상세 내역 (Breakdown)</div>
-            ${itemsBreakdown}
-            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:var(--text); margin-top:8px;">
-               <span>배송비 (Shipping)</span>
-               <span>${sFee > 0 ? `₩${sFee.toLocaleString()}` : '-'}</span>
+          <div>
+            <button onclick="document.getElementById('bd-${uid}').style.display=document.getElementById('bd-${uid}').style.display==='none'?'block':'none'"
+              style="font-size:12px; color:#888; background:none; border:none; cursor:pointer; padding:4px 0; margin:8px 0 0;">
+              ▾ 상세 내역 보기
+            </button>
+            <div id="bd-${uid}" style="display:none; margin-top:6px; padding:10px; background:#fafafa; border-radius:8px; border:1px solid #eee;">
+              ${itemLines}
+              <div style="display:flex; justify-content:space-between; font-size:12px; padding:4px 0; color:#666;">
+                <span>배송비</span><span>${sFee > 0 ? `₩${sFee.toLocaleString()}` : '-'}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:12px; padding:4px 0; color:#666;">
+                <span>수수료</span><span>${svFee > 0 ? `₩${svFee.toLocaleString()}` : '-'}</span>
+              </div>
             </div>
-            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:var(--text);">
-               <span>수수료 (Service Fee)</span>
-               <span>${svFee > 0 ? `₩${svFee.toLocaleString()}` : '-'}</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:700; color:var(--primary); margin-top:8px; border-top:1px solid var(--border); padding-top:6px;">
-               <span>총 예상 견적</span>
-               <span>₩${totalCost.toLocaleString()}</span>
-            </div>
-          </div>
-        `;
+          </div>`;
       }
 
+      // Admin reply
       let replyHtml = '';
       if (req.admin_reply) {
-        replyHtml = `<div style="margin-top:10px; padding:12px; background:var(--background); border-radius:6px; border-left:3px solid var(--primary);">
-          <div style="font-weight:600; font-size:13px; margin-bottom:5px;">${window.t('sourcing.admin_reply_title')}</div>
-          ${req.admin_reply ? `<div style="font-size:13px; color:var(--text); white-space:pre-wrap; line-height:1.4;">${escapeHtml(req.admin_reply)}</div>` : ''}
-        </div>`;
+        replyHtml = `<div style="margin-top:8px; padding:8px 12px; background:#f8f9fa; border-radius:6px; border-left:3px solid #0071e3; font-size:12px; color:#444; line-height:1.5;">
+          <span style="font-weight:600; font-size:11px; color:#0071e3; display:block; margin-bottom:3px;">💬 관리자 답변</span>
+          ${escapeHtml(req.admin_reply)}</div>`;
       }
 
+      // Payment button (only when quoted)
+      const payBtn = req.status === 'quoted' && totalCost > 0
+        ? `<button onclick="alert('결제 기능은 곧 오픈됩니다! 총액: ₩${totalCost.toLocaleString()}')"
+             style="width:100%; margin-top:12px; padding:12px; border-radius:10px; border:none; background:#0071e3; color:white; font-size:14px; font-weight:700; cursor:pointer; letter-spacing:-0.3px;">
+             💳 결제하기 · ₩${totalCost.toLocaleString()}
+           </button>`
+        : '';
+
       return `
-        <div style="border:1px solid var(--border); border-radius:8px; padding:15px; background:var(--surface);">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+        <div style="border:1px solid #e8e8ed; border-radius:12px; padding:16px; background:white; box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <div>
-              <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">${date}</div>
-              <div style="font-weight:600; font-size:14px;">${window.t('sourcing.total_items').replace('{count}', itemCount)}</div>
+              <div style="font-size:11px; color:#aaa; margin-bottom:2px;">${date}</div>
+              <div style="font-weight:700; font-size:14px; color:#1d1d1f;">상품 ${itemCount}종</div>
             </div>
             ${statusBadge}
           </div>
-          ${req.user_message ? `<div style="font-size:13px; color:var(--text-muted); padding:8px; background:#f5f5f5; border-radius:4px; margin-bottom:10px;">💬 ${escapeHtml(req.user_message)}</div>` : ''}
+          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:${req.user_message ? '10px' : '0'};">${itemPreview}</div>
+          ${req.user_message ? `<div style="font-size:12px; color:#888; padding:6px 10px; background:#f5f5f7; border-radius:6px; margin-top:6px;">💬 ${escapeHtml(req.user_message)}</div>` : ''}
           ${breakdownHtml}
           ${replyHtml}
+          ${payBtn}
         </div>
       `;
     }).join('');
