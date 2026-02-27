@@ -48,9 +48,9 @@ export const SteadySellerBridge = {
 
     renderCustomHeader(state) {
         return `
-            <div class="steady-sellers-hero">
-                <h1>🏆 Steady Sellers</h1>
-                <p>K-Vant가 엄선한 대한민국 대표 스테디 셀러 브랜드입니다.</p>
+            <div class="steady-sellers-compact-header">
+                <h2>🏆 Steady Sellers</h2>
+                <p>K-Vant 엄선 브랜드</p>
             </div>
         `;
     },

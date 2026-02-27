@@ -488,11 +488,24 @@ async function loadBridgeTab(tabId) {
     if (state.activeBridge.renderTabContent) {
       const customHtml = state.activeBridge.renderTabContent(tabId, result, state);
       if (customHtml) {
-        grid.innerHTML = customHtml;
+        // Hide standard table if it exists
+        const tableContainer = activeTabContent?.querySelector('.table-container');
+        if (tableContainer) tableContainer.style.display = 'none';
+
+        // Show in products-grid or similar container
+        if (grid) {
+          grid.innerHTML = customHtml;
+          grid.style.display = 'block'; // Ensure grid container is visible and not acting as table body
+        }
+
         i18n.documentUpdate();
-        renderPagination(0); // Custom renderers handle their own pagination/grouping usually
+        renderPagination(0);
         return;
       }
+    } else {
+      // Restore table visibility for standard bridges
+      const tableContainer = activeTabContent?.querySelector('.table-container');
+      if (tableContainer) tableContainer.style.display = 'block';
     }
 
     if (data.length === 0) {

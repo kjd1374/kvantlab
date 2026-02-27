@@ -3486,3 +3486,50 @@ body[data-platform="k_trend"] #tab-global_trends {
     font-size: 20px;
   }
 }
+
+/* ============================================
+   Steady Sellers Compact Header Fix
+   ============================================ */
+.steady-sellers-compact-header {
+  background: white;
+  padding: 16px 24px;
+  border-radius: var(--radius-md);
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.steady-sellers-compact-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.steady-sellers-compact-header p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Adjust brand group layout */
+.brand-group-header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+  margin-top: 32px;
+}
+
+.brand-title {
+  font-size: 20px;
+  color: var(--accent-blue);
+}
+
+.brand-products-grid {
+  padding-top: 20px;
+}
+
+/* Ensure no overlap with hidden table */
+#tab-all .products-grid {
+  width: 100%;
+}
