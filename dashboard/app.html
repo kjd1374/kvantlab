@@ -351,96 +351,102 @@
         <textarea id="quoteMessage" class="form-input" rows="4" data-i18n="sourcing.modal_placeholder"
           placeholder="추가 요구사항을 남겨주세요 (예: 베트남 호치민으로 이달 말까지 배송 원합니다.)"
           style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; resize: vertical;"></textarea>
+        <div
+          style="margin-top: 15px; margin-bottom: 20px; padding: 12px; border-radius: 8px; background: rgba(255, 77, 79, 0.05); border: 1px solid rgba(255, 77, 79, 0.2);">
+          <p style="color: #ff4d4f; font-size: 13px; font-weight: 500; line-height: 1.5; margin: 0; display: flex; gap: 8px;"
+            data-i18n="sourcing.modal_warning">
+            ⚠️ 견적 산출에는 약간의 시간이 소요될 수 있습니다. 완료 시 대시보드 알림과 메일로 안내해 드립니다.
+          </p>
+        </div>
+        <button class="btn-primary" id="btnSubmitQuote"
+          style="width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: 700; cursor: pointer; color: white; background: var(--accent-blue); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);"
+          onclick="submitQuoteRequest()" data-i18n="sourcing.btn_submit">견적 요청 전송</button>
       </div>
-      <button class="btn-primary" id="btnSubmitQuote"
-        style="width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: 700; cursor: pointer; color: white; background: var(--accent-blue); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);"
-        onclick="submitQuoteRequest()" data-i18n="sourcing.btn_submit">견적 요청 전송</button>
     </div>
-  </div>
 
-  <!-- My Page Modal -->
-  <div class="modal-overlay" id="myPageModalOverlay">
-    <div class="modal my-page-modal" id="myPageModal">
-      <button class="modal-close" id="myPageModalClose">&times;</button>
-      <h2 class="my-page-title" data-i18n="mypage.title">마이페이지</h2>
-      <div class="auth-tabs" style="margin-bottom: 24px;">
-        <button class="auth-tab active" data-mypage-tab="account" data-i18n="mypage.account">계정 관리</button>
-        <button class="auth-tab" data-mypage-tab="billing" data-i18n="mypage.billing">결제 관리</button>
-        <button class="auth-tab" data-mypage-tab="sourcing" data-i18n="sourcing.mypage_tab">견적/소싱 내역</button>
-      </div>
+    <!-- My Page Modal -->
+    <div class="modal-overlay" id="myPageModalOverlay">
+      <div class="modal my-page-modal" id="myPageModal">
+        <button class="modal-close" id="myPageModalClose">&times;</button>
+        <h2 class="my-page-title" data-i18n="mypage.title">마이페이지</h2>
+        <div class="auth-tabs" style="margin-bottom: 24px;">
+          <button class="auth-tab active" data-mypage-tab="account" data-i18n="mypage.account">계정 관리</button>
+          <button class="auth-tab" data-mypage-tab="billing" data-i18n="mypage.billing">결제 관리</button>
+          <button class="auth-tab" data-mypage-tab="sourcing" data-i18n="sourcing.mypage_tab">견적/소싱 내역</button>
+        </div>
 
-      <div class="my-page-content" id="myPageAccountTab">
-        <div class="form-group">
-          <label data-i18n="mypage.email">이메일</label>
-          <input type="text" id="myPageEmail" disabled class="form-input disabled-input">
-        </div>
-        <div class="form-group">
-          <label data-i18n="mypage.role">권한 (Role)</label>
-          <input type="text" id="myPageRole" disabled class="form-input disabled-input">
-        </div>
-        <div class="info-notice">
-          <span style="font-size:16px;">💡</span> 계정 정보 수정은 관리자에게 문의해주세요.
-        </div>
-      </div>
-
-      <div class="my-page-content" id="myPageBillingTab" style="display:none;">
-        <div class="billing-card">
-          <div class="billing-header">
-            <h3 data-i18n="mypage.current_plan">현재 구독 플랜</h3>
-            <span class="plan-badge" id="myPagePlanBadge">Free</span>
+        <div class="my-page-content" id="myPageAccountTab">
+          <div class="form-group">
+            <label data-i18n="mypage.email">이메일</label>
+            <input type="text" id="myPageEmail" disabled class="form-input disabled-input">
           </div>
-          <p class="billing-desc" id="myPagePlanDesc">현재 무료 플랜을 이용 중입니다. (일일 조회 10회 제한)</p>
-
-          <div class="billing-info-row">
-            <span class="info-label" data-i18n="mypage.expires_at">만료 예정일</span>
-            <span class="info-value" id="myPageExpiresAt">-</span>
+          <div class="form-group">
+            <label data-i18n="mypage.role">권한 (Role)</label>
+            <input type="text" id="myPageRole" disabled class="form-input disabled-input">
+          </div>
+          <div class="info-notice">
+            <span style="font-size:16px;">💡</span> 계정 정보 수정은 관리자에게 문의해주세요.
           </div>
         </div>
 
-        <div class="billing-actions" style="margin-top: 24px; text-align:center;">
-          <div id="paypal-button-container" style="max-width: 400px; margin: 0 auto;"></div>
-          <button id="cancelSubscriptionBtn" class="btn-secondary"
-            style="display:none; width: 100%; max-width: 400px; margin: 0 auto; padding: 12px; background: #fff5f5; color: #e03131; border: 1px solid #ffc9c9; border-radius: 8px; cursor: pointer; font-weight: 600;">구독
-            취소 (Cancel Subscription)</button>
+        <div class="my-page-content" id="myPageBillingTab" style="display:none;">
+          <div class="billing-card">
+            <div class="billing-header">
+              <h3 data-i18n="mypage.current_plan">현재 구독 플랜</h3>
+              <span class="plan-badge" id="myPagePlanBadge">Free</span>
+            </div>
+            <p class="billing-desc" id="myPagePlanDesc">현재 무료 플랜을 이용 중입니다. (일일 조회 10회 제한)</p>
+
+            <div class="billing-info-row">
+              <span class="info-label" data-i18n="mypage.expires_at">만료 예정일</span>
+              <span class="info-value" id="myPageExpiresAt">-</span>
+            </div>
+          </div>
+
+          <div class="billing-actions" style="margin-top: 24px; text-align:center;">
+            <div id="paypal-button-container" style="max-width: 400px; margin: 0 auto;"></div>
+            <button id="cancelSubscriptionBtn" class="btn-secondary"
+              style="display:none; width: 100%; max-width: 400px; margin: 0 auto; padding: 12px; background: #fff5f5; color: #e03131; border: 1px solid #ffc9c9; border-radius: 8px; cursor: pointer; font-weight: 600;">구독
+              취소 (Cancel Subscription)</button>
+          </div>
         </div>
-      </div>
 
-      <!-- Sourcing History Tab -->
-      <div class="my-page-content" id="myPageSourcingTab" style="display: none;">
-        <h3 style="font-size: 16px; margin-bottom: 15px;" data-i18n="sourcing.history_title">📦 나의 소싱 견적 내역</h3>
-        <div id="sourcingHistoryList"
-          style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;">
-          <div class="loading-skeleton"></div>
+        <!-- Sourcing History Tab -->
+        <div class="my-page-content" id="myPageSourcingTab" style="display: none;">
+          <h3 style="font-size: 16px; margin-bottom: 15px;" data-i18n="sourcing.history_title">📦 나의 소싱 견적 내역</h3>
+          <div id="sourcingHistoryList"
+            style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;">
+            <div class="loading-skeleton"></div>
+          </div>
         </div>
+
       </div>
-
     </div>
-  </div>
 
-  <footer class="footer">
-    <p data-i18n="common.footer_text">K-Trend Intelligence © 2026 · Global K-Beauty & Fashion Intelligence · Analytics
-      for Global Sellers · K-Vant</p>
-    <div class="footer-links"
-      style="margin-top: 8px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; opacity: 0.8;">
-      <a href="/terms.html" data-i18n-href="common.terms_url"
-        style="color: var(--text-secondary); font-size: 13px; text-decoration: none;">이용약관</a>
-      <a href="/privacy.html" data-i18n-href="common.privacy_url"
-        style="color: var(--text-secondary); font-size: 13px; text-decoration: none;">개인정보 처리방침</a>
-      <a href="mailto:contact@k-vant.kr"
-        style="color: var(--text-secondary); font-size: 13px; text-decoration: none;">문의하기</a>
-    </div>
-  </footer>
+    <footer class="footer">
+      <p data-i18n="common.footer_text">K-Trend Intelligence © 2026 · Global K-Beauty & Fashion Intelligence · Analytics
+        for Global Sellers · K-Vant</p>
+      <div class="footer-links"
+        style="margin-top: 8px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; opacity: 0.8;">
+        <a href="/terms.html" data-i18n-href="common.terms_url"
+          style="color: var(--text-secondary); font-size: 13px; text-decoration: none;">이용약관</a>
+        <a href="/privacy.html" data-i18n-href="common.privacy_url"
+          style="color: var(--text-secondary); font-size: 13px; text-decoration: none;">개인정보 처리방침</a>
+        <a href="mailto:contact@k-vant.kr"
+          style="color: var(--text-secondary); font-size: 13px; text-decoration: none;">문의하기</a>
+      </div>
+    </footer>
 
-  <script type="module" src="/main.js?v=26"></script>
-  <!-- Reliable body[data-platform] setter independent of ES module system -->
-  <script>
-    document.addEventListener('click', function (e) {
-      var btn = e.target.closest('.platform-btn');
-      if (btn && btn.dataset.platform) {
-        document.body.dataset.platform = btn.dataset.platform;
-      }
-    });
-  </script>
+    <script type="module" src="/main.js?v=26"></script>
+    <!-- Reliable body[data-platform] setter independent of ES module system -->
+    <script>
+      document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.platform-btn');
+        if (btn && btn.dataset.platform) {
+          document.body.dataset.platform = btn.dataset.platform;
+        }
+      });
+    </script>
 </body>
 
 </html>

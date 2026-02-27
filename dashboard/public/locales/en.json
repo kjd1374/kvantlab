@@ -250,6 +250,7 @@
         "btn_request_quote": "📦 Request Quote for Cart Items",
         "modal_title": "📦 B2B Sourcing Quote Request",
         "modal_desc": "Request purchase prices and shipping estimates for items in your cart from K-Vant. Please leave any additional requirements (destination, desired arrival date, etc.) for a more accurate quote.",
+        "modal_warning": "⚠️ Quote calculation may take some time. We will notify you via dashboard and email once complete.",
         "modal_placeholder": "e.g., I want shipping to Ho Chi Minh, Vietnam by the end of this month. Is this quantity available?",
         "btn_submit": "Send Quote Request",
         "btn_submitting": "Sending...",
