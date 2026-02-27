@@ -358,23 +358,54 @@
           <input type="text" id="myPageEmail" disabled class="form-input disabled-input">
         </div>
         <div class="form-group">
-          <label>연락처 (Phone)</label>
-          <input type="text" id="myPagePhone" class="form-input" placeholder="연락처를 입력하세요">
+          <label data-i18n="mypage.phone">연락처 (Phone)</label>
+          <input type="text" id="myPagePhone" class="form-input" placeholder="연락처를 입력하세요"
+            data-i18n="mypage.phone_placeholder">
         </div>
+
         <div class="form-group">
-          <label>배송지 주소 (Address)</label>
-          <input type="text" id="myPageAddress" class="form-input" placeholder="배송지 주소를 입력하세요">
+          <label data-i18n="mypage.country">국가 (Country)</label>
+          <input type="text" id="myPageCountry" class="form-input" placeholder="국가를 입력하세요"
+            data-i18n="mypage.country_placeholder">
         </div>
+
+        <div class="form-group" style="display: flex; gap: 10px;">
+          <div style="flex: 1;">
+            <label data-i18n="mypage.city">도시 (City)</label>
+            <input type="text" id="myPageCity" class="form-input" placeholder="도시를 입력하세요"
+              data-i18n="mypage.city_placeholder">
+          </div>
+          <div style="flex: 1;">
+            <label data-i18n="mypage.zip_code">우편번호 (ZIP Code)</label>
+            <input type="text" id="myPageZip" class="form-input" placeholder="우편번호 입력"
+              data-i18n="mypage.zip_placeholder">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label data-i18n="mypage.address1">주소 상세 1 (Address Line 1)</label>
+          <input type="text" id="myPageAddress1" class="form-input" placeholder="도로명, 지번 주소 등"
+            data-i18n="mypage.address1_placeholder">
+        </div>
+
+        <div class="form-group">
+          <label data-i18n="mypage.address2">주소 상세 2 (Address Line 2)</label>
+          <input type="text" id="myPageAddress2" class="form-input" placeholder="상세주소 (동/호수, 건물명 등)"
+            data-i18n="mypage.address2_placeholder">
+        </div>
+
         <div class="form-group">
           <label data-i18n="mypage.role">권한 (Role)</label>
           <input type="text" id="myPageRole" disabled class="form-input disabled-input">
         </div>
+
         <div style="margin-top: 20px; text-align: right;">
-          <button id="btnSaveProfile" class="btn-primary"
+          <button id="btnSaveProfile" class="btn-primary" data-i18n="mypage.save"
             style="padding: 10px 20px; border-radius: 8px; border: none; background: var(--accent-blue); color: white; font-weight: 600; cursor: pointer;">저장하기</button>
         </div>
+
         <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); text-align: right;">
-          <button id="btnDeleteAccount" class="btn-secondary"
+          <button id="btnDeleteAccount" class="btn-secondary" data-i18n="mypage.delete_account"
             style="padding: 8px 16px; border-radius: 8px; border: 1px solid #ffc9c9; background: #fff5f5; color: #e03131; font-weight: 600; cursor: pointer;">회원
             탈퇴</button>
         </div>

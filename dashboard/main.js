@@ -2757,12 +2757,20 @@ window.openMyPageModal = async function () {
   const emailInput = document.getElementById('myPageEmail');
   const roleInput = document.getElementById('myPageRole');
   const phoneInput = document.getElementById('myPagePhone');
-  const addressInput = document.getElementById('myPageAddress');
+  const countryInput = document.getElementById('myPageCountry');
+  const cityInput = document.getElementById('myPageCity');
+  const zipInput = document.getElementById('myPageZip');
+  const address1Input = document.getElementById('myPageAddress1');
+  const address2Input = document.getElementById('myPageAddress2');
 
   if (emailInput && session) emailInput.value = session.user.email || '';
   if (roleInput) roleInput.value = profile?.role || 'user';
   if (phoneInput) phoneInput.value = profile?.phone || '';
-  if (addressInput) addressInput.value = profile?.address || '';
+  if (countryInput) countryInput.value = profile?.country || '';
+  if (cityInput) cityInput.value = profile?.city || '';
+  if (zipInput) zipInput.value = profile?.zip_code || '';
+  if (address1Input) address1Input.value = profile?.address1 || '';
+  if (address2Input) address2Input.value = profile?.address2 || '';
 
   // Fill Billing Tab
   const planBadge = document.getElementById('myPagePlanBadge');
@@ -2824,16 +2832,22 @@ document.getElementById('btnSaveProfile')?.addEventListener('click', async () =>
   const session = getSession();
   if (!session) return;
   const phone = document.getElementById('myPagePhone')?.value || '';
-  const address = document.getElementById('myPageAddress')?.value || '';
+  const country = document.getElementById('myPageCountry')?.value || '';
+  const city = document.getElementById('myPageCity')?.value || '';
+  const zip_code = document.getElementById('myPageZip')?.value || '';
+  const address1 = document.getElementById('myPageAddress1')?.value || '';
+  const address2 = document.getElementById('myPageAddress2')?.value || '';
 
   const btn = document.getElementById('btnSaveProfile');
   const origText = btn.innerText;
-  btn.innerText = '저장 중...';
+  btn.innerText = window.t('common.saving') || '저장 중...';
   btn.disabled = true;
 
   try {
     const { updateUserProfile } = await import('./supabase.js');
-    const { error } = await updateUserProfile(session.user.id, { phone, address });
+    const { error } = await updateUserProfile(session.user.id, {
+      phone, country, city, zip_code, address1, address2
+    });
     if (error) throw new Error(error.message || '저장 실패');
     alert('계정 정보가 성공적으로 저장되었습니다.');
   } catch (e) {
