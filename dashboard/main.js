@@ -469,6 +469,8 @@ async function loadBridgeTab(tabId) {
   if (titleEl) {
     if (state.searchQuery) {
       titleEl.textContent = `${window.t('sections.all')} - ${state.searchQuery}`;
+    } else if (state.currentPlatform === 'steady_sellers') {
+      titleEl.textContent = "주요 스테디 셀러";
     } else {
       const activeChip = document.querySelector('#categoryChips .chip.active');
       const catName = activeChip ? activeChip.textContent : window.t('tabs.all');
@@ -476,7 +478,11 @@ async function loadBridgeTab(tabId) {
     }
   }
   if (descEl) {
-    descEl.textContent = `${state.activeBridge.name} 플랫폼 데이터 분석 결과`;
+    if (state.currentPlatform === 'steady_sellers') {
+      descEl.textContent = "K-Vant가 엄선한 최고의 상품 컬렉션";
+    } else {
+      descEl.textContent = `${state.activeBridge.name} 플랫폼 데이터 분석 결과`;
+    }
   }
 
   try {

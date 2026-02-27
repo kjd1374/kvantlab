@@ -77,11 +77,11 @@ export const SteadySellerBridge = {
                         </div>
                         <div class="brand-products-grid">
                             ${products.map(p => `
-                                <div class="ss-product-card" onclick="window.__openProduct(${JSON.stringify(p).replace(/"/g, '&quot;')})">
+                                <div class="ss-product-card overlay-card" onclick="window.__openProduct(${JSON.stringify(p).replace(/"/g, '&quot;')})">
                                     <div class="ss-product-img-wrapper">
                                         <img src="${p.image_url}" alt="${p.name}" class="ss-product-img" loading="lazy">
                                     </div>
-                                    <div class="ss-product-info">
+                                    <div class="ss-product-overlay">
                                         <h4 class="ss-product-name">${p.name}</h4>
                                         <div class="ss-product-price">
                                             <span class="currency">₩</span>

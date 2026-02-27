@@ -3533,3 +3533,70 @@ body[data-platform="k_trend"] #tab-global_trends {
 #tab-all .products-grid {
   width: 100%;
 }
+
+/* ============================================
+   Steady Sellers Overlay Cards
+   ============================================ */
+.ss-product-card.overlay-card {
+  position: relative;
+  border-radius: var(--radius-md);
+  box-shadow: none;
+  border: none;
+  background: #f8f8f8;
+  height: auto;
+  aspect-ratio: 1/1.2;
+}
+
+.ss-product-card.overlay-card .ss-product-img-wrapper {
+  margin-bottom: 0;
+  height: 100%;
+  border-radius: var(--radius-md);
+}
+
+.ss-product-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+  color: white;
+  border-bottom-left-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 80px;
+}
+
+.ss-product-overlay .ss-product-name {
+  color: white;
+  font-size: 13px;
+  margin-bottom: 4px;
+  line-height: 1.2;
+  height: auto;
+  -webkit-line-clamp: 2;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.ss-product-overlay .ss-product-price {
+  color: #fff;
+  font-weight: 800;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.ss-product-overlay .ss-product-price .amount {
+  font-size: 15px;
+}
+
+/* Redefine card grid for more compact look */
+.brand-products-grid {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 480px) {
+  .brand-products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
