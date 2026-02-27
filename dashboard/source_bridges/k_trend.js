@@ -247,16 +247,16 @@ export const KoreaTrendBridge = {
         return `
             <div class="k-trend-filters" style="display:flex; gap:10px; padding:10px 20px; border-bottom:1px solid var(--border-color); overflow-x:auto; align-items:center;">
                 <select id="kTrendCountry" style="padding:8px; border-radius:8px; border:1px solid #ccc;">
-                    <option value="VN" ${this.filterState.country === 'VN' ? 'selected' : ''}>${window.t('countries.vn') || '🇻🇳 베트남 (Vietnam)'}</option>
-                    <option value="TH" ${this.filterState.country === 'TH' ? 'selected' : ''}>${window.t('countries.th') || '🇹🇭 태국 (Thailand)'}</option>
-                    <option value="PH" ${this.filterState.country === 'PH' ? 'selected' : ''}>${window.t('countries.ph') || '🇵🇭 필리핀 (Philippines)'}</option>
-                    <option value="MY" ${this.filterState.country === 'MY' ? 'selected' : ''}>${window.t('countries.my') || '🇲🇾 말레이시아 (Malaysia)'}</option>
-                    <option value="ALL" ${this.filterState.country === 'ALL' ? 'selected' : ''}>${window.t('countries.all') || '🌏 글로벌 (Global)'}</option>
+                    <option value="VN" ${this.filterState.country === 'VN' ? 'selected' : ''} data-i18n="countries.vn">${window.t('countries.vn') || '🇻🇳 베트남 (Vietnam)'}</option>
+                    <option value="TH" ${this.filterState.country === 'TH' ? 'selected' : ''} data-i18n="countries.th">${window.t('countries.th') || '🇹🇭 태국 (Thailand)'}</option>
+                    <option value="PH" ${this.filterState.country === 'PH' ? 'selected' : ''} data-i18n="countries.ph">${window.t('countries.ph') || '🇵🇭 필리핀 (Philippines)'}</option>
+                    <option value="MY" ${this.filterState.country === 'MY' ? 'selected' : ''} data-i18n="countries.my">${window.t('countries.my') || '🇲🇾 말레이시아 (Malaysia)'}</option>
+                    <option value="ALL" ${this.filterState.country === 'ALL' ? 'selected' : ''} data-i18n="countries.all">${window.t('countries.all') || '🌏 글로벌 (Global)'}</option>
                 </select>
                 <select id="kTrendCategory" style="padding:8px; border-radius:8px; border:1px solid #ccc;">
-                    <option value="ALL" ${this.filterState.category === 'ALL' ? 'selected' : ''}>${window.t('categories.all') || '전체 카테고리'}</option>
-                    <option value="Skincare" ${this.filterState.category === 'Skincare' ? 'selected' : ''}>${window.t('categories.skincare') || '스킨케어 (Skincare)'}</option>
-                    <option value="Makeup" ${this.filterState.category === 'Makeup' ? 'selected' : ''}>${window.t('categories.makeup') || '메이크업 (Makeup)'}</option>
+                    <option value="ALL" ${this.filterState.category === 'ALL' ? 'selected' : ''} data-i18n="categories.all">${window.t('categories.all') || '전체 카테고리'}</option>
+                    <option value="Skincare" ${this.filterState.category === 'Skincare' ? 'selected' : ''} data-i18n="categories.skincare">${window.t('categories.skincare') || '스킨케어 (Skincare)'}</option>
+                    <option value="Makeup" ${this.filterState.category === 'Makeup' ? 'selected' : ''} data-i18n="categories.makeup">${window.t('categories.makeup') || '메이크업 (Makeup)'}</option>
                 </select>
                 <button id="kTrendApply" style="padding:8px 16px; background:var(--accent-blue); color:white; border:none; border-radius:8px; cursor:pointer;" data-i18n="tabs.apply">적용</button>
             </div>

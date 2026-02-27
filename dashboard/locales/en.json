@@ -249,6 +249,9 @@
         "feedback": "Feedback & Requests",
         "coming_soon": "This feature is coming soon."
     },
+    "sourcing": {
+        "mypage_tab": "Pricing/Sourcing"
+    },
     "deals": {
         "today_title": "Daily Deals Order Deadline",
         "today_desc": "Orders close daily at 9 PM KST."
