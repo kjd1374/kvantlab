@@ -6,9 +6,7 @@ import { fetchSteadySellers } from '../supabase.js';
 export const SteadySellerBridge = {
     id: 'steady_sellers',
     name: 'Steady Sellers',
-    tabs: [
-        { id: 'all', icon: '🏆', label: 'Best Sellers' }
-    ],
+    tabs: [],
 
     async getKPIs(currentPlatform) {
         const res = await fetchSteadySellers();
@@ -18,19 +16,36 @@ export const SteadySellerBridge = {
     },
 
     async getCategories() {
+        const res = await fetchSteadySellers();
+        const data = res.data || [];
+        const brands = new Set();
+        data.forEach(item => {
+            if (item.brand) brands.add(item.brand);
+        });
+
+        const brandList = Array.from(brands).sort();
+        const categories = [{ category_code: 'ALL', name_ko: '전체 (All)', name_en: 'All Brands', depth: 1 }];
+
+        brandList.forEach(brand => {
+            categories.push({ category_code: brand, name_ko: brand, name_en: brand, depth: 1 });
+        });
+
         return {
-            data: [
-                { category_code: 'all', name_ko: '전체 스테디 셀러', name_en: 'All Steady Sellers', depth: 1 }
-            ],
-            count: 1
+            data: categories,
+            count: categories.length
         };
     },
 
     async fetchData(tabId, state) {
-        const res = await fetchSteadySellers();
+        let res = await fetchSteadySellers();
+        let sourceData = res.data || [];
 
-        // Map data to match existing Olive Young product card format
-        const formattedData = (res.data || []).map(item => ({
+        // Apply category filter if one is selected (and not 'ALL')
+        if (state.activeCategory && state.activeCategory !== 'ALL' && state.activeCategory !== 'all') {
+            sourceData = sourceData.filter(item => item.brand === state.activeCategory);
+        }
+
+        const formattedData = sourceData.map(item => ({
             id: item.id,
             product_id: item.id,
             url: item.link,
@@ -57,7 +72,7 @@ export const SteadySellerBridge = {
 
     renderTabContent(tabId, result, state) {
         const data = result.data || [];
-        if (data.length === 0) return null;
+        if (data.length === 0) return `<div style="padding:40px; text-align:center; color:var(--text-muted);">${window.t('common.no_results') || '조건에 맞는 스테디셀러가 없습니다.'}</div>`;
 
         // Group by brand
         const grouped = data.reduce((acc, item) => {

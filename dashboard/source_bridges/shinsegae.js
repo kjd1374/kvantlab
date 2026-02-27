@@ -8,7 +8,8 @@ export const ShinsegaeBridge = {
     name: 'Shinsegae',
     tabs: [
         { id: 'all', icon: '📋', label: 'tabs.all' },
-        { id: 'trending', icon: '🔥', label: 'tabs.trending' }
+        { id: 'trending', icon: '🔥', label: 'tabs.trending' },
+        { id: 'wishlist', icon: '❤️', label: 'tabs.favorites' }
     ],
 
     async getKPIs(currentPlatform) {
