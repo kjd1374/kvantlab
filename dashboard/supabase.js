@@ -650,7 +650,7 @@ export async function fetchAnnouncements() {
     return await query('board_announcements', 'order=created_at.desc');
 }
 
-export async function insertAnnouncement(title, content, type, is_published) {
+export async function insertAnnouncement(title, content, type, is_published, title_en = '', content_en = '') {
     const session = getSession();
     if (!session) return { error: 'Not authenticated' };
 
@@ -662,7 +662,7 @@ export async function insertAnnouncement(title, content, type, is_published) {
             'Content-Type': 'application/json',
             'Prefer': 'return=representation'
         },
-        body: JSON.stringify({ title, content, type, is_published })
+        body: JSON.stringify({ title, content, type, is_published, title_en, content_en })
     });
     if (!response.ok) {
         const err = await response.json();
@@ -671,7 +671,7 @@ export async function insertAnnouncement(title, content, type, is_published) {
     return await response.json();
 }
 
-export async function updateAnnouncement(id, title, content, type, is_published) {
+export async function updateAnnouncement(id, title, content, type, is_published, title_en = '', content_en = '') {
     const session = getSession();
     if (!session) return { error: 'Not authenticated' };
 
@@ -683,7 +683,7 @@ export async function updateAnnouncement(id, title, content, type, is_published)
             'Content-Type': 'application/json',
             'Prefer': 'return=representation'
         },
-        body: JSON.stringify({ title, content, type, is_published })
+        body: JSON.stringify({ title, content, type, is_published, title_en, content_en })
     });
     if (!response.ok) {
         const err = await response.json();

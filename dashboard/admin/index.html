@@ -440,14 +440,29 @@
                     <option value="update">업데이트 (Update)</option>
                 </select>
             </div>
+            <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: flex-end;">
+                <div style="flex: 1;">
+                    <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">제목 (KO)</label>
+                    <input type="text" id="aTitle" placeholder="공지 제목을 입력하세요"
+                        style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box;">
+                </div>
+                <button id="aiTranslateBtn" class="btn-primary"
+                    style="padding: 10px; height: 38px; white-space: nowrap; background: #673ab7; font-size: 12px;"
+                    title="AI로 영어 번역 채우기">✨ AI 자동 번역</button>
+            </div>
             <div style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">제목</label>
-                <input type="text" id="aTitle" placeholder="공지 제목을 입력하세요"
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">제목 (EN)</label>
+                <input type="text" id="aTitleEn" placeholder="English Title"
                     style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box;">
             </div>
             <div style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">내용 (줄바꿈 허용)</label>
-                <textarea id="aContent" rows="5" placeholder="공지 내용을 입력하세요"
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">내용 (KO)</label>
+                <textarea id="aContent" rows="4" placeholder="공지 내용을 입력하세요"
+                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box; resize:vertical;"></textarea>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">내용 (EN)</label>
+                <textarea id="aContentEn" rows="4" placeholder="English Content"
                     style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box; resize:vertical;"></textarea>
             </div>
             <div style="margin-bottom: 25px;">

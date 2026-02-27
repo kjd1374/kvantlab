@@ -489,6 +489,10 @@
                     }
 
                     listEl.innerHTML = data.map(item => {
+                        const isEn = window.i18n && window.i18n.currentLang === 'en';
+                        const displayTitle = (isEn && item.title_en) ? item.title_en : item.title;
+                        const displayContent = (isEn && item.content_en) ? item.content_en : (item.content || '');
+
                         const badgeText = item.type === 'report' ? (window.t ? window.t('landing.announcement_report') : '리포트')
                             : item.type === 'update' ? (window.t ? window.t('landing.announcement_update') : '업데이트')
                                 : (window.t ? window.t('landing.announcement_notice') : '공지사항');
@@ -496,14 +500,14 @@
                         const dateText = new Date(item.created_at).toLocaleDateString(langCode);
 
                         // Prepare safe data strings
-                        const safeTitle = item.title.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-                        const safeContent = item.content ? item.content.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, "\\n") : '';
+                        const safeTitle = displayTitle.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                        const safeContent = displayContent.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, "\\n");
 
                         return `
                             <div class="announcement-item" onclick="openNoticeModal('${safeTitle}', '${dateText}', '${safeContent}')">
                                 <div>
                                     <span class="ai-badge">${badgeText}</span>
-                                    <span class="a-title">${item.title}</span>
+                                    <span class="a-title">${displayTitle}</span>
                                 </div>
                                 <span class="a-date">${dateText}</span>
                             </div>

@@ -626,6 +626,51 @@ app.delete('/api/admin/steady-sellers/:id', async (req, res) => {
     }
 });
 
+// 5. AI Translate API
+app.post('/api/admin/translate', async (req, res) => {
+    const { text, target_lang = 'en' } = req.body;
+    if (!text) return res.status(400).json({ success: false, error: 'Text is required' });
+
+    try {
+        const OLLAMA_URL = "http://localhost:11434/api/generate";
+        // Check if user has a custom model in env, else use deepseek
+        const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "deepseek-r1:8b";
+
+        const prompt = `
+Translate the following Korean text to ${target_lang === 'en' ? 'natural and professional English' : target_lang}. 
+Maintain the original tone and meaning. ONLY provide the translated text without any explanation or meta-talk.
+If there are <think> tags or reasoning, ignore them and only output the final translation.
+
+Text to translate:
+${text}
+`;
+
+        const response = await fetch(OLLAMA_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: OLLAMA_MODEL,
+                prompt: prompt,
+                stream: false,
+                options: { temperature: 0.3 }
+            })
+        });
+
+        if (!response.ok) throw new Error('Ollama connection failed');
+
+        const data = await response.json();
+        let translatedText = data.response || '';
+
+        // Clean up <think> tags if deepseek is used
+        translatedText = translatedText.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+
+        res.json({ success: true, translatedText });
+    } catch (error) {
+        console.error("Translation failed:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
         console.log(`Data Pool Admin Backend running on http://localhost:${PORT}`);

@@ -255,11 +255,9 @@ async function initAdmin() {
     const saveAnnouncementBtn = document.getElementById('saveAnnouncementBtn');
 
     // Form elements
-    const aIdInput = document.getElementById('announcementId');
-    const aTypeInput = document.getElementById('aType');
-    const aTitleInput = document.getElementById('aTitle');
-    const aContentInput = document.getElementById('aContent');
-    const aPublishedInput = document.getElementById('aPublished');
+    const aTitleEnInput = document.getElementById('aTitleEn');
+    const aContentEnInput = document.getElementById('aContentEn');
+    const aiTranslateBtn = document.getElementById('aiTranslateBtn');
     const aModalTitle = document.getElementById('announcementModalTitle');
 
     async function loadAnnouncements() {
@@ -323,6 +321,8 @@ async function initAdmin() {
         aIdInput.value = item.id;
         aTitleInput.value = item.title;
         aContentInput.value = item.content || '';
+        aTitleEnInput.value = item.title_en || '';
+        aContentEnInput.value = item.content_en || '';
         aTypeInput.value = item.type;
         aPublishedInput.checked = item.is_published;
 
@@ -346,6 +346,8 @@ async function initAdmin() {
         aIdInput.value = '';
         aTitleInput.value = '';
         aContentInput.value = '';
+        aTitleEnInput.value = '';
+        aContentEnInput.value = '';
         aTypeInput.value = 'notice';
         aPublishedInput.checked = true;
         announcementModal.style.display = 'flex';
@@ -356,9 +358,10 @@ async function initAdmin() {
     });
 
     saveAnnouncementBtn?.addEventListener('click', async () => {
-        const id = aIdInput.value;
         const title = aTitleInput.value.trim();
         const content = aContentInput.value.trim();
+        const titleEn = aTitleEnInput.value.trim();
+        const contentEn = aContentEnInput.value.trim();
         const type = aTypeInput.value;
         const isPublished = aPublishedInput.checked;
 
@@ -368,12 +371,12 @@ async function initAdmin() {
         try {
             if (id) {
                 // Update existing
-                const { error } = await updateAnnouncement(id, title, content, type, isPublished);
+                const { error } = await updateAnnouncement(id, title, content, type, isPublished, titleEn, contentEn);
                 if (error) throw new Error(error.message || JSON.stringify(error));
                 alert('업데이트 성공');
             } else {
                 // Create new
-                const { error } = await insertAnnouncement(title, content, type, isPublished);
+                const { error } = await insertAnnouncement(title, content, type, isPublished, titleEn, contentEn);
                 if (error) throw new Error(error.message || JSON.stringify(error));
                 alert('등록 성공');
             }
@@ -383,6 +386,49 @@ async function initAdmin() {
             alert('저장 실패: ' + err.message);
         } finally {
             saveAnnouncementBtn.disabled = false;
+        }
+    });
+
+    // AI Translation Button Event
+    aiTranslateBtn?.addEventListener('click', async () => {
+        const titleKo = aTitleInput.value.trim();
+        const contentKo = aContentInput.value.trim();
+
+        if (!titleKo && !contentKo) {
+            return alert('번역할 내용을 먼저 입력해주세요.');
+        }
+
+        aiTranslateBtn.disabled = true;
+        const originalText = aiTranslateBtn.innerText;
+        aiTranslateBtn.innerText = '⌛ 번역 중...';
+
+        try {
+            // Translate Title
+            if (titleKo) {
+                const resTitle = await fetch('/api/admin/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: titleKo })
+                });
+                const dataTitle = await resTitle.json();
+                if (dataTitle.success) aTitleEnInput.value = dataTitle.translatedText;
+            }
+
+            // Translate Content
+            if (contentKo) {
+                const resContent = await fetch('/api/admin/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: contentKo })
+                });
+                const dataContent = await resContent.json();
+                if (dataContent.success) aContentEnInput.value = dataContent.translatedText;
+            }
+        } catch (err) {
+            alert('번역 중 오류가 발생했습니다: ' + err.message);
+        } finally {
+            aiTranslateBtn.disabled = false;
+            aiTranslateBtn.innerText = originalText;
         }
     });
 
