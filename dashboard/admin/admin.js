@@ -54,6 +54,7 @@ async function initAdmin() {
             if (tabId === 'announcements') loadAnnouncements();
             if (tabId === 'sourcing') loadSourcingRequests();
             if (tabId === 'steadysellers') loadSteadySellers();
+            if (tabId === 'support') loadSupportInquiries();
         });
     });
 
@@ -789,6 +790,225 @@ async function initAdmin() {
             alert('저장 실패: ' + err.message);
         } finally {
             saveSsBtn.disabled = false;
+        }
+    });
+
+    // ─── 7. Customer Support Logic ─────────────────
+    const viewInquiriesBtn = document.getElementById('viewInquiriesBtn');
+    const viewFaqsBtn = document.getElementById('viewFaqsBtn');
+    const inquiriesContainer = document.getElementById('inquiriesContainer');
+    const faqsContainer = document.getElementById('faqsContainer');
+
+    viewInquiriesBtn?.addEventListener('click', () => {
+        inquiriesContainer.style.display = 'block';
+        faqsContainer.style.display = 'none';
+        viewInquiriesBtn.style.background = 'var(--admin-primary)';
+        viewFaqsBtn.style.background = '#6c757d';
+        loadSupportInquiries();
+    });
+
+    viewFaqsBtn?.addEventListener('click', () => {
+        inquiriesContainer.style.display = 'none';
+        faqsContainer.style.display = 'block';
+        viewInquiriesBtn.style.background = '#6c757d';
+        viewFaqsBtn.style.background = 'var(--admin-primary)';
+        loadAdminFaqs();
+    });
+
+    const supportInquiriesBody = document.getElementById('supportInquiriesBody');
+    async function loadSupportInquiries() {
+        if (!supportInquiriesBody) return;
+        supportInquiriesBody.innerHTML = '<tr><td colspan="6" style="padding: 20px; text-align: center; color: #888;">데이터를 불러오는 중...</td></tr>';
+        try {
+            const { fetchAllInquiries } = await import('../supabase.js');
+            const { data } = await fetchAllInquiries();
+            if (!data || data.length === 0) {
+                supportInquiriesBody.innerHTML = '<tr><td colspan="6" style="padding: 20px; text-align: center; color: #888;">접수된 문의가 없습니다.</td></tr>';
+                return;
+            }
+            window.__supportInquiries = data;
+            supportInquiriesBody.innerHTML = data.map(inq => {
+                const date = new Date(inq.created_at).toLocaleString();
+                let statusColor = '#e2e3e5'; let statusTxt = '#383d41'; let statusLabel = inq.status;
+                if (inq.status === 'pending') { statusColor = '#fff3cd'; statusTxt = '#856404'; statusLabel = '답변대기'; }
+                else if (inq.status === 'answered') { statusColor = '#d4edda'; statusTxt = '#155724'; statusLabel = '답변완료'; }
+                else if (inq.status === 'closed') { statusColor = '#d1ecf1'; statusTxt = '#0c5460'; statusLabel = '종료됨'; }
+
+                return `
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 12px; font-weight: 600;">${inq.type === 'inquiry' ? '문의' : '건의'}</td>
+                    <td style="padding: 12px;">
+                        <span style="background:${statusColor}; color:${statusTxt}; padding:4px 8px; border-radius:12px; font-size:11px; font-weight:600;">${statusLabel}</span>
+                    </td>
+                    <td style="padding: 12px;">
+                        <div style="font-weight: 600; font-size: 13px;">${inq.title}</div>
+                        <div style="font-size: 11px; color: #888; margin-top: 4px; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${inq.message}</div>
+                    </td>
+                    <td style="padding: 12px; font-size: 12px;">${inq.user_email}</td>
+                    <td style="padding: 12px; font-size: 12px; color: #666;">${date}</td>
+                    <td style="padding: 12px;">
+                        <button onclick="window.adminActions.replyInquiry('${inq.id}')" style="background: #e7f5ff; border: 1px solid #a5d8ff; color: #1971c2; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">답변/관리</button>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        } catch (err) {
+            supportInquiriesBody.innerHTML = `<tr><td colspan="6" style="padding: 20px; text-align: center; color: #dc3545;">에러: ${err.message}</td></tr>`;
+        }
+    }
+
+    const faqListAdmin = document.getElementById('faqListAdmin');
+    async function loadAdminFaqs() {
+        if (!faqListAdmin) return;
+        faqListAdmin.innerHTML = '<div style="padding: 20px; text-align: center; color: #888;">데이터를 불러오는 중...</div>';
+        try {
+            const { fetchAllFaqs } = await import('../supabase.js');
+            const { data } = await fetchAllFaqs();
+            if (!data || data.length === 0) {
+                faqListAdmin.innerHTML = '<div style="padding: 20px; text-align: center; color: #888;">등록된 FAQ가 없습니다.</div>';
+                return;
+            }
+            window.__adminFaqs = data;
+            faqListAdmin.innerHTML = data.map(faq => `
+                <div style="padding: 15px; border: 1px solid #eee; border-radius: 8px; background: white; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600; font-size: 14px; margin-bottom: 5px;">[순위: ${faq.sort_order}] ${faq.question_ko}</div>
+                        <div style="font-size: 12px; color: #666;">상태: ${faq.is_published ? '<span style="color:#28a745;">공개됨</span>' : '<span style="color:#999;">비공개</span>'}</div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="window.adminActions.editFaq('${faq.id}')" style="background: #e7f5ff; border: 1px solid #a5d8ff; color: #1971c2; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">수정</button>
+                        <button onclick="window.adminActions.deleteFaq('${faq.id}')" style="background: #fff5f5; border: 1px solid #ffc9c9; color: #fa5252; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">삭제</button>
+                    </div>
+                </div>
+            `).join('');
+        } catch (err) {
+            faqListAdmin.innerHTML = `<div style="padding: 20px; text-align: center; color: #dc3545;">에러: ${err.message}</div>`;
+        }
+    }
+
+    // Modal Definitions
+    const inquiryReplyModal = document.getElementById('inquiryReplyModal');
+    const inquiryReplyId = document.getElementById('inquiryReplyId');
+    const inquiryReplyTitle = document.getElementById('inquiryReplyTitle');
+    const inquiryReplyMessage = document.getElementById('inquiryReplyMessage');
+    const inquiryReplyText = document.getElementById('inquiryReplyText');
+    const inquiryReplyStatus = document.getElementById('inquiryReplyStatus');
+    const saveInquiryReplyBtn = document.getElementById('saveInquiryReplyBtn');
+
+    window.adminActions.replyInquiry = (id) => {
+        const inq = window.__supportInquiries?.find(x => x.id === id);
+        if (!inq) return;
+        inquiryReplyId.value = inq.id;
+        inquiryReplyTitle.innerText = `[${inq.type === 'inquiry' ? '문의' : '건의'}] ${inq.title}`;
+        inquiryReplyMessage.innerText = inq.message;
+        inquiryReplyText.value = inq.admin_reply || '';
+        inquiryReplyStatus.value = inq.status;
+        inquiryReplyModal.style.display = 'flex';
+    };
+
+    document.getElementById('closeInquiryReplyBtn')?.addEventListener('click', () => {
+        inquiryReplyModal.style.display = 'none';
+    });
+
+    saveInquiryReplyBtn?.addEventListener('click', async () => {
+        const id = inquiryReplyId.value;
+        const text = inquiryReplyText.value.trim();
+        const status = inquiryReplyStatus.value;
+
+        saveInquiryReplyBtn.disabled = true;
+        saveInquiryReplyBtn.innerText = '저장 중...';
+        try {
+            const { updateInquiryReply } = await import('../supabase.js');
+            const { error } = await updateInquiryReply(id, text, status);
+            if (error) throw new Error(error.message);
+            alert('답변이 저장되었습니다.');
+            inquiryReplyModal.style.display = 'none';
+            loadSupportInquiries();
+        } catch (err) {
+            alert('저장 실패: ' + err.message);
+        } finally {
+            saveInquiryReplyBtn.disabled = false;
+            saveInquiryReplyBtn.innerText = '답변 등록';
+        }
+    });
+
+    const faqEditModal = document.getElementById('faqEditModal');
+    const faqEditId = document.getElementById('faqEditId');
+    const faqQKo = document.getElementById('faqQKo');
+    const faqAKo = document.getElementById('faqAKo');
+    const faqQEn = document.getElementById('faqQEn');
+    const faqAEn = document.getElementById('faqAEn');
+    const faqSort = document.getElementById('faqSort');
+    const faqPublished = document.getElementById('faqPublished');
+    const saveFaqBtn = document.getElementById('saveFaqBtn');
+    const faqModalTitle = document.getElementById('faqModalTitle');
+
+    document.getElementById('addFaqBtn')?.addEventListener('click', () => {
+        faqModalTitle.innerText = '새 FAQ 추가';
+        faqEditId.value = '';
+        faqQKo.value = ''; faqAKo.value = '';
+        faqQEn.value = ''; faqAEn.value = '';
+        faqSort.value = '0'; faqPublished.checked = true;
+        faqEditModal.style.display = 'flex';
+    });
+
+    window.adminActions.editFaq = (id) => {
+        const faq = window.__adminFaqs?.find(x => x.id === id);
+        if (!faq) return;
+        faqModalTitle.innerText = 'FAQ 수정';
+        faqEditId.value = faq.id;
+        faqQKo.value = faq.question_ko; faqAKo.value = faq.answer_ko;
+        faqQEn.value = faq.question_en || ''; faqAEn.value = faq.answer_en || '';
+        faqSort.value = faq.sort_order; faqPublished.checked = faq.is_published;
+        faqEditModal.style.display = 'flex';
+    };
+
+    window.adminActions.deleteFaq = async (id) => {
+        if (!confirm('정말로 이 FAQ를 삭제하시겠습니까?')) return;
+        try {
+            const { manageFaq } = await import('../supabase.js');
+            const { error } = await manageFaq('DELETE', { id });
+            if (error) throw new Error(error.message);
+            alert('삭제되었습니다.');
+            loadAdminFaqs();
+        } catch (err) {
+            alert('삭제 실패: ' + err.message);
+        }
+    };
+
+    document.getElementById('closeFaqEditBtn')?.addEventListener('click', () => {
+        faqEditModal.style.display = 'none';
+    });
+
+    saveFaqBtn?.addEventListener('click', async () => {
+        const id = faqEditId.value;
+        const payload = {
+            question_ko: faqQKo.value.trim(),
+            answer_ko: faqAKo.value.trim(),
+            question_en: faqQEn.value.trim(),
+            answer_en: faqAEn.value.trim(),
+            sort_order: parseInt(faqSort.value) || 0,
+            is_published: faqPublished.checked
+        };
+        if (!payload.question_ko || !payload.answer_ko) return alert('한글 질문과 답변은 필수입니다.');
+
+        if (id) payload.id = id;
+
+        saveFaqBtn.disabled = true;
+        saveFaqBtn.innerText = '저장 중...';
+        try {
+            const { manageFaq } = await import('../supabase.js');
+            const action = id ? 'PATCH' : 'POST';
+            const { error } = await manageFaq(action, payload);
+            if (error) throw new Error(error.message);
+            alert('저장되었습니다.');
+            faqEditModal.style.display = 'none';
+            loadAdminFaqs();
+        } catch (err) {
+            alert('저장 실패: ' + err.message);
+        } finally {
+            saveFaqBtn.disabled = false;
+            saveFaqBtn.innerText = '저장하기';
         }
     });
 

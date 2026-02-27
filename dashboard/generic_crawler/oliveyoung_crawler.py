@@ -13,6 +13,7 @@ import random
 from datetime import datetime
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright
+from translate_helper import get_english_brand
 
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"))
 
@@ -77,12 +78,17 @@ def save_product_and_rank(item, rank, category_code):
         review_count = item.get('review_count', 0)
         review_rating = item.get('review_rating', 0.0)
 
+        # Translate brand
+        brand_en = get_english_brand(brand) if brand else ""
+
         # Try with review data first
         product_record = {
             "product_id": str(product_id),
             "source": SOURCE,
             "name": name,
             "brand": brand,
+            "brand_ko": brand,
+            "brand_en": brand_en,
             "price": price,
             "image_url": image_url,
             "url": url,

@@ -6,7 +6,8 @@ import {
     fetchRankedProducts,
     fetchProducts,
     fetchProductCount,
-    fetchCategories
+    fetchCategories,
+    fetchTrending
 } from '../supabase.js';
 
 export const MusinsaBridge = {
@@ -15,8 +16,7 @@ export const MusinsaBridge = {
     tabs: [
         { id: 'all', icon: '📋', label: 'tabs.musinsa_ranking' },
         { id: 'trending', icon: '🔥', label: 'tabs.trending' },
-        { id: 'wishlist', icon: '❤️', label: 'tabs.favorites' },
-        { id: 'logs', icon: '📋', label: 'tabs.crawl_logs' }
+        { id: 'wishlist', icon: '❤️', label: 'tabs.favorites' }
     ],
 
     async getKPIs(currentPlatform) {
@@ -24,7 +24,6 @@ export const MusinsaBridge = {
 
         return [
             { id: 'total', icon: '📦', value: total || '0', label: 'kpi.total_musinsa', format: true },
-            { id: 'styles', icon: '🎨', value: 'New', label: 'kpi.style_trends' },
             { id: 'brands', icon: '🔖', value: '800+', label: 'kpi.musinsa_brands' }
         ];
     },
@@ -60,6 +59,8 @@ export const MusinsaBridge = {
                     platform: 'musinsa',
                     gender: state.genderFilter
                 });
+            case 'trending':
+                return await fetchTrending(100, state.currentPlatform);
             default:
                 return { data: [], count: 0 };
         }

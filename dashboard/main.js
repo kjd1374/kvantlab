@@ -30,7 +30,10 @@ import {
   getProfile,
   getDailyViewCount,
   incrementDetailViewCount,
-  fetchProductHistory
+  fetchProductHistory,
+  fetchFaqs,
+  fetchUserInquiries,
+  submitInquiry
 } from './supabase.js?v=3';
 import { setupAuthUI } from './src/auth.js?v=11';
 import { i18n } from './src/i18n.js?v=6';
@@ -133,6 +136,10 @@ async function init() {
     ]);
     initNotificationSystem();
     // loadCategories sets active category and triggers loadTab
+
+    // Initialize Support View empty state
+    window.toggleSupportView = toggleSupportView;
+    window.submitSupportInquiry = submitSupportInquiry;
   } catch (err) {
     console.error('Critical Init Error:', err);
     alert('초기화 중 오류가 발생했습니다: ' + err.message);
@@ -672,6 +679,7 @@ async function loadKTrendView(tabId) {
 
     if (i18n.currentLang !== 'ko') {
       translateProductNames(data, i18n.currentLang);
+      translateBrands(data);
     }
   } catch (err) {
     console.error('K-Trend fetch error:', err);
@@ -878,24 +886,82 @@ async function loadWishlist() {
   }
 
   try {
-    const { data } = await fetchSavedProducts();
-    const products = data?.map(item => ({
-      ...item.products_master,
-      is_saved: true
-    })) || [];
+    // --- Deal Expiration Logic ---
+    // Check Current KST Time for Deleting Expired Deals
+    const nowKst = new Date();
+    // UTC to KST by adding 9 hours
+    const kstOffset = 9 * 60;
+    const kstTime = new Date(nowKst.getTime() + (nowKst.getTimezoneOffset() + kstOffset) * 60000);
+    const kstHour = kstTime.getHours();
 
-    if (products.length === 0) {
+    const { fetchDailySpecials, toggleWishlistStatus } = await import('./supabase.js');
+    // Fetch today's deals to see if any wishlist item is actually an expired deal
+    const dealsRes = await fetchDailySpecials('oliveyoung');
+    const todayDeals = dealsRes.data || [];
+    const todayDealIds = new Set(todayDeals.map(d => d.product_id));
+    const dealDateStr = dealsRes.date || '';
+
+    // Determine if today's deal is expired (Past 9 PM KST)
+    // For safety, let's assume if it's past 9 PM, the deals for `dealDateStr` are expired.
+    // Ideally we check if kstHour >= 21 and the deal's date is today's date in KST.
+    const isDealExpired = kstHour >= 21;
+
+    let expiredCount = 0;
+    const activeProducts = [];
+
+    for (const p of products) {
+      // If the item is in today's deals and it has expired
+      if (p.platform === 'oliveyoung' && todayDealIds.has(p.product_id) && isDealExpired) {
+        // Auto-remove from wishlist
+        try {
+          await toggleWishlistStatus(p.product_id, false);
+          expiredCount++;
+        } catch (e) { console.error("Failed to auto-remove expired deal:", e); }
+      } else {
+        activeProducts.push(p);
+      }
+    }
+
+    if (expiredCount > 0) {
+      alert(`올리브영 오늘의 특가 시간이 종료되어 ${expiredCount}개의 상품이 관심 상품에서 자동 삭제되었습니다.`);
+    }
+
+    if (activeProducts.length === 0) {
       grid.innerHTML = emptyState(window.t('sections.fav_empty'), window.t('sections.fav_empty_desc'));
+      const quoteItemCount = document.getElementById('quoteItemCount');
+      if (quoteItemCount) quoteItemCount.innerText = '0';
       return;
     }
 
-    // `isWishlistTab`을 true로 전달
-    grid.innerHTML = products.map(p => renderProductCard(p, 'normal', false, true)).join('');
+    // 그룹화: 플랫폼별로 분리
+    const grouped = activeProducts.reduce((acc, p) => {
+      const platform = p.platform || '기타';
+      if (!acc[platform]) acc[platform] = [];
+      acc[platform].push(p);
+      return acc;
+    }, {});
+
+    grid.innerHTML = Object.entries(grouped).map(([platform, items]) => {
+      const isEn = window.i18n && window.i18n.currentLang === 'en';
+      const pName = platform.charAt(0).toUpperCase() + platform.slice(1);
+      return `
+        <div class="wishlist-platform-group" style="margin-bottom: 24px;">
+          <h3 style="font-size: 16px; margin-bottom: 12px; color: var(--text); display: flex; align-items: center; gap: 8px;">
+            <span style="display:inline-block; width:4px; height:16px; background:var(--accent-blue); border-radius:2px;"></span>
+            ${pName} 
+            <span style="font-size: 12px; color: var(--text-muted); font-weight: 400;">(${items.length})</span>
+          </h3>
+          <div class="product-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+            ${items.map(p => renderProductCard(p, 'normal', false, true)).join('')}
+          </div>
+        </div>
+      `;
+    }).join('');
 
     if (actionBar) {
       actionBar.style.display = 'block';
       const quoteItemCount = document.getElementById('quoteItemCount');
-      if (quoteItemCount) quoteItemCount.innerText = products.length;
+      if (quoteItemCount) quoteItemCount.innerText = activeProducts.length;
     }
   } catch (e) {
     grid.innerHTML = `<div class="error-state">관심 상품을 불러오는데 실패했습니다: ${e.message}</div>`;
@@ -975,7 +1041,11 @@ async function translateBrands(products) {
   const lang = i18n.currentLang;
   if (lang === 'ko') return;
 
-  const needsTr = products.filter(p => !p.brand_en && !localStorage.getItem(`br_en_${p.product_id || p.id}`));
+  const needsTr = products.filter(p => {
+    const pid = p.product_id || p.id;
+    return !p.brand_en && !localStorage.getItem(`br_en_${pid}`);
+  });
+
   if (needsTr.length === 0) return;
 
   const batchSize = 30;
@@ -995,12 +1065,17 @@ async function translateBrands(products) {
         if (enBrand) {
           const pid = p.product_id || p.id;
           localStorage.setItem(`br_en_${pid}`, enBrand);
-          // DOM 업데이트
+          // 메모리에 저장해 getLocalizedBrand 에서 즉시 접근 가능하게 함
+          p.brand_en = enBrand;
+          // DOM 업데이트 (상품 카드 및 리스트 테이블의 클래스명)
           document.querySelectorAll(`.product-brand[data-brand-pid="${pid}"]`).forEach(el => {
             el.textContent = enBrand;
           });
+          // 카드뷰의 브랜드 요소 (data 속성 없을 경우를 대비해 텍스트 기반으로 찾진 않고 그냥 캐싱에 의존)
+          // 하지만 카드는 새로 렌더링될 수도 있으므로 p 객체를 업데이트하는게 중요
         }
       });
+      // 카드가 이미 그려진 상태에서 p.brand_en이 업데이트 되었으므로 카드뷰도 리렌더링 트리거 고려 (여기선 생략)
     }
   }
 }
@@ -1041,27 +1116,33 @@ async function translateKeywords(items, targetLang, targetType = 'category') {
 
 function getLocalizedName(p) {
   const lang = i18n.currentLang;
+  // 한국어 설정이면 원본 제품명 그대로
+  if (lang === 'ko') return p.name_ko || p.name || '';
+
   // 1. DB에 해당 언어 번역 있으면 바로 사용
   const localized = p[`name_${lang}`] || p[`${lang}_name`];
   if (localized) return localized;
-  // 2. 한국어 설정이면 원본 그대로
-  if (lang === 'ko') return p.name_ko || p.name || '';
-  // 3. 메모리/로컬 캐시에 번역 있으면 사용
+
+  // 2. 메모리/로컬 캐시에 번역 있으면 사용
   const pid = p.product_id || p.id;
   const cacheKey = `tr_${lang}_${pid}`;
   const cached = _translationCache[cacheKey] || localStorage.getItem(cacheKey);
   if (cached) { _translationCache[cacheKey] = cached; return cached; }
-  // 4. 영어 번역 있으면 영어 (비동기 번역이 완료되기 전 fallback)
-  return p.name_en || p.name || '';
+
+  // 3. 영어가 있으면 영어 반환 (번역되는 동안 임시 표시)
+  if (p.name_en) return p.name_en;
+
+  // 4. 전부 없으면 한국어 원본 반환 (아직 번역 API가 안 끝났을 때 나오는 기본 텍스트)
+  return p.name_ko || p.name || '';
 }
 
 function getLocalizedBrand(p) {
   const lang = i18n.currentLang;
 
-  // 한국어면 고민 없이 한국어 반환
+  // 한국어면 한국어 원본 반환
   if (lang === 'ko') return p.brand_ko || p.brand || '';
 
-  // 영문/기타 언어: 영문 브랜드명 우선
+  // 영문/기타 언어: 무조건 영어 브랜드명 우선
   if (p.brand_en) return p.brand_en;
 
   // 영문 캐시 확인
@@ -1070,6 +1151,7 @@ function getLocalizedBrand(p) {
   const cached = localStorage.getItem(cacheKey);
   if (cached) return cached;
 
+  // 정 번역이 안됐을 때만 한국어 원본
   return p.brand_ko || p.brand || '';
 }
 
@@ -1132,9 +1214,9 @@ function renderProductCard(p, mode = 'normal', isGlobalTrend = false, isWishlist
         <span style="font-size:12px; color:var(--text-muted); font-weight:500;">📦 ${window.t('sourcing.qty_label')}</span>
       </label>
       <div style="display:flex; align-items:center; gap:8px;">
-        <button onclick="window.__updateSourcingQty(this, -10)" style="width:24px; height:24px; border-radius:4px; border:1px solid var(--border); background:var(--surface); cursor:pointer;">-</button>
-        <input type="number" class="sourcing-qty-input" data-product-id="${productId}" value="100" min="10" step="10" style="width:50px; text-align:center; border:1px solid var(--border); border-radius:4px; font-size:12px; padding:2px; background:var(--background); color:var(--text);" onclick="event.stopPropagation();">
-        <button onclick="window.__updateSourcingQty(this, 10)" style="width:24px; height:24px; border-radius:4px; border:1px solid var(--border); background:var(--surface); cursor:pointer;">+</button>
+        <button type="button" class="btn-qty" onclick="event.stopPropagation(); window.__updateSourcingQty(this, -5)">-</button>
+        <input type="number" class="sourcing-qty-input" data-product-id="${productId}" value="10" min="10" step="5" style="width:50px; text-align:center; border:1px solid var(--border); border-radius:4px; font-size:12px; padding:2px; background:var(--background); color:var(--text);" onclick="event.stopPropagation();">
+        <button type="button" class="btn-qty" onclick="event.stopPropagation(); window.__updateSourcingQty(this, 5)">+</button>
       </div>
     </div>
   ` : '';
@@ -1498,7 +1580,18 @@ window.__openProduct = async function (product) {
     const platformName = window.t('platforms.' + sourceKey) || sourceKey;
     const ctaText = isDeal ? window.t('modal.cta_check_price') : ('🔗 ' + window.t('modal.view_in').replace('{platform}', platformName));
 
-    if (isTrendItem) {
+    if (sourceKey === 'steady_sellers') {
+      // --- WIP STEADY SELLER LAYOUT ---
+      modalContent = `
+        <div style="padding: 60px 40px; text-align: center; border-radius: 12px;">
+          <h2 style="font-size: 24px; color: var(--text-main); margin-bottom: 16px;">상세 페이지 준비 중</h2>
+          <p style="color: var(--text-secondary); line-height: 1.6;">
+            선택하신 스테디 셀러 <strong>${escapeHtml(getLocalizedName(product))}</strong>의 상세 분석 페이지는 현재 개발 중입니다.<br>
+            조금만 기다려주시면 더 나은 서비스로 찾아뵙겠습니다.
+          </p>
+        </div>
+      `;
+    } else if (isTrendItem) {
       // --- TREND ITEM LAYOUT ---
       modalContent = `
         <div class="modal-upper">
@@ -2572,7 +2665,7 @@ async function fetchAndRenderNotifications() {
   if (!session) return;
 
   try {
-    const res = await fetch(`http://localhost:6002/api/notifications?user_id=${session.user.id}`);
+    const res = await fetch(`/api/notifications?user_id=${session.user.id}`);
     if (!res.ok) return;
     const data = await res.json();
     if (data.success && data.notifications) {
@@ -2585,10 +2678,10 @@ async function fetchAndRenderNotifications() {
         badge.innerText = data.notifications.length > 99 ? '99+' : data.notifications.length;
 
         listBody.innerHTML = data.notifications.map(n => `
-          <div class="noti-item" style="padding:12px; border-bottom:1px solid var(--border); cursor:pointer; background:var(--surface);" onclick="handleNotiClick('${n.id}', '${n.link}')">
-            <div style="font-weight:700; font-size:13px; color:var(--text); margin-bottom:4px;">${escapeHtml(n.title)}</div>
-            <div style="font-size:12px; color:var(--text-muted); line-height:1.4;">${escapeHtml(n.message)}</div>
-            <div style="font-size:10px; color:#aaa; margin-top:6px;">${new Date(n.created_at).toLocaleString('ko-KR')}</div>
+          <div class="notif-item" onclick="handleNotiClick('${n.id}', '${n.link}')">
+            <div class="notif-title">${escapeHtml(n.title)}</div>
+            <div class="notif-message">${escapeHtml(n.message)}</div>
+            <div class="notif-time">${new Date(n.created_at).toLocaleString('ko-KR')}</div>
           </div>
         `).join('');
       } else {
@@ -2604,7 +2697,7 @@ async function fetchAndRenderNotifications() {
 window.handleNotiClick = async function (id, link) {
   try {
     // Mark as read immediately
-    await fetch(`http://localhost:6002/api/notifications/${id}/read`, { method: 'PUT' });
+    await fetch(`/api/notifications/${id}/read`, { method: 'PUT' });
   } catch (e) { console.error(e); }
 
   // Refresh badge
@@ -2660,11 +2753,16 @@ window.openMyPageModal = async function () {
   // Fetch basic info
   const profile = await getProfile() || {};
 
-  // Fill Account Tab
+  // Account Info
   const emailInput = document.getElementById('myPageEmail');
   const roleInput = document.getElementById('myPageRole');
-  if (emailInput) emailInput.value = session.user.email || '';
-  if (roleInput) roleInput.value = profile.role === 'admin' ? 'Admin (최고 관리자)' : 'User (일반 사용자)';
+  const phoneInput = document.getElementById('myPagePhone');
+  const addressInput = document.getElementById('myPageAddress');
+
+  if (emailInput && session) emailInput.value = session.user.email || '';
+  if (roleInput) roleInput.value = profile?.role || 'user';
+  if (phoneInput) phoneInput.value = profile?.phone || '';
+  if (addressInput) addressInput.value = profile?.address || '';
 
   // Fill Billing Tab
   const planBadge = document.getElementById('myPagePlanBadge');
@@ -2721,10 +2819,63 @@ window.openMyPageModal = async function () {
   document.body.classList.add('one-page');
 };
 
+// ─── Account Management ──────────────────────
+document.getElementById('btnSaveProfile')?.addEventListener('click', async () => {
+  const session = getSession();
+  if (!session) return;
+  const phone = document.getElementById('myPagePhone')?.value || '';
+  const address = document.getElementById('myPageAddress')?.value || '';
+
+  const btn = document.getElementById('btnSaveProfile');
+  const origText = btn.innerText;
+  btn.innerText = '저장 중...';
+  btn.disabled = true;
+
+  try {
+    const { updateUserProfile } = await import('./supabase.js');
+    const { error } = await updateUserProfile(session.user.id, { phone, address });
+    if (error) throw new Error(error.message || '저장 실패');
+    alert('계정 정보가 성공적으로 저장되었습니다.');
+  } catch (e) {
+    alert('오류: ' + e.message);
+  } finally {
+    btn.innerText = origText;
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('btnDeleteAccount')?.addEventListener('click', async () => {
+  if (!confirm('정말 회원 탈퇴를 진행하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
+  const session = getSession();
+  if (!session) return;
+
+  const btn = document.getElementById('btnDeleteAccount');
+  const origText = btn.innerText;
+  btn.innerText = '처리 중...';
+  btn.disabled = true;
+
+  try {
+    const { updateUserProfile } = await import('./supabase.js');
+    // Soft delete: set deleted_at to current timestamp
+    const { error } = await updateUserProfile(session.user.id, { deleted_at: new Date().toISOString() });
+    if (error) throw new Error(error.message || '탈퇴 처리 실패');
+
+    alert('탈퇴 처리가 완료되었습니다. 이용해 주셔서 감사합니다.');
+    const { signOut } = await import('./supabase.js');
+    await signOut();
+    window.location.href = '/';
+  } catch (e) {
+    alert('오류: ' + e.message);
+    btn.innerText = origText;
+    btn.disabled = false;
+  }
+});
+
 function switchMyPageTab(tabName) {
   const accountTab = document.getElementById('myPageAccountTab');
   const billingTab = document.getElementById('myPageBillingTab');
   const sourcingTab = document.getElementById('myPageSourcingTab');
+  const supportTab = document.getElementById('myPageSupportTab');
   const tabBtns = document.querySelectorAll('#myPageModal .auth-tab');
 
   tabBtns.forEach(btn => {
@@ -2738,9 +2889,12 @@ function switchMyPageTab(tabName) {
   if (accountTab) accountTab.style.display = tabName === 'account' ? 'block' : 'none';
   if (billingTab) billingTab.style.display = tabName === 'billing' ? 'block' : 'none';
   if (sourcingTab) sourcingTab.style.display = tabName === 'sourcing' ? 'block' : 'none';
+  if (supportTab) supportTab.style.display = tabName === 'support' ? 'block' : 'none';
 
   if (tabName === 'sourcing') {
     window.loadSourcingHistory();
+  } else if (tabName === 'support') {
+    window.loadFaqs();
   }
 
   // Render PayPal button when billing tab is open
@@ -2997,7 +3151,14 @@ window.__updateSourcingQty = function (btn, delta) {
 window.submitQuoteRequest = async function () {
   const btn = document.getElementById('btnSubmitQuote');
   const msgInput = document.getElementById('quoteMessage');
-  const message = msgInput ? msgInput.value : '';
+  const snsInput = document.getElementById('quoteSnsLink');
+
+  let message = msgInput ? msgInput.value : '';
+  const snsLink = snsInput ? snsInput.value.trim() : '';
+
+  if (snsLink) {
+    message += `\n\n📌 상품/SNS 링크: ${snsLink}`;
+  }
 
   if (btn) {
     btn.disabled = true;
@@ -3037,7 +3198,7 @@ window.submitQuoteRequest = async function () {
       user_message: message
     };
 
-    const res = await fetch('http://localhost:6002/api/sourcing/request', {
+    const res = await fetch('/api/sourcing/request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -3049,6 +3210,7 @@ window.submitQuoteRequest = async function () {
     alert(window.t('sourcing.alert_success'));
     closeQuoteModal();
     if (msgInput) msgInput.value = '';
+    if (snsInput) snsInput.value = '';
   } catch (e) {
     console.error("Quote Submit Error:", e);
     alert("❌ Error: " + e.message);
@@ -3069,7 +3231,7 @@ window.loadSourcingHistory = async function () {
   if (!session) return;
 
   try {
-    const res = await fetch(`http://localhost:6002/api/sourcing/history/${session.user.id}`);
+    const res = await fetch(`/api/sourcing/history/${session.user.id}`);
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
 
@@ -3177,6 +3339,141 @@ window.__modalToggleWishlist = async function (btn, productId) {
     btn.innerHTML = window.t('modal.wishlist_saved');
   } else {
     btn.innerHTML = window.t('modal.wishlist_add');
+  }
+};
+window.toggleSupportView = function (viewName) {
+  const faqView = document.getElementById('supportFaqView');
+  const inquiryView = document.getElementById('supportInquiryView');
+  const btnFaq = document.getElementById('btnSupportFaq');
+  const btnInquiry = document.getElementById('btnSupportInquiry');
+
+  if (viewName === 'faq') {
+    faqView.style.display = 'block';
+    inquiryView.style.display = 'none';
+    btnFaq.classList.add('active');
+    btnInquiry.classList.remove('active');
+    window.loadFaqs();
+  } else if (viewName === 'inquiry') {
+    faqView.style.display = 'none';
+    inquiryView.style.display = 'block';
+    btnFaq.classList.remove('active');
+    btnInquiry.classList.add('active');
+    window.loadUserInquiries();
+  }
+};
+
+window.loadFaqs = async function () {
+  const list = document.getElementById('faqList');
+  if (!list) return;
+  list.innerHTML = '<div class="loading-skeleton"></div>';
+
+  try {
+    const { fetchFaqs } = await import('./supabase.js');
+    const { data } = await fetchFaqs();
+    if (!data || data.length === 0) {
+      list.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted);">등록된 FAQ가 없습니다.</div>`;
+      return;
+    }
+
+    // Check language
+    const lang = localStorage.getItem('app_lang') || 'ko';
+
+    list.innerHTML = data.map((faq, i) => {
+      const q = lang === 'ko' ? faq.question_ko : (faq.question_en || faq.question_ko);
+      const a = lang === 'ko' ? faq.answer_ko : (faq.answer_en || faq.answer_ko);
+      return `
+        <div style="border:1px solid #eee; border-radius:8px; overflow:hidden; background:white;">
+          <button onclick="const a = document.getElementById('faq-ans-${i}'); a.style.display = a.style.display==='none' ? 'block' : 'none';"
+                  style="width:100%; text-align:left; padding:15px; background:#f9f9fb; border:none; font-weight:600; font-size:14px; cursor:pointer; display:flex; justify-content:space-between;">
+            <span>Q. ${escapeHtml(q)}</span>
+            <span style="color:#aaa;">+</span>
+          </button>
+          <div id="faq-ans-${i}" style="display:none; padding:15px; border-top:1px solid #efefef; font-size:13px; color:#444; line-height:1.6; background:white;">
+            A. ${escapeHtml(a).replace(/\\n/g, '<br>')}
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    list.innerHTML = `<div style="text-align:center; padding:15px; color:#e03131;">불러오기 실패: ${e.message}</div>`;
+  }
+};
+
+window.loadUserInquiries = async function () {
+  const list = document.getElementById('inquiryList');
+  if (!list) return;
+  list.innerHTML = '<div class="loading-skeleton"></div>';
+
+  try {
+    const { fetchUserInquiries } = await import('./supabase.js');
+    const { data } = await fetchUserInquiries();
+    if (!data || data.length === 0) {
+      list.innerHTML = `<div style="text-align:center; padding:20px; font-size:13px; color:#888;">작성하신 문의 내역이 없습니다.</div>`;
+      return;
+    }
+
+    list.innerHTML = data.map(inq => {
+      const date = new Date(inq.created_at).toLocaleDateString();
+      let statusColor = '#e2e3e5'; let statusTxt = '#383d41'; let statusLabel = inq.status;
+      if (inq.status === 'pending') { statusColor = '#fff3cd'; statusTxt = '#856404'; statusLabel = '답변대기'; }
+      else if (inq.status === 'answered') { statusColor = '#d4edda'; statusTxt = '#155724'; statusLabel = '답변완료'; }
+      else if (inq.status === 'closed') { statusColor = '#d1ecf1'; statusTxt = '#0c5460'; statusLabel = '종료됨'; }
+
+      let html = `
+        <div style="border:1px solid #e8e8ed; border-radius:8px; padding:15px; background:white; margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-size:12px; color:#aaa;">[${inq.type === 'inquiry' ? '문의' : '건의'}] ${date}</div>
+            <span style="background:${statusColor}; color:${statusTxt}; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600;">${statusLabel}</span>
+          </div>
+          <div style="font-weight:600; font-size:14px; margin-bottom:5px;">${escapeHtml(inq.title)}</div>
+          <div style="font-size:12px; color:#666; margin-bottom:10px; line-height:1.5;">${escapeHtml(inq.message).replace(/\\n/g, '<br>')}</div>
+      `;
+
+      if (inq.admin_reply) {
+        html += `
+          <div style="margin-top:10px; padding:10px; background:#f0f7ff; border-radius:6px; border-left:3px solid var(--accent-blue); font-size:12px; color:#333;">
+            <div style="font-weight:700; color:var(--accent-blue); margin-bottom:4px; font-size:11px;">관리자 답변</div>
+            ${escapeHtml(inq.admin_reply).replace(/\\n/g, '<br>')}
+          </div>
+         `;
+      }
+      html += `</div>`;
+      return html;
+    }).join('');
+  } catch (e) {
+    list.innerHTML = `<div style="text-align:center; padding:15px; color:#e03131;">불러오기 실패: ${e.message}</div>`;
+  }
+};
+
+window.submitSupportInquiry = async function () {
+  const type = document.getElementById('inquiryType').value;
+  const title = document.getElementById('inquiryTitle').value.trim();
+  const message = document.getElementById('inquiryMessage').value.trim();
+
+  if (!title || !message) {
+    alert('제목과 내용을 모두 입력해주세요.');
+    return;
+  }
+
+  const btn = event.target;
+  const originalText = btn.innerText;
+  btn.innerText = '등록 중...';
+  btn.disabled = true;
+
+  try {
+    const { submitInquiry } = await import('./supabase.js');
+    const { error } = await submitInquiry(type, title, message);
+    if (error) throw new Error(error.message);
+
+    alert('성공적으로 등록되었습니다.');
+    document.getElementById('inquiryTitle').value = '';
+    document.getElementById('inquiryMessage').value = '';
+    window.loadUserInquiries();
+  } catch (err) {
+    alert('등록 실패: ' + err.message);
+  } finally {
+    btn.innerText = originalText;
+    btn.disabled = false;
   }
 };
 

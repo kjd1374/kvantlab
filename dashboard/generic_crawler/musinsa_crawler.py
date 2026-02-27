@@ -4,6 +4,8 @@ import json
 import requests
 from datetime import datetime
 from dotenv import load_dotenv
+import urllib.parse
+from translate_helper import get_english_brand
 
 # ENV Setup
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"))
@@ -101,11 +103,14 @@ def musinsa_crawl():
                         rank = idx + 1
                         
                         if title and product_id:
+                            brand_en = get_english_brand(brand) if brand else ""
                             product_record = {
                                 "product_id": product_id,
                                 "source": "musinsa",
                                 "name": title,
                                 "brand": brand,
+                                "brand_ko": brand,
+                                "brand_en": brand_en,
                                 "price": price,
                                 "image_url": image_url,
                                 "url": link_url,

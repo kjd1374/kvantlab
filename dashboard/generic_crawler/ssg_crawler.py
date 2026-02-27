@@ -8,6 +8,7 @@ import time
 import asyncio
 import requests
 from datetime import datetime
+from translate_helper import get_english_brand
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright
 
@@ -53,11 +54,15 @@ def log_crawl(status, metadata=None):
 
 def save_product_and_rank(product_id, name, brand, price, image_url, url, rank, category_code, category_name):
     """products_master에 upsert 후, daily_rankings_v2에 랭킹 저장"""
+    brand_en = get_english_brand(brand) if brand else ""
+
     product_record = {
         "product_id": str(product_id),
         "source": SOURCE,
         "name": name,
         "brand": brand or "",
+        "brand_ko": brand or "",
+        "brand_en": brand_en,
         "price": int(price) if price else None,
         "image_url": image_url,
         "url": url,

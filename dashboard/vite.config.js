@@ -24,6 +24,10 @@ export default defineConfig({
             '/api/admin': {
                 target: 'http://127.0.0.1:6002',
                 changeOrigin: true
+            },
+            '/api/sourcing': {
+                target: 'http://127.0.0.1:6002',
+                changeOrigin: true
             }
         }
     },

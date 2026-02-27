@@ -66,7 +66,23 @@ export const OliveYoungBridge = {
     },
 
     renderCustomHeader(state) {
-        // Olive Young specific header adjustments if any
+        if (state.currentTab === 'deals') {
+            return `
+            <div style="background: linear-gradient(135deg, #111111, #333333); color: white; padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                <div>
+                    <h3 style="margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                        🔥 ${window.t('deals.today_title') || '오늘의 특가 주문 마감까지'}
+                    </h3>
+                    <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.8;">
+                        ${window.t('deals.today_desc') || 'KST(한국시간) 매일 저녁 9시에 주문이 마감됩니다.'}
+                    </p>
+                </div>
+                <div id="oyDealTimer" style="font-size: 24px; font-weight: 800; font-family: monospace; background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 8px; letter-spacing: 2px;">
+                    --:--:--
+                </div>
+            </div>
+            `;
+        }
         return '';
     }
 };

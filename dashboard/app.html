@@ -62,34 +62,6 @@
           </div>
         </div>
 
-        <!-- Notification Bell -->
-        <div class="noti-selector" style="position:relative; margin-left: 10px;">
-          <button class="header-icon-btn" id="notiBtn" title="Notifications" style="position: relative;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              style="color:var(--text);">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-            </svg>
-            <span id="notiBadge"
-              style="display:none; position:absolute; top:-2px; right:-2px; background:var(--error); color:white; font-size:10px; font-weight:700; border-radius:10px; padding:2px 5px;">0</span>
-          </button>
-          <div class="noti-dropdown" id="notiDropdown"
-            style="display:none; position:absolute; top:40px; right:0; width:300px; background:var(--surface); border:1px solid var(--border); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.1); z-index:100; max-height:400px; overflow-y:auto; padding:10px;">
-            <div
-              style="font-weight:700; font-size:14px; padding-bottom:10px; border-bottom:1px solid var(--border); margin-bottom:10px;">
-              알림 (Notifications)</div>
-            <div id="notiListBody">
-              <div style="color:var(--text-muted); font-size:12px; text-align:center; padding:20px 0;">로그인 후 확인 가능합니다.
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="header-stats" id="headerStats">
-          <span class="stat-chip"><span class="stat-dot green"></span><span id="totalProducts">-</span> <span
-              data-i18n="common.stat_products">상품</span></span>
-          <span class="stat-chip"><span class="stat-dot blue"></span><span id="totalCategories">-</span> <span
-              data-i18n="common.stat_categories">카테고리</span></span>
-        </div>
         <div class="notification-wrapper">
           <button class="header-icon-btn" id="notifBell" data-i18n-title="notifications.title">
             <span class="bell-icon">🔔</span>
@@ -349,7 +321,11 @@
 
         <textarea id="quoteMessage" class="form-input" rows="4" data-i18n="sourcing.modal_placeholder"
           placeholder="추가 요구사항을 남겨주세요 (예: 베트남 호치민으로 이달 말까지 배송 원합니다.)"
-          style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; resize: vertical;"></textarea>
+          style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; resize: vertical; margin-bottom: 10px;"></textarea>
+
+        <input type="url" id="quoteSnsLink" class="form-input" data-i18n="sourcing.modal_sns_placeholder"
+          placeholder="📌 원하시는 상품 이미지 URL 또는 SNS 링크 (선택)"
+          style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: #fafafa;">
         <div
           style="margin-top: 15px; margin-bottom: 20px; padding: 12px; border-radius: 8px; background: rgba(255, 77, 79, 0.05); border: 1px solid rgba(255, 77, 79, 0.2);">
           <p style="color: #ff4d4f; font-size: 13px; font-weight: 500; line-height: 1.5; margin: 0; display: flex; gap: 8px;"
@@ -373,6 +349,7 @@
         <button class="auth-tab active" data-mypage-tab="account" data-i18n="mypage.account">계정 관리</button>
         <button class="auth-tab" data-mypage-tab="billing" data-i18n="mypage.billing">결제 관리</button>
         <button class="auth-tab" data-mypage-tab="sourcing" data-i18n="sourcing.mypage_tab">견적/소싱 내역</button>
+        <button class="auth-tab" data-mypage-tab="support" data-i18n="support.title">고객센터</button>
       </div>
 
       <div class="my-page-content" id="myPageAccountTab">
@@ -381,11 +358,25 @@
           <input type="text" id="myPageEmail" disabled class="form-input disabled-input">
         </div>
         <div class="form-group">
+          <label>연락처 (Phone)</label>
+          <input type="text" id="myPagePhone" class="form-input" placeholder="연락처를 입력하세요">
+        </div>
+        <div class="form-group">
+          <label>배송지 주소 (Address)</label>
+          <input type="text" id="myPageAddress" class="form-input" placeholder="배송지 주소를 입력하세요">
+        </div>
+        <div class="form-group">
           <label data-i18n="mypage.role">권한 (Role)</label>
           <input type="text" id="myPageRole" disabled class="form-input disabled-input">
         </div>
-        <div class="info-notice">
-          <span style="font-size:16px;">💡</span> 계정 정보 수정은 관리자에게 문의해주세요.
+        <div style="margin-top: 20px; text-align: right;">
+          <button id="btnSaveProfile" class="btn-primary"
+            style="padding: 10px 20px; border-radius: 8px; border: none; background: var(--accent-blue); color: white; font-weight: 600; cursor: pointer;">저장하기</button>
+        </div>
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); text-align: right;">
+          <button id="btnDeleteAccount" class="btn-secondary"
+            style="padding: 8px 16px; border-radius: 8px; border: 1px solid #ffc9c9; background: #fff5f5; color: #e03131; font-weight: 600; cursor: pointer;">회원
+            탈퇴</button>
         </div>
       </div>
 
@@ -417,6 +408,49 @@
         <div id="sourcingHistoryList"
           style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;">
           <div class="loading-skeleton"></div>
+        </div>
+      </div>
+
+      <!-- Customer Center Tab -->
+      <div class="my-page-content" id="myPageSupportTab" style="display: none;">
+        <div class="support-header" style="display: flex; gap: 10px; margin-bottom: 20px;">
+          <button class="chip active" onclick="window.toggleSupportView('faq')" data-i18n="support.faq"
+            id="btnSupportFaq">FAQ (자주 묻는 질문)</button>
+          <button class="chip" onclick="window.toggleSupportView('inquiry')" data-i18n="support.inquiry"
+            id="btnSupportInquiry">1:1 문의 & 건의사항</button>
+        </div>
+
+        <!-- FAQ View -->
+        <div id="supportFaqView">
+          <div id="faqList"
+            style="display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto;">
+            <div class="loading-skeleton"></div>
+          </div>
+        </div>
+
+        <!-- Inquiry View -->
+        <div id="supportInquiryView" style="display: none;">
+          <div
+            style="margin-bottom: 20px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+            <h4 style="margin-bottom: 10px; font-size: 14px;">새 문의 작성</h4>
+            <select id="inquiryType" class="form-input"
+              style="margin-bottom: 10px; width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
+              <option value="inquiry">1:1 문의사항</option>
+              <option value="feedback">서비스 건의/요청</option>
+            </select>
+            <input type="text" id="inquiryTitle" class="form-input" placeholder="제목을 입력해주세요"
+              style="margin-bottom: 10px; width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
+            <textarea id="inquiryMessage" class="form-input" rows="4" placeholder="문의 내용이나 건의사항을 상세히 작성해주세요."
+              style="margin-bottom: 10px; width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ddd; resize: vertical;"></textarea>
+            <button onclick="window.submitSupportInquiry()" class="btn-primary"
+              style="width: 100%; padding: 10px; border-radius: 6px; border: none; background: var(--accent-blue); color: white; cursor: pointer; font-weight: 600;">등록하기</button>
+          </div>
+
+          <h4 style="margin-bottom: 10px; font-size: 14px; border-top: 1px solid #eee; padding-top: 20px;">나의 문의 내역</h4>
+          <div id="inquiryList"
+            style="display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto;">
+            <div class="loading-skeleton"></div>
+          </div>
         </div>
       </div>
 

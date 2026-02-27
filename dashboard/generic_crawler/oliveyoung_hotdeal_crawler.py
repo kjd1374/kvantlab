@@ -12,6 +12,7 @@ from datetime import datetime
 import sys
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright
+from translate_helper import get_english_brand
 
 # Add parent directory to path to import notifier
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -60,12 +61,17 @@ def save_hotdeal(item):
         image_url = item['image']
         url = item['url']
 
+        # Translate brand
+        brand_en = get_english_brand(brand) if brand else ""
+
         # 1. Update Products Master
         product_record = {
             "product_id": str(product_id),
             "source": SOURCE,
             "name": name,
             "brand": brand,
+            "brand_ko": brand,
+            "brand_en": brand_en,
             "price": price_org, # We keep original price in master
             "image_url": image_url,
             "url": url,

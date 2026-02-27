@@ -919,3 +919,125 @@ export async function clearNotifications() {
     });
     return res.ok;
 }
+
+
+// ==========================================
+// Phase 7: Customer Center (Support APIs)
+// ==========================================
+
+export async function fetchFaqs() {
+    return await query('support_faqs', 'select=*&is_published=eq.true&order=sort_order.asc');
+}
+
+export async function submitInquiry(type, title, message) {
+    const session = await getSession();
+    if (!session?.user) return { data: null, error: new Error('로그인이 필요합니다.') };
+
+    try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/support_inquiries`, {
+            method: 'POST',
+            headers: {
+                ...headers,
+                'Authorization': `Bearer ${session.access_token}`,
+                'Prefer': 'return=representation'
+            },
+            body: JSON.stringify({
+                user_id: session.user.id,
+                user_email: session.user.email,
+                type: type,
+                title: title,
+                message: message
+            })
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.message || '문의 등록 실패');
+        }
+        const data = await res.json();
+        return { data: data[0], error: null };
+    } catch (err) {
+        return { data: null, error: err };
+    }
+}
+
+export async function fetchUserInquiries() {
+    const session = await getSession();
+    if (!session?.user) return { data: [], count: 0 };
+    return await query('support_inquiries', `select=*&user_id=eq.${session.user.id}&order=created_at.desc`);
+}
+
+export async function fetchAllInquiries() {
+    return await query('support_inquiries', 'select=*&order=created_at.desc');
+}
+
+export async function updateInquiryReply(id, replyText, status) {
+    const session = await getSession();
+    if (!session?.user) return { error: new Error('로그인이 필요합니다.') };
+
+    try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/support_inquiries?id=eq.${id}`, {
+            method: 'PATCH',
+            headers: {
+                ...headers,
+                'Authorization': `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({
+                admin_reply: replyText,
+                status: status
+            })
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.message || '답변 등록 실패');
+        }
+        return { error: null };
+    } catch (err) {
+        return { error: err };
+    }
+}
+
+export async function fetchAllFaqs() {
+    return await query('support_faqs', 'select=*&order=sort_order.asc');
+}
+
+export async function manageFaq(action, payload) {
+    const session = await getSession();
+    if (!session?.user) return { error: new Error('로그인이 필요합니다.') };
+
+    const fetchHeaders = {
+        ...headers,
+        'Authorization': `Bearer ${session.access_token}`,
+        'Prefer': 'return=representation'
+    };
+
+    try {
+        let res;
+        if (action === 'POST') {
+            res = await fetch(`${SUPABASE_URL}/rest/v1/support_faqs`, {
+                method: 'POST',
+                headers: fetchHeaders,
+                body: JSON.stringify(payload)
+            });
+        } else if (action === 'PATCH') {
+            res = await fetch(`${SUPABASE_URL}/rest/v1/support_faqs?id=eq.${payload.id}`, {
+                method: 'PATCH',
+                headers: fetchHeaders,
+                body: JSON.stringify(payload)
+            });
+        } else if (action === 'DELETE') {
+            res = await fetch(`${SUPABASE_URL}/rest/v1/support_faqs?id=eq.${payload.id}`, {
+                method: 'DELETE',
+                headers: fetchHeaders
+            });
+            if (res.ok) return { data: null, error: null };
+        }
+
+        if (!res.ok) throw new Error('FAQ 관리 실패');
+        const data = await res.json();
+        return { data: data[0], error: null };
+    } catch (err) {
+        return { data: null, error: err };
+    }
+}

@@ -95,6 +95,14 @@ async function renderAuthButton(container, session) {
           <a href="#" onclick="event.preventDefault(); window.openMyPageModal(); setTimeout(() => document.querySelector('.auth-tab[data-mypage-tab=\\'billing\\']').click(), 50);" class="dropdown-item">${window.t('mypage.billing') || '결제 / 플랜 관리'}</a>
           <a href="#" onclick="event.preventDefault(); window.openMyPageModal(); setTimeout(() => document.querySelector('.auth-tab[data-mypage-tab=\\'sourcing\\']').click(), 50);" class="dropdown-item">${window.t('sourcing.mypage_tab') || '견적 / 소싱 장바구니'}</a>
           <a href="#" onclick="event.preventDefault(); if(document.querySelector('.tab[data-tab=\\'wishlist\\']')) document.querySelector('.tab[data-tab=\\'wishlist\\']').click();" class="dropdown-item">${window.t('tabs.favorites') || '관심 상품 (찜)'}</a>
+          
+          <div style="margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px;">
+            <div style="font-size: 11px; color: #888; padding: 4px 12px; text-transform: uppercase;">${window.t('support.title') || '고객센터'}</div>
+            <a href="#" onclick="event.preventDefault(); window.openMyPageModal(); setTimeout(() => { document.querySelector('.auth-tab[data-mypage-tab=\\'support\\']').click(); window.toggleSupportView('inquiry'); }, 50);" class="dropdown-item" style="font-size: 13px;">${window.t('support.inquiry') || '1:1 문의'}</a>
+            <a href="#" onclick="event.preventDefault(); window.openMyPageModal(); setTimeout(() => { document.querySelector('.auth-tab[data-mypage-tab=\\'support\\']').click(); window.toggleSupportView('faq'); }, 50);" class="dropdown-item" style="font-size: 13px;">${window.t('support.faq') || 'FAQ'}</a>
+            <a href="#" onclick="event.preventDefault(); window.openMyPageModal(); setTimeout(() => { document.querySelector('.auth-tab[data-mypage-tab=\\'support\\']').click(); window.toggleSupportView('inquiry'); document.getElementById('inquiryType').value = 'feedback'; }, 50);" class="dropdown-item" style="font-size: 13px;">${window.t('support.feedback') || '건의 & 요청사항'}</a>
+          </div>
+
           <button id="logoutBtn" class="dropdown-item" style="color:#d32f2f; margin-top:4px; border-top:1px solid #eee;">${window.t('common.logout')}</button>
         </div>
       </div>
@@ -152,6 +160,7 @@ function setupAuthModals() {
               <button type="button" id="verifyOtpBtn" class="btn-secondary" data-i18n="auth.otp_verify" style="white-space:nowrap; padding: 0 12px; border-radius: 6px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-hover); color: var(--text-primary);">확인</button>
             </div>
             <div id="otpTimer" style="font-size: 11px; color: var(--accent-red); margin-top: 4px; display: none;">남은 시간: 03:00</div>
+            <div id="otpError" style="font-size: 11px; color: var(--accent-red); margin-top: 4px;"></div>
           </div>
 
           <!-- Password -->
@@ -314,9 +323,12 @@ function setupAuthModals() {
     btn.disabled = true;
     btn.textContent = window.t('auth.sending_otp') || '전송 중...';
 
+    const otpErrorDiv = document.getElementById('otpError');
+    if (otpErrorDiv) otpErrorDiv.textContent = '';
+
     const result = await sendOtp(email);
     if (result.error) {
-      errorDiv.textContent = result.error_description || result.error.message || result.error;
+      if (otpErrorDiv) otpErrorDiv.textContent = result.error_description || result.error.message || result.error;
       btn.disabled = false;
       btn.textContent = window.t('auth.resend_otp') || '인증번호 재발송';
     } else {
@@ -332,10 +344,13 @@ function setupAuthModals() {
   document.getElementById('verifyOtpBtn').addEventListener('click', async () => {
     const email = document.getElementById('authEmail').value;
     const otp = document.getElementById('authOtp').value;
+    const otpErrorDiv = document.getElementById('otpError');
+
     errorDiv.textContent = '';
+    if (otpErrorDiv) otpErrorDiv.textContent = '';
 
     if (!otp || otp.length < 4) {
-      errorDiv.textContent = window.t('auth.invalid_otp') || '인증번호를 정확히 입력해주세요.';
+      if (otpErrorDiv) otpErrorDiv.textContent = window.t('auth.invalid_otp') || '인증번호를 정확히 입력해주세요.';
       return;
     }
 
@@ -345,7 +360,7 @@ function setupAuthModals() {
 
     const result = await verifyOtp(email, otp);
     if (result.error) {
-      errorDiv.textContent = result.error_description || result.error.message || result.error;
+      if (otpErrorDiv) otpErrorDiv.textContent = result.error_description || result.error.message || result.error;
       btn.disabled = false;
       btn.textContent = window.t('auth.otp_verify');
     } else {

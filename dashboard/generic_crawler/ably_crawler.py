@@ -8,9 +8,9 @@ URL: https://m.a-bly.com/
 import os
 import json
 import time
-import asyncio
+import re
 import requests
-from datetime import datetime
+from translate_helper import get_english_brand
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright
 
@@ -80,12 +80,17 @@ def save_product_and_rank(item, rank, category_code, category_name):
         image_url = item['image']
         url = item['url']
 
+        # Translate brand
+        brand_en = get_english_brand(brand) if brand else ""
+
         # 1. products_master 테이블에 상품 정보 저장 (Upsert)
         product_record = {
             "product_id": str(product_id),
             "source": SOURCE,
             "name": name,
             "brand": brand,
+            "brand_ko": brand,
+            "brand_en": brand_en,
             "price": price,
             "category": category_name,
             "image_url": image_url,

@@ -214,5 +214,23 @@
         "gt_oy_link": "🛒 View on OY",
         "gt_oy_matched": "✓ OY Linked",
         "gt_no_image": "No Image"
+    },
+    "countries": {
+        "vn": "🇻🇳 Vietnam",
+        "th": "🇹🇭 Thailand",
+        "ph": "🇵🇭 Philippines",
+        "my": "🇲🇾 Malaysia",
+        "all": "🌏 Global"
+    },
+    "support": {
+        "title": "Customer Center",
+        "inquiry": "1:1 Inquiry",
+        "faq": "FAQ",
+        "feedback": "Feedback & Requests",
+        "coming_soon": "This feature is coming soon."
+    },
+    "deals": {
+        "today_title": "Daily Deals Order Deadline",
+        "today_desc": "Orders close daily at 9 PM KST."
     }
 }
