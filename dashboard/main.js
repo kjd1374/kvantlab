@@ -34,14 +34,14 @@ import {
   fetchFaqs,
   fetchUserInquiries,
   submitInquiry
-} from './supabase.js?v=3';
-import { setupAuthUI } from './src/auth.js?v=11';
-import { i18n } from './src/i18n.js?v=6';
-import { OliveYoungBridge } from './source_bridges/oliveyoung.js?v=2';
-import { MusinsaBridge } from './source_bridges/musinsa.js';
+} from './supabase.js?v=4';
+import { setupAuthUI } from './src/auth.js?v=12';
+import { i18n } from './src/i18n.js?v=7';
+import { OliveYoungBridge } from './source_bridges/oliveyoung.js?v=3';
+import { MusinsaBridge } from './source_bridges/musinsa.js?v=2';
 import { AblyBridge } from './source_bridges/ably.js';
 import { ShinsegaeBridge } from './source_bridges/shinsegae.js';
-import { KoreaTrendBridge } from './source_bridges/k_trend.js';
+import { KoreaTrendBridge } from './source_bridges/k_trend.js?v=2';
 import { SteadySellerBridge } from './source_bridges/steady_seller.js';
 
 const bridges = {
