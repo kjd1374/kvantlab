@@ -492,20 +492,34 @@ async function loadBridgeTab(tabId) {
         const tableContainer = activeTabContent?.querySelector('.table-container');
         if (tableContainer) tableContainer.style.display = 'none';
 
-        // Show in products-grid or similar container
-        if (grid) {
-          grid.innerHTML = customHtml;
-          grid.style.display = 'block'; // Ensure grid container is visible and not acting as table body
+        // Find a suitable container for custom HTML. 
+        // We prefer a .products-grid that is NOT a tbody, or a parent of grid.
+        let target = activeTabContent?.querySelector('.custom-content-area');
+        if (!target) {
+          target = document.createElement('div');
+          target.className = 'custom-content-area';
+          if (activeTabContent) {
+            activeTabContent.appendChild(target);
+          }
         }
+
+        target.innerHTML = customHtml;
+        target.style.display = 'block';
+
+        // Hide the original grid/tbody if it's separate
+        if (grid) grid.style.display = 'none';
 
         i18n.documentUpdate();
         renderPagination(0);
         return;
       }
     } else {
-      // Restore table visibility for standard bridges
+      // Restore standard layout for standard bridges
       const tableContainer = activeTabContent?.querySelector('.table-container');
       if (tableContainer) tableContainer.style.display = 'block';
+      if (grid) grid.style.display = (grid.tagName === 'TBODY' ? 'table-row-group' : 'grid');
+      const target = activeTabContent?.querySelector('.custom-content-area');
+      if (target) target.style.display = 'none';
     }
 
     if (data.length === 0) {
