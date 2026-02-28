@@ -809,18 +809,11 @@ async function loadDeals() {
 
   const { data, date } = await fetchDailySpecials();
 
-  // Temporary fix: Hardcode original prices for key items to show discount effect
-  const priceOverrides = {
-    'A000000246380': 16000, // Etude Tint
-    'A000000191996': 7000,  // Ritter Chocolate
-    'A000000204780': 18000, // Amuse Pencil
-    'A000000199947': 5500   // Fillimilli Puff
-  };
-
+  // Auto-compute discount for all items where special_price < price
   const patchedData = data.map(p => {
-    if (priceOverrides[p.product_id]) {
-      const orig = priceOverrides[p.product_id];
-      const current = p.special_price;
+    const current = p.special_price || p.price || 0;
+    const orig = p.original_price || p.price_original || p.price || 0;
+    if (orig > current && current > 0) {
       return {
         ...p,
         original_price: orig,
@@ -1205,10 +1198,10 @@ function renderProductCard(p, mode = 'normal', isGlobalTrend = false, isWishlist
     priceHtml = `<div class="price-current" style="color:var(--accent-blue);font-size:16px;">💬 ${formatNumber(currentPrice)}건 언급</div>`;
   } else {
     priceHtml = isDeal
-      ? `<div class="price-wrapper">
-             <span class="price-original">${formatPrice(originalPrice)}</span>
-             <span class="price-current deal">${formatPrice(currentPrice)}</span>
-             <span class="discount-badge">${p.discount_pct || Math.round((1 - currentPrice / originalPrice) * 100)}%</span>
+      ? `<div class="price-wrapper" style="display:flex; align-items:center; gap:7px; flex-wrap:nowrap;">
+             <span class="price-original" style="text-decoration:line-through; color:var(--text-muted); font-size:12px; white-space:nowrap;">${formatPrice(originalPrice)}</span>
+             <span class="price-current deal" style="color:#e03131; font-weight:700; font-size:15px; white-space:nowrap;">${formatPrice(currentPrice)}</span>
+             <span class="discount-badge" style="background:#e03131; color:white; font-size:11px; font-weight:700; padding:2px 6px; border-radius:4px; white-space:nowrap; flex-shrink:0;">${p.discount_pct || Math.round((1 - currentPrice / originalPrice) * 100)}%</span>
            </div>`
       : `<div class="price-current">${formatPrice(currentPrice)}</div>`;
   }
