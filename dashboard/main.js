@@ -1193,17 +1193,20 @@ function renderProductCard(p, mode = 'normal', isGlobalTrend = false, isWishlist
   // If we have an original price and it's higher than current, it's a deal
   const isDeal = originalPrice > currentPrice;
 
-  let priceHtml = '';
+  // deal mode: use discount_rate from DB if no original price available
+  const discountPct = p.discount_pct || p.discount_rate || (isDeal ? Math.round((1 - currentPrice / originalPrice) * 100) : 0);
+  const showDeal = isDeal || (mode === 'deal' && discountPct > 0);
+
   if (isGlobalTrend) {
     priceHtml = `<div class="price-current" style="color:var(--accent-blue);font-size:16px;">💬 ${formatNumber(currentPrice)}건 언급</div>`;
+  } else if (showDeal && discountPct > 0) {
+    priceHtml = `<div class="deal-price-row">
+             <span class="deal-pct">${discountPct}%</span>
+             <span class="deal-sale-price">${formatPrice(currentPrice)}</span>
+             ${originalPrice > 0 ? `<span class="deal-orig-price">${formatPrice(originalPrice)}</span>` : ''}
+           </div>`;
   } else {
-    priceHtml = isDeal
-      ? `<div class="price-wrapper" style="display:flex; align-items:center; gap:7px; flex-wrap:nowrap;">
-             <span class="price-original" style="text-decoration:line-through; color:var(--text-muted); font-size:12px; white-space:nowrap;">${formatPrice(originalPrice)}</span>
-             <span class="price-current deal" style="color:#e03131; font-weight:700; font-size:15px; white-space:nowrap;">${formatPrice(currentPrice)}</span>
-             <span class="discount-badge" style="background:#e03131; color:white; font-size:11px; font-weight:700; padding:2px 6px; border-radius:4px; white-space:nowrap; flex-shrink:0;">${p.discount_pct || Math.round((1 - currentPrice / originalPrice) * 100)}%</span>
-           </div>`
-      : `<div class="price-current">${formatPrice(currentPrice)}</div>`;
+    priceHtml = `<div class="price-current">${formatPrice(currentPrice)}</div>`;
   }
 
   const isTrend = ['google_trends', 'naver_datalab'].includes(p.source);

@@ -72,7 +72,7 @@ def save_hotdeal(item):
             "brand": brand,
             "brand_ko": brand,
             "brand_en": brand_en,
-            "price": price_org, # We keep original price in master
+            "price": price_org if price_org > 0 else price_cur,  # original price in master; fallback to current
             "image_url": image_url,
             "url": url,
             "updated_at": datetime.now().isoformat()
@@ -225,7 +225,8 @@ async def crawl_hotdeals(page):
                 const imgEl = li.querySelector('.thumb img, .pic-thumb');
                 
                 const priceCur = priceCurEl ? parseInt(priceCurEl.innerText.replace(/[^0-9]/g, '')) : 0;
-                const priceOrg = priceOrgEl ? parseInt(priceOrgEl.innerText.replace(/[^0-9]/g, '')) : priceCur;
+                // Keep priceOrg as 0 if not found - let backend/frontend use discount_rate instead
+                const priceOrg = priceOrgEl ? parseInt(priceOrgEl.innerText.replace(/[^0-9]/g, '')) : 0;
                 const discount = discountEl ? parseInt(discountEl.innerText.replace(/[^0-9]/g, '')) : 0;
                 let imgUrl = imgEl ? (imgEl.src || imgEl.dataset.original) : '';
                 
