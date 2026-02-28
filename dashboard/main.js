@@ -813,6 +813,31 @@ async function loadTrending() {
       return;
     }
 
+    // Deduplicate by name + brand (keep highest rank_change or best current_rank)
+    const uniqueMap = new Map();
+    filtered.forEach(p => {
+      // Normalize name and brand for comparison
+      const key = `${p.brand || ''}_${p.name || ''}`.toLowerCase().trim();
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, p);
+      } else {
+        const existing = uniqueMap.get(key);
+        // Prefer the one with higher rank change, or if same, better (lower) current_rank
+        const existingRC = existing.rank_change || 0;
+        const newRC = p.rank_change || 0;
+        if (newRC > existingRC) {
+          uniqueMap.set(key, p);
+        } else if (newRC === existingRC) {
+          const existingRank = existing.current_rank || 999;
+          const newRank = p.current_rank || 999;
+          if (newRank < existingRank) {
+            uniqueMap.set(key, p);
+          }
+        }
+      }
+    });
+    filtered = Array.from(uniqueMap.values());
+
     const savedItems = await fetchSavedProducts();
     const savedIds = new Set(savedItems.data?.map(i => i.product_id) || []);
 
