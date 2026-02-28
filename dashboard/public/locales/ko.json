@@ -224,7 +224,14 @@
         "save": "저장하기",
         "delete_account": "회원 탈퇴",
         "current_plan": "현재 구독 플랜",
-        "expires_at": "만료 예정일",
+        "subscribed_at": "가입/체험 시작일",
+        "expires_at": "만료/갱신 예정일",
+        "status_admin": "무제한 (관리자)",
+        "status_pro_active": "자동 연장 중",
+        "status_pro_cancelled": "해지됨 ({date}까지 유지)",
+        "status_free": "무료 플랜 (제한됨)",
+        "status_expired": "만료됨",
+        "cancel_subscription": "구독 취소",
         "upgrade": "플랜 업그레이드"
     },
     "gt": {
@@ -258,13 +265,26 @@
         "inquiry": "1:1 문의",
         "faq": "FAQ",
         "feedback": "건의 및 요청사항",
+        "new_inquiry_title": "새 문의 작성",
+        "title_placeholder": "제목을 입력해주세요",
+        "message_placeholder": "문의 내용이나 건의사항을 상세히 작성해주세요.",
+        "submit": "등록하기",
         "coming_soon": "해당 기능은 준비중입니다."
     },
     "sourcing": {
         "mypage_tab": "견적 / 소싱 내역",
         "cart_title": "나의 관심 상품 & 소싱 카트",
         "cart_desc": "찜한 상품들을 체계적으로 모아보고 B2B 견적을 요청하세요",
-        "qty_label": "요청 수량"
+        "history_title": "📦 나의 소싱 견적 내역",
+        "history_empty": "내역이 없습니다.",
+        "qty_label": "요청 수량",
+        "status_pending": "대기 중",
+        "status_quoted": "견적 완료",
+        "status_canceled": "취소됨",
+        "admin_reply_title": "💬 관리자 답변",
+        "view_details": "상세 내역 보기",
+        "shipping_fee": "배송비",
+        "service_fee": "수수료"
     },
     "deals": {
         "today_title": "오늘의 특가 주문 마감까지",

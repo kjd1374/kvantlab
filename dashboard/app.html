@@ -417,10 +417,15 @@
             <h3 data-i18n="mypage.current_plan">현재 구독 플랜</h3>
             <span class="plan-badge" id="myPagePlanBadge">Free</span>
           </div>
-          <p class="billing-desc" id="myPagePlanDesc">현재 무료 플랜을 이용 중입니다. (일일 조회 10회 제한)</p>
+          <p class="billing-desc" id="myPagePlanDesc" data-i18n="mypage.status_free">현재 무료 플랜을 이용 중입니다. (일일 상세 조회 10회
+            제한)</p>
 
           <div class="billing-info-row">
-            <span class="info-label" data-i18n="mypage.expires_at">만료 예정일</span>
+            <span class="info-label" data-i18n="mypage.subscribed_at">가입/체험 시작일</span>
+            <span class="info-value" id="myPageSubscribedAt">-</span>
+          </div>
+          <div class="billing-info-row">
+            <span class="info-label" data-i18n="mypage.expires_at">만료/갱신 예정일</span>
             <span class="info-value" id="myPageExpiresAt">-</span>
           </div>
         </div>
@@ -428,8 +433,8 @@
         <div class="billing-actions" style="margin-top: 24px; text-align:center;">
           <div id="paypal-button-container" style="max-width: 400px; margin: 0 auto;"></div>
           <button id="cancelSubscriptionBtn" class="btn-secondary"
-            style="display:none; width: 100%; max-width: 400px; margin: 0 auto; padding: 12px; background: #fff5f5; color: #e03131; border: 1px solid #ffc9c9; border-radius: 8px; cursor: pointer; font-weight: 600;">구독
-            취소 (Cancel Subscription)</button>
+            style="display:none; width: 100%; max-width: 400px; margin: 0 auto; padding: 12px; background: #fff5f5; color: #e03131; border: 1px solid #ffc9c9; border-radius: 8px; cursor: pointer; font-weight: 600;"
+            data-i18n="mypage.cancel_subscription">구독 취소 (Cancel Subscription)</button>
         </div>
       </div>
 
@@ -448,7 +453,7 @@
           <button class="chip active" onclick="window.toggleSupportView('faq')" data-i18n="support.faq"
             id="btnSupportFaq">FAQ (자주 묻는 질문)</button>
           <button class="chip" onclick="window.toggleSupportView('inquiry')" data-i18n="support.inquiry"
-            id="btnSupportInquiry">1:1 문의 & 건의사항</button>
+            id="btnSupportInquiry">1:1 문의</button>
         </div>
 
         <!-- FAQ View -->
@@ -461,20 +466,29 @@
 
         <!-- Inquiry View -->
         <div id="supportInquiryView" style="display: none;">
-          <div
-            style="margin-bottom: 20px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
-            <h4 style="margin-bottom: 10px; font-size: 14px;">새 문의 작성</h4>
-            <select id="inquiryType" class="form-input"
-              style="margin-bottom: 10px; width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
-              <option value="inquiry">1:1 문의사항</option>
-              <option value="feedback">서비스 건의/요청</option>
-            </select>
-            <input type="text" id="inquiryTitle" class="form-input" placeholder="제목을 입력해주세요"
-              style="margin-bottom: 10px; width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
-            <textarea id="inquiryMessage" class="form-input" rows="4" placeholder="문의 내용이나 건의사항을 상세히 작성해주세요."
-              style="margin-bottom: 10px; width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ddd; resize: vertical;"></textarea>
-            <button onclick="window.submitSupportInquiry()" class="btn-primary"
-              style="width: 100%; padding: 10px; border-radius: 6px; border: none; background: var(--accent-blue); color: white; cursor: pointer; font-weight: 600;">등록하기</button>
+          <div class="inquiry-form"
+            style="background: var(--card-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 25px;">
+            <h4 style="margin-top: 0; margin-bottom: 12px; font-size: 14px;" data-i18n="support.new_inquiry_title">새 문의
+              작성</h4>
+            <div class="form-group">
+              <select id="inquiryType" class="form-input">
+                <option value="general" selected>1:1 문의사항</option>
+                <option value="sourcing">소싱/견적 관련</option>
+                <option value="billing">결제/구독 관련</option>
+                <option value="technical">기술적 오류 제보</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <input type="text" id="inquiryTitle" class="form-input" placeholder="제목을 입력해주세요"
+                data-i18n="support.title_placeholder">
+            </div>
+            <div class="form-group">
+              <textarea id="inquiryContent" class="form-input" rows="4" placeholder="문의 내용이나 건의사항을 상세히 작성해주세요."
+                data-i18n="support.message_placeholder"></textarea>
+            </div>
+            <button id="btnSubmitInquiry" class="btn-primary"
+              style="width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;"
+              data-i18n="support.submit">등록하기</button>
           </div>
 
           <h4 style="margin-bottom: 10px; font-size: 14px; border-top: 1px solid #eee; padding-top: 20px;">나의 문의 내역</h4>

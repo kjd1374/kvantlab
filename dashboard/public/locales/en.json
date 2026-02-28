@@ -219,7 +219,14 @@
         "save": "Save",
         "delete_account": "Delete Account",
         "current_plan": "Current Plan",
-        "expires_at": "Expires At",
+        "subscribed_at": "Trial/Subscription Start",
+        "expires_at": "Expiration/Renewal Date",
+        "status_admin": "Unlimited (Admin)",
+        "status_pro_active": "Auto-renewing",
+        "status_pro_cancelled": "Cancelled (Active until {date})",
+        "status_free": "Free (Limited)",
+        "status_expired": "Expired",
+        "cancel_subscription": "Cancel Subscription",
         "upgrade": "Upgrade Plan"
     },
     "gt": {
@@ -253,13 +260,26 @@
         "inquiry": "1:1 Inquiry",
         "faq": "FAQ",
         "feedback": "Feedback & Requests",
+        "new_inquiry_title": "New Inquiry",
+        "title_placeholder": "Please enter a title...",
+        "message_placeholder": "Please describe your inquiry or suggestion in detail.",
+        "submit": "Submit inquiry",
         "coming_soon": "This feature is coming soon."
     },
     "sourcing": {
         "mypage_tab": "Pricing/Sourcing",
         "cart_title": "My Sourcing Cart & Interests",
         "cart_desc": "View your saved items and request B2B sourcing quotes.",
-        "qty_label": "Quantity"
+        "history_title": "📦 My Sourcing History",
+        "history_empty": "No sourcing history found.",
+        "qty_label": "Quantity",
+        "status_pending": "Pending",
+        "status_quoted": "Quoted",
+        "status_canceled": "Canceled",
+        "admin_reply_title": "💬 Admin Reply",
+        "view_details": "View Details",
+        "shipping_fee": "Shipping",
+        "service_fee": "Service Fee"
     },
     "deals": {
         "today_title": "Daily Deals Order Deadline",

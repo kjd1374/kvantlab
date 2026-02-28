@@ -2808,7 +2808,9 @@ window.openMyPageModal = async function () {
   // Fill Billing Tab
   const planBadge = document.getElementById('myPagePlanBadge');
   const planDesc = document.getElementById('myPagePlanDesc');
+  const subscribedAt = document.getElementById('myPageSubscribedAt');
   const expiresAt = document.getElementById('myPageExpiresAt');
+  const cancelBtn = document.getElementById('cancelSubscriptionBtn');
 
   const tier = (profile.subscription_tier || 'free').toLowerCase();
 
@@ -2817,38 +2819,49 @@ window.openMyPageModal = async function () {
     planBadge.className = `plan-badge ${tier === 'pro' ? 'pro' : ''}`;
   }
 
+  // Helper for Date Formatting
+  const fmtDate = (date) => date ? new Date(date).toLocaleDateString(i18n.currentLang === 'ko' ? 'ko-KR' : 'en-US') : '-';
+
+  if (subscribedAt) subscribedAt.textContent = fmtDate(profile.created_at);
+
   if (planDesc) {
     if (profile.role === 'admin') {
-      planDesc.textContent = '최고 관리자 권한으로 모든 기능을 무제한 이용할 수 있습니다.';
+      planDesc.textContent = window.t('mypage.status_admin');
     } else if (tier === 'pro') {
       if (profile.subscription_id) {
-        planDesc.textContent = '현재 Pro 구독을 이용 중입니다. (자유 무제한 풀 엑세스)';
+        planDesc.textContent = window.t('mypage.status_pro_active');
+        if (cancelBtn) cancelBtn.style.display = 'block';
       } else {
-        planDesc.textContent = '구독이 해지 처리되었습니다. 남은 기간 동안 Pro 혜택이 유지됩니다.';
+        const dateStr = fmtDate(profile.expires_at);
+        planDesc.textContent = window.t('mypage.status_pro_cancelled').replace('{date}', dateStr);
+        if (cancelBtn) cancelBtn.style.display = 'none';
       }
     } else {
-      planDesc.textContent = '현재 무료 플랜을 이용 중입니다. (일일 상세 조회 10회 제한)';
+      planDesc.textContent = window.t('mypage.status_free');
+      if (cancelBtn) cancelBtn.style.display = 'none';
     }
   }
 
   if (expiresAt) {
     if (profile.role === 'admin') {
-      expiresAt.textContent = '무제한 (Admin)';
+      expiresAt.textContent = window.t('mypage.status_admin');
     } else if (profile.expires_at) {
       const d = new Date(profile.expires_at);
       const isExpired = d < new Date();
-      const dateStr = d.toLocaleDateString(i18n?.currentLang === 'ko' ? 'ko-KR' : 'en-US');
+      const dateStr = fmtDate(d);
 
       if (isExpired) {
-        expiresAt.textContent = `만료됨 (${dateStr})`;
+        expiresAt.textContent = `${window.t('mypage.status_expired')} (${dateStr})`;
         expiresAt.style.color = 'var(--text-danger)';
       } else if (profile.subscription_id) {
-        expiresAt.textContent = `${dateStr} (이후 자동 연장)`;
+        expiresAt.textContent = `${dateStr} (${window.t('mypage.status_auto_renew')})`;
+        expiresAt.style.color = 'var(--accent-blue)';
       } else {
-        expiresAt.textContent = `${dateStr} 까지 (연장 안 됨)`;
+        expiresAt.textContent = `${dateStr} (${window.t('mypage.status_no_renew')})`;
+        expiresAt.style.color = 'var(--text-secondary)';
       }
     } else {
-      expiresAt.textContent = '기간 제한 없음';
+      expiresAt.textContent = window.t('common.no_time_limit') || '-';
     }
   }
 
@@ -3021,19 +3034,6 @@ function switchMyPageTab(tabName) {
       } else if (tier === 'pro') {
         const container = document.getElementById('paypal-button-container');
         if (container) container.innerHTML = ''; // hide if already pro
-
-        const cancelBtn = document.getElementById('cancelSubscriptionBtn');
-        const planDesc = document.getElementById('myPagePlanDesc');
-
-        if (profile.subscription_id) {
-          // Active recurring subscription
-          if (cancelBtn) cancelBtn.style.display = 'block';
-          if (planDesc) planDesc.textContent = '현재 Pro 구독 이용 중입니다. (자유 무제한 풀 엑세스)';
-        } else {
-          // Cancelled but still PRO until expires_at
-          if (cancelBtn) cancelBtn.style.display = 'none';
-          if (planDesc) planDesc.textContent = '구독이 해지되었습니다. 남은 기간 동안 Pro 혜택이 유지됩니다.';
-        }
       }
     };
 
@@ -3087,7 +3087,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const cancelBtn = document.getElementById('cancelSubscriptionBtn');
   if (cancelBtn) {
     cancelBtn.addEventListener('click', async () => {
-      const siteLang = localStorage.getItem('app_lang') || 'ko';
+      const siteLang = i18n.currentLang || 'ko';
       const msg = siteLang === 'ko'
         ? '정말로 구독을 취소하시겠습니까?\n이번 결제 주기(만료일)까지만 Pro 혜택이 유지되며 이후에는 더 이상 자동 연장 결제되지 않습니다.'
         : 'Are you sure you want to cancel your subscription?\nPro benefits will remain until the end of the current billing cycle, and you will not be charged again.';
@@ -3287,10 +3287,8 @@ window.loadSourcingHistory = async function () {
       return;
     }
 
-    const reqId = (req) => req.id || req.created_at;
-
     list.innerHTML = data.requests.map(req => {
-      const date = new Date(req.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const dateStr = new Date(req.created_at).toLocaleString(i18n.currentLang === 'ko' ? 'ko-KR' : 'en-US', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
       const itemCount = (req.items && Array.isArray(req.items)) ? req.items.length : 0;
       const totalCost = req.estimated_cost || 0;
       const uid = btoa(req.created_at || Math.random()).replace(/[^a-z0-9]/gi, '').slice(0, 8);
@@ -3302,10 +3300,10 @@ window.loadSourcingHistory = async function () {
       else if (req.status === 'canceled') { statusColor = '#f8d7da'; statusTxt = '#721c24'; statusText = window.t('sourcing.status_canceled'); }
       const statusBadge = `<span style="background:${statusColor}; color:${statusTxt}; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; white-space:nowrap;">${statusText}</span>`;
 
-      // Simple item preview (just names, no prices crowding)
+      // Simple item preview
       const itemPreview = req.items && Array.isArray(req.items)
-        ? req.items.slice(0, 3).map(i => `<span style="font-size:12px; background:#f0f0f5; padding:2px 8px; border-radius:12px; color:#555;">${i.name && i.name.length > 20 ? i.name.slice(0, 20) + '…' : (i.name || '상품')}</span>`).join('')
-        + (req.items.length > 3 ? `<span style="font-size:12px; color:var(--text-muted);">+${req.items.length - 3}개</span>` : '')
+        ? req.items.slice(0, 3).map(i => `<span style="font-size:12px; background:#f0f0f5; padding:2px 8px; border-radius:12px; color:#555;">${i.name && i.name.length > 20 ? i.name.slice(0, 20) + '…' : (i.name || 'Item')}</span>`).join('')
+        + (req.items.length > 3 ? `<span style="font-size:12px; color:var(--text-muted);">+${req.items.length - 3}</span>` : '')
         : '';
 
       // Collapsible breakdown
@@ -3317,7 +3315,7 @@ window.loadSourcingHistory = async function () {
           const up = item.unit_price || 0;
           return `<div style="display:flex; justify-content:space-between; font-size:12px; padding:3px 0; border-bottom:1px solid #f0f0f0; color:#444;">
             <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-right:8px;">${item.name || ''} (×${item.quantity || 0})</span>
-            <span style="flex-shrink:0;">${up > 0 ? `₩${up.toLocaleString()}` : '미정'}</span>
+            <span style="flex-shrink:0;">${up > 0 ? `₩${up.toLocaleString()}` : '-'}</span>
           </div>`;
         }).join('');
 
@@ -3325,15 +3323,15 @@ window.loadSourcingHistory = async function () {
           <div>
             <button onclick="document.getElementById('bd-${uid}').style.display=document.getElementById('bd-${uid}').style.display==='none'?'block':'none'"
               style="font-size:12px; color:#888; background:none; border:none; cursor:pointer; padding:4px 0; margin:8px 0 0;">
-              ▾ 상세 내역 보기
+              ▾ ${window.t('sourcing.view_details')}
             </button>
             <div id="bd-${uid}" style="display:none; margin-top:6px; padding:10px; background:#fafafa; border-radius:8px; border:1px solid #eee;">
               ${itemLines}
               <div style="display:flex; justify-content:space-between; font-size:12px; padding:4px 0; color:#666;">
-                <span>배송비</span><span>${sFee > 0 ? `₩${sFee.toLocaleString()}` : '-'}</span>
+                <span>${window.t('sourcing.shipping_fee')}</span><span>${sFee > 0 ? `₩${sFee.toLocaleString()}` : '-'}</span>
               </div>
               <div style="display:flex; justify-content:space-between; font-size:12px; padding:4px 0; color:#666;">
-                <span>수수료</span><span>${svFee > 0 ? `₩${svFee.toLocaleString()}` : '-'}</span>
+                <span>${window.t('sourcing.service_fee')}</span><span>${svFee > 0 ? `₩${svFee.toLocaleString()}` : '-'}</span>
               </div>
             </div>
           </div>`;
@@ -3343,7 +3341,7 @@ window.loadSourcingHistory = async function () {
       let replyHtml = '';
       if (req.admin_reply) {
         replyHtml = `<div style="margin-top:8px; padding:8px 12px; background:#f8f9fa; border-radius:6px; border-left:3px solid #0071e3; font-size:12px; color:#444; line-height:1.5;">
-          <span style="font-weight:600; font-size:11px; color:#0071e3; display:block; margin-bottom:3px;">💬 관리자 답변</span>
+          <span style="font-weight:600; font-size:11px; color:#0071e3; display:block; margin-bottom:3px;">${window.t('sourcing.admin_reply_title')}</span>
           ${escapeHtml(req.admin_reply)}</div>`;
       }
 
@@ -3359,8 +3357,8 @@ window.loadSourcingHistory = async function () {
         <div style="border:1px solid #e8e8ed; border-radius:12px; padding:16px; background:white; box-shadow:0 1px 4px rgba(0,0,0,0.04);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <div>
-              <div style="font-size:11px; color:#aaa; margin-bottom:2px;">${date}</div>
-              <div style="font-weight:700; font-size:14px; color:#1d1d1f;">상품 ${itemCount}종</div>
+              <div style="font-size:11px; color:#aaa; margin-bottom:2px;">${dateStr}</div>
+              <div style="font-weight:700; font-size:14px; color:#1d1d1f;">${window.t('sourcing.total_items').replace('{count}', itemCount)}</div>
             </div>
             ${statusBadge}
           </div>
@@ -3418,12 +3416,11 @@ window.loadFaqs = async function () {
     const { fetchFaqs } = await import('./supabase.js');
     const { data } = await fetchFaqs();
     if (!data || data.length === 0) {
-      list.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted);">등록된 FAQ가 없습니다.</div>`;
+      list.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted);">No FAQs found.</div>`;
       return;
     }
 
-    // Check language
-    const lang = localStorage.getItem('app_lang') || 'ko';
+    const lang = i18n.currentLang || 'ko';
 
     list.innerHTML = data.map((faq, i) => {
       const q = lang === 'ko' ? faq.question_ko : (faq.question_en || faq.question_ko);
@@ -3442,7 +3439,7 @@ window.loadFaqs = async function () {
       `;
     }).join('');
   } catch (e) {
-    list.innerHTML = `<div style="text-align:center; padding:15px; color:#e03131;">불러오기 실패: ${e.message}</div>`;
+    list.innerHTML = `<div style="text-align:center; padding:15px; color:#e03131;">Load failed: ${e.message}</div>`;
   }
 };
 
@@ -3455,56 +3452,57 @@ window.loadUserInquiries = async function () {
     const { fetchUserInquiries } = await import('./supabase.js');
     const { data } = await fetchUserInquiries();
     if (!data || data.length === 0) {
-      list.innerHTML = `<div style="text-align:center; padding:20px; font-size:13px; color:#888;">작성하신 문의 내역이 없습니다.</div>`;
+      list.innerHTML = `<div style="text-align:center; padding:20px; font-size:13px; color:#888;">${window.t('support.no_inquiries') || 'No inquiries found.'}</div>`;
       return;
     }
 
     list.innerHTML = data.map(inq => {
-      const date = new Date(inq.created_at).toLocaleDateString();
+      const date = new Date(inq.created_at).toLocaleDateString(i18n.currentLang === 'ko' ? 'ko-KR' : 'en-US');
       let statusColor = '#e2e3e5'; let statusTxt = '#383d41'; let statusLabel = inq.status;
-      if (inq.status === 'pending') { statusColor = '#fff3cd'; statusTxt = '#856404'; statusLabel = '답변대기'; }
-      else if (inq.status === 'answered') { statusColor = '#d4edda'; statusTxt = '#155724'; statusLabel = '답변완료'; }
-      else if (inq.status === 'closed') { statusColor = '#d1ecf1'; statusTxt = '#0c5460'; statusLabel = '종료됨'; }
+      if (inq.status === 'pending') { statusColor = '#fff3cd'; statusTxt = '#856404'; statusLabel = window.t('support.status_pending') || 'Pending'; }
+      else if (inq.status === 'answered') { statusColor = '#d4edda'; statusTxt = '#155724'; statusLabel = window.t('support.status_answered') || 'Answered'; }
+      else if (inq.status === 'closed') { statusColor = '#d1ecf1'; statusTxt = '#0c5460'; statusLabel = window.t('support.status_closed') || 'Closed'; }
 
       let html = `
         <div style="border:1px solid #e8e8ed; border-radius:8px; padding:15px; background:white; margin-bottom:10px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <div style="font-size:12px; color:#aaa;">[${inq.type === 'inquiry' ? '문의' : '건의'}] ${date}</div>
+            <div style="font-size:12px; color:#aaa;">[${inq.type}] ${date}</div>
             <span style="background:${statusColor}; color:${statusTxt}; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600;">${statusLabel}</span>
           </div>
           <div style="font-weight:600; font-size:14px; margin-bottom:5px;">${escapeHtml(inq.title)}</div>
-          <div style="font-size:12px; color:#666; margin-bottom:10px; line-height:1.5;">${escapeHtml(inq.message).replace(/\\n/g, '<br>')}</div>
-      `;
+          <div style="font-size:12px; color:#666; margin-bottom:10px; line-height:1.5;">${escapeHtml(inq.message || inq.content || '').replace(/\\n/g, '<br>')}</div>
+        `;
 
       if (inq.admin_reply) {
         html += `
           <div style="margin-top:10px; padding:10px; background:#f0f7ff; border-radius:6px; border-left:3px solid var(--accent-blue); font-size:12px; color:#333;">
-            <div style="font-weight:700; color:var(--accent-blue); margin-bottom:4px; font-size:11px;">관리자 답변</div>
+            <div style="font-weight:700; color:var(--accent-blue); margin-bottom:4px; font-size:11px;">💬 ${window.t('support.admin_reply_label') || 'Admin Reply'}</div>
             ${escapeHtml(inq.admin_reply).replace(/\\n/g, '<br>')}
           </div>
-         `;
+        `;
       }
       html += `</div>`;
       return html;
     }).join('');
   } catch (e) {
-    list.innerHTML = `<div style="text-align:center; padding:15px; color:#e03131;">불러오기 실패: ${e.message}</div>`;
+    list.innerHTML = `<div style="text-align:center; padding:15px; color:#e03131;">Load failed: ${e.message}</div>`;
   }
 };
 
 window.submitSupportInquiry = async function () {
   const type = document.getElementById('inquiryType').value;
   const title = document.getElementById('inquiryTitle').value.trim();
-  const message = document.getElementById('inquiryMessage').value.trim();
+  const message = document.getElementById('inquiryContent').value.trim();
 
   if (!title || !message) {
-    alert('제목과 내용을 모두 입력해주세요.');
+    alert(i18n.currentLang === 'ko' ? '제목과 내용을 모두 입력해주세요.' : 'Please enter both title and content.');
     return;
   }
 
-  const btn = event.target;
+  const btn = document.getElementById('btnSubmitInquiry');
+  if (!btn) return;
   const originalText = btn.innerText;
-  btn.innerText = '등록 중...';
+  btn.innerText = i18n.currentLang === 'ko' ? '등록 중...' : 'Submitting...';
   btn.disabled = true;
 
   try {
@@ -3512,12 +3510,12 @@ window.submitSupportInquiry = async function () {
     const { error } = await submitInquiry(type, title, message);
     if (error) throw new Error(error.message);
 
-    alert('성공적으로 등록되었습니다.');
+    alert(i18n.currentLang === 'ko' ? '성공적으로 등록되었습니다.' : 'Submitted successfully.');
     document.getElementById('inquiryTitle').value = '';
-    document.getElementById('inquiryMessage').value = '';
+    document.getElementById('inquiryContent').value = '';
     window.loadUserInquiries();
   } catch (err) {
-    alert('등록 실패: ' + err.message);
+    alert('Error: ' + err.message);
   } finally {
     btn.innerText = originalText;
     btn.disabled = false;
