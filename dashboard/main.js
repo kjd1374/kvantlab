@@ -974,18 +974,18 @@ async function loadWishlist() {
 
 // ─── Render Helpers ───────────────────────
 
-// API Batch Translation (Name & Brand) using Gemini API
+// API Batch Translation (Name & Brand) - Using Google Translation API (V2) for Ranking speed
 const _translationCache = {};
 async function translateProducts(products, targetLang) {
   if (targetLang === 'ko') return;
 
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+  // Use Google Translate API for Ranking View (List Speed)
+  // AI Analysis (Product Detail) will use Gemini separately
+  const apiKey = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
   if (!apiKey) {
-    console.warn("VITE_GEMINI_API_KEY is missing! Vercel dashboard needs this variable to run dynamic translations.");
-    return;
+    console.warn("VITE_GOOGLE_TRANSLATE_API_KEY is missing! Using Gemini fallback...");
+    return translateProductsWithGemini(products, targetLang);
   }
-
-  const langNames = { vi: 'Vietnamese', en: 'English', th: 'Thai', id: 'Indonesian', ja: 'Japanese' };
 
   // 1. Gather all tasks
   const tasks = []; // { type: 'name' | 'brand', p: product, text: string, cacheKey: string }
@@ -993,17 +993,14 @@ async function translateProducts(products, targetLang) {
   products.forEach(p => {
     const pid = p.product_id || p.id;
     const nameCacheKey = `tr_${targetLang}_${pid}`;
-    const brandCacheKey = `br_en_${pid}`; // Brands are always translated to English per user req
+    const brandCacheKey = `br_en_${pid}`;
 
     const rawName = p.name_ko || p.name || p.product_name;
     const rawBrand = p.brand_ko || p.brand || p.brand_name;
 
-    // Name translation (to targetLang)
     if (!p[`name_${targetLang}`] && !_translationCache[nameCacheKey] && !localStorage.getItem(nameCacheKey) && rawName) {
       tasks.push({ type: 'name', p, text: rawName, cacheKey: nameCacheKey });
     }
-
-    // Brand translation (to English always)
     if (!p.brand_en && !localStorage.getItem(brandCacheKey) && rawBrand) {
       tasks.push({ type: 'brand', p, text: rawBrand, cacheKey: brandCacheKey, target: 'en' });
     }
@@ -1011,9 +1008,8 @@ async function translateProducts(products, targetLang) {
 
   if (tasks.length === 0) return;
 
-  // 2. Batch and request
-  const BATCH = 25; // Gemini has strict RPM limits, 25 items per prompt is safer
-
+  // 2. Batch and request (Standard Google Translate V2 API)
+  const BATCH = 25;
   const groupedTasks = tasks.reduce((acc, t) => {
     const tgt = t.target || targetLang;
     if (!acc[tgt]) acc[tgt] = [];
@@ -1022,57 +1018,29 @@ async function translateProducts(products, targetLang) {
   }, {});
 
   for (const [tgtLang, langTasks] of Object.entries(groupedTasks)) {
-    const tgtLangName = langNames[tgtLang] || tgtLang;
-
     for (let i = 0; i < langTasks.length; i += BATCH) {
       const batch = langTasks.slice(i, i + BATCH);
-      const qArray = batch.map(t => t.text);
+      const qParameters = batch.map(t => `q=${encodeURIComponent(t.text)}`).join('&');
 
       try {
-        const prompt = `Translate the following list to ${tgtLangName}. Return ONLY a valid JSON array of strings in exactly the same order. Do not wrap in markdown or backticks.\n\n` + JSON.stringify(qArray);
+        // Using POST to handle long query strings
+        const res = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `target=${tgtLang}&source=ko&${qParameters}`
+        });
 
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { temperature: 0.1 }
-            })
-          }
-        );
         if (!res.ok) continue;
-
         const data = await res.json();
-        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!rawText) continue;
+        const translated = data?.data?.translations?.map(t => t.translatedText) || [];
 
-        let translated = [];
-        try {
-          // strip markdown formatting if Gemini accidentally included it
-          const cleanText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-          translated = JSON.parse(cleanText);
-        } catch (err) {
-          console.error('Gemini JSON parse error:', err, rawText);
-          continue;
-        }
-
-        if (!Array.isArray(translated) || translated.length !== batch.length) {
-          console.warn('Gemini returned mismatched array length.');
-          continue;
-        }
-
-        // Save and Update DOM
         batch.forEach((t, idx) => {
           let resText = translated[idx] || t.text;
-          // Clean up common weird translations
-          if (t.type === 'brand') { resText = resText.replace(/ /g, ''); } // basic brand cleanup
+          if (t.type === 'brand') { resText = resText.replace(/ /g, ''); }
 
           _translationCache[t.cacheKey] = resText;
           localStorage.setItem(t.cacheKey, resText);
 
-          // Directly update DOM
           const pid = t.p.product_id || t.p.id;
           const selector = t.type === 'name'
             ? `.product-name[data-pid="${pid}"], .gt-product-name[data-pid="${pid}"]`
@@ -1083,50 +1051,95 @@ async function translateProducts(products, targetLang) {
           });
         });
       } catch (e) {
-        console.warn(`Gemini Translation batch error (${tgtLang}):`, e);
+        console.warn(`Speed Translation error (${tgtLang}):`, e);
       }
     }
   }
 }
 
-// Google Cloud Translation API 배치 번역 (브랜드/카테고리 등 짧은 키워드 번역) -> Gemini API로 변경
-async function translateKeywords(items, targetLang, targetType = 'category') {
-  if (!items || items.length === 0) return;
-
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+// Fallback to Gemini if Google API key is missing (Historical logic kept for analysis etc)
+async function translateProductsWithGemini(products, targetLang) {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) return;
 
   const langNames = { vi: 'Vietnamese', en: 'English', th: 'Thai', id: 'Indonesian', ja: 'Japanese' };
-  const tgtLangName = langNames[targetLang] || targetLang;
+  const tasks = [];
+  products.forEach(p => {
+    const pid = p.product_id || p.id;
+    const nameCacheKey = `tr_${targetLang}_${pid}`;
+    const brandCacheKey = `br_en_${pid}`;
+    const rawName = p.name_ko || p.name || p.product_name;
+    const rawBrand = p.brand_ko || p.brand || p.brand_name;
+    if (!p[`name_${targetLang}`] && !_translationCache[nameCacheKey] && !localStorage.getItem(nameCacheKey) && rawName) {
+      tasks.push({ type: 'name', p, text: rawName, cacheKey: nameCacheKey });
+    }
+    if (!p.brand_en && !localStorage.getItem(brandCacheKey) && rawBrand) {
+      tasks.push({ type: 'brand', p, text: rawBrand, cacheKey: brandCacheKey, target: 'en' });
+    }
+  });
+
+  if (tasks.length === 0) return;
+
+  const groupedTasks = tasks.reduce((acc, t) => {
+    const tgt = t.target || targetLang;
+    if (!acc[tgt]) acc[tgt] = [];
+    acc[tgt].push(t);
+    return acc;
+  }, {});
+
+  for (const [tgtLang, langTasks] of Object.entries(groupedTasks)) {
+    const tgtLangName = langNames[tgtLang] || tgtLang;
+    const BATCH = 25;
+    for (let i = 0; i < langTasks.length; i += BATCH) {
+      const batch = langTasks.slice(i, i + BATCH);
+      const qArray = batch.map(t => t.text);
+      try {
+        const prompt = `Translate the following list to ${tgtLangName}. Return ONLY a valid JSON array of strings in exactly the same order. Do not wrap in markdown or backticks.\n\n` + JSON.stringify(qArray);
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.1 }
+          })
+        });
+        if (!res.ok) continue;
+        const data = await res.json();
+        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!rawText) continue;
+        const translated = JSON.parse(rawText.replace(/```json/g, '').replace(/```/g, '').trim());
+        batch.forEach((t, idx) => {
+          let resText = translated[idx] || t.text;
+          if (t.type === 'brand') resText = resText.replace(/ /g, '');
+          _translationCache[t.cacheKey] = resText;
+          localStorage.setItem(t.cacheKey, resText);
+          const pid = t.p.product_id || t.p.id;
+          const selector = t.type === 'name'
+            ? `.product-name[data-pid="${pid}"], .gt-product-name[data-pid="${pid}"]`
+            : `.product-brand[data-pid="${pid}"], .gt-product-brand[data-pid="${pid}"]`;
+          document.querySelectorAll(selector).forEach(cell => cell.textContent = resText);
+        });
+      } catch (e) { console.warn("Gemini translation error", e); }
+    }
+  }
+}
+
+// Google Cloud Translation API (Speed) for keywords
+async function translateKeywords(items, targetLang, targetType = 'category') {
+  if (!items || items.length === 0) return;
+  const apiKey = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+  if (!apiKey) return null; // Keywords usually aren't worth Gemini's cost/speed in lists
 
   try {
-    const prompt = `Translate the following list to ${tgtLangName}. Return ONLY a valid JSON array of strings in exactly the same order. Do not wrap in markdown or backticks.\n\n` + JSON.stringify(items);
-
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.1 }
-        })
-      }
-    );
+    const qParameters = items.map(t => `q=${encodeURIComponent(t)}`).join('&');
+    const res = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `target=${targetLang}&source=ko&${qParameters}`
+    });
     if (!res.ok) return null;
     const data = await res.json();
-    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!rawText) return null;
-
-    let translated = [];
-    try {
-      const cleanText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-      translated = JSON.parse(cleanText);
-    } catch (err) {
-      return null;
-    }
-
-    return Array.isArray(translated) && translated.length === items.length ? translated : null;
+    return data?.data?.translations?.map(t => t.translatedText) || null;
   } catch (e) {
     console.warn(`Keyword translation error (${targetType}):`, e);
     return null;
