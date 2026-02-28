@@ -69,6 +69,7 @@ export const KoreaTrendBridge = {
                 fetchNaverBestBrands({ categoryId: this._nb.brandCatId, periodType: this._nb.brandPeriod, limit: 30 }),
             ]);
             return {
+                data: pRes.data || [],      // ← main.js empty-check needs this key
                 products: pRes.data || [],
                 brands: bRes.data || [],
                 _isNaverBest: true,
