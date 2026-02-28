@@ -1733,7 +1733,7 @@ window.__openProduct = async function (product) {
             <button class="btn-store-premium ${window.currentModalIsSaved ? 'active' : ''}" style="flex:1; background:#fff; color:var(--accent-blue); border:1px solid var(--accent-blue); padding:12px; border-radius:12px; font-weight:700; cursor:pointer;" onclick="window.__modalToggleWishlist(this, '${product.id || product.product_id}')">
                ${window.currentModalIsSaved ? window.t('modal.wishlist_saved') : window.t('modal.wishlist_add')}
             </button>
-            <button class="btn-store-premium" style="flex:1; background:#fff; color:#f06595; border:1px solid #f06595; padding:12px; border-radius:12px; font-weight:700; cursor:pointer;" onclick="document.getElementById('productDetailModalOverlay').classList.remove('open'); window.openMyPageModal(); setTimeout(() => { document.querySelector('.auth-tab[data-mypage-tab=\\'sourcing\\']').click(); }, 100);">
+            <button class="btn-store-premium" style="flex:1; background:#fff; color:#f06595; border:1px solid #f06595; padding:12px; border-radius:12px; font-weight:700; cursor:pointer;" onclick="window.__sourcingRequestFromModal('${(product.id || product.product_id)}')">
                ${window.t('modal.sourcing_req')}
             </button>
           </div>
@@ -3386,6 +3386,34 @@ window.__modalToggleWishlist = async function (btn, productId) {
     btn.innerHTML = window.t('modal.wishlist_add');
   }
 };
+
+// Auto-add to wishlist then navigate to sourcing tab
+window.__sourcingRequestFromModal = async function (productId) {
+  try {
+    // Find and auto-save the product to wishlist if not already saved
+    if (!window.currentModalIsSaved && productId) {
+      const wishBtn = document.querySelector('#productDetailModalOverlay .btn-store-premium');
+      if (wishBtn) {
+        await window.__toggleWishlist(wishBtn, productId);
+        if (wishBtn.classList.contains('active')) {
+          wishBtn.innerHTML = window.t('modal.wishlist_saved');
+          window.currentModalIsSaved = true;
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Could not auto-add to wishlist:', e);
+  }
+  // Close modal and open sourcing tab
+  const overlay = document.getElementById('productDetailModalOverlay');
+  if (overlay) overlay.classList.remove('open');
+  window.openMyPageModal();
+  setTimeout(() => {
+    const sourcingTab = document.querySelector('.auth-tab[data-mypage-tab="sourcing"]');
+    if (sourcingTab) sourcingTab.click();
+  }, 150);
+};
+
 window.toggleSupportView = function (viewName) {
   const faqView = document.getElementById('supportFaqView');
   const inquiryView = document.getElementById('supportInquiryView');
@@ -3406,6 +3434,7 @@ window.toggleSupportView = function (viewName) {
     window.loadUserInquiries();
   }
 };
+
 
 window.loadFaqs = async function () {
   const list = document.getElementById('faqList');

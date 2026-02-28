@@ -92,7 +92,13 @@
         "ai_analyzing": "AI가 리뷰 데이터를 분석 및 저장하고 있습니다...",
         "sentiment_pos": "긍정",
         "sentiment_neg": "부정",
-        "ai_disclaimer": "이 요약은 AI AI가 실제 리뷰를 바탕으로 분석한 자동 생성 결과이며, 최초 1회 분석 후 DB에 저장됩니다."
+        "wishlist_add": "❤️ 관심상품 추가",
+        "wishlist_saved": "❤️ 관심상품 저장됨",
+        "sourcing_req": "📦 소싱 견적 요청하기",
+        "view_in": "🔗 {platform}에서 보기",
+        "rank_category": "카테고리 순위",
+        "rank_value": "#{rank}위",
+        "ai_disclaimer": "이 요약은 AI가 실제 리뷰를 바탕으로 분석한 자동 생성 결과이며, 최초 1회 분석 후 DB에 저장됩니다."
     },
     "sections": {
         "all": "카테고리별 랭킹",
@@ -277,14 +283,23 @@
         "cart_desc": "찜한 상품들을 체계적으로 모아보고 B2B 견적을 요청하세요",
         "history_title": "📦 나의 소싱 견적 내역",
         "history_empty": "내역이 없습니다.",
+        "history_error": "내역을 불러오지 못했습니다.",
         "qty_label": "요청 수량",
+        "btn_request_quote": "📦 B2B 견적 요청하기",
+        "btn_submit": "견적 요청하기",
+        "btn_submitting": "요청 중...",
+        "total_items": "{count}종 상품",
         "status_pending": "대기 중",
         "status_quoted": "견적 완료",
         "status_canceled": "취소됨",
         "admin_reply_title": "💬 관리자 답변",
         "view_details": "상세 내역 보기",
         "shipping_fee": "배송비",
-        "service_fee": "수수료"
+        "service_fee": "수수료",
+        "alert_login": "로그인이 필요합니다.",
+        "alert_empty_cart": "견적을 요청할 상품을 선택해주세요.",
+        "alert_fail": "요청에 실패했습니다.",
+        "alert_success": "견적 요청이 완료되었습니다. 곧 결과를 알려드리겠습니다."
     },
     "deals": {
         "today_title": "오늘의 특가 주문 마감까지",
