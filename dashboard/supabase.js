@@ -79,6 +79,17 @@ export async function fetchSteadySellers() {
 }
 
 /**
+ * Fetch Naver Best products (source='naver_best')
+ */
+export async function fetchNaverBestProducts({ limit = 100, category = '' } = {}) {
+    let qs = `select=*&source=eq.naver_best&order=current_rank.asc&limit=${limit}`;
+    if (category && category !== 'ALL') {
+        qs += `&category=eq.${encodeURIComponent(category)}`;
+    }
+    return await query('products_master', qs);
+}
+
+/**
  * Fetch trending products (7-day rank change)
  */
 export async function fetchTrending(limit = 50, platform = 'oliveyoung') {

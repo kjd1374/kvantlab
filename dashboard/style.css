@@ -2920,6 +2920,98 @@ body {
   gap: 16px;
 }
 
+/* ── Naver Best Dashboard ───────────────────────────── */
+.nb-dashboard {
+  padding: 16px 20px;
+}
+
+.nb-cat-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--border-color, #ccc);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+
+.nb-cat-btn:hover {
+  background: var(--card-bg2, #f5f5f5);
+}
+
+.nb-product-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.nb-product-card {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #eee);
+  transition: box-shadow 0.15s;
+}
+
+.nb-product-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.nb-rank-badge {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nb-rank-badge-normal {
+  background: var(--text-muted, #666);
+  font-size: 10px;
+}
+
+.nb-product-brand {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.nb-product-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nb-product-price {
+  font-size: 13px;
+  color: var(--accent-blue, #4dabf7);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.nb-product-category {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+
 /* KPI Row */
 .gt-kpi-row {
   display: grid;
