@@ -42,7 +42,36 @@ const FALLBACK_STRINGS = {
     'auth.signup': { 'en': 'Sign Up', 'ko': '회원가입' },
     'auth.other_platform': { 'en': 'Enter platform directly', 'ko': '플랫폼 직접 입력' },
     'auth.other_category': { 'en': 'Enter category directly', 'ko': '카테고리 직접 입력' },
-    'common.login_signup': { 'en': 'Login / Register', 'ko': '로그인 / 회원가입' }
+    'common.login_signup': { 'en': 'Login / Register', 'ko': '로그인 / 회원가입' },
+
+    // Korea Trends – Tab names
+    'tabs.global_trends': { ko: '🌏 글로벌 트렌드', en: '🌏 Global Trends' },
+    'tabs.naver_best': { ko: '🇰🇷 대한민국 트렌드', en: '🇰🇷 Korea Best' },
+    'tabs.apply': { ko: '적용', en: 'Apply' },
+
+    // Naver Best – Section titles
+    'naver_best.products_title': { ko: '🛍️ 베스트 상품 순위', en: '🛍️ Best Product Rankings' },
+    'naver_best.brands_title': { ko: '🏢 베스트 브랜드 순위', en: '🏢 Best Brand Rankings' },
+    'naver_best.header': { ko: '🇰🇷 네이버 쇼핑 베스트', en: '🇰🇷 Naver Shopping Best' },
+    'naver_best.empty': { ko: '데이터가 없습니다. 잠시 후 다시 시도하세요.', en: 'No data available. Please try again later.' },
+    'naver_best.count': { ko: '오늘의 베스트셀러', en: "Today's Best Sellers" },
+
+    // Naver Best – Period toggles
+    'naver_best.daily': { ko: '일간', en: 'Daily' },
+    'naver_best.weekly': { ko: '주간', en: 'Weekly' },
+    'naver_best.monthly': { ko: '월간', en: 'Monthly' },
+
+    // Naver Best – Category names
+    'naver_cat.A': { ko: '전체', en: 'All' },
+    'naver_cat.50000000': { ko: '패션의류', en: 'Fashion' },
+    'naver_cat.50000001': { ko: '패션잡화', en: 'Accessories' },
+    'naver_cat.50000002': { ko: '화장품/미용', en: 'Beauty' },
+    'naver_cat.50000003': { ko: '디지털/가전', en: 'Digital' },
+    'naver_cat.50000004': { ko: '가구/인테리어', en: 'Furniture' },
+    'naver_cat.50000005': { ko: '출산/육아', en: 'Baby' },
+    'naver_cat.50000006': { ko: '식품', en: 'Food' },
+    'naver_cat.50000007': { ko: '스포츠/레저', en: 'Sports' },
+    'naver_cat.50000008': { ko: '생활/건강', en: 'Living' },
 };
 
 class I18n {

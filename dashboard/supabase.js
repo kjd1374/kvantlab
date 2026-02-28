@@ -81,12 +81,23 @@ export async function fetchSteadySellers() {
 /**
  * Fetch Naver Best products (source='naver_best')
  */
-export async function fetchNaverBestProducts({ limit = 100, category = '' } = {}) {
+export async function fetchNaverBestProducts({ limit = 50, categoryId = 'A' } = {}) {
     let qs = `select=*&source=eq.naver_best&order=current_rank.asc&limit=${limit}`;
-    if (category && category !== 'ALL') {
-        qs += `&category=eq.${encodeURIComponent(category)}`;
+    if (categoryId && categoryId !== 'A') {
+        qs += `&naver_category_id=eq.${encodeURIComponent(categoryId)}`;
     }
     return await query('products_master', qs);
+}
+
+/**
+ * Fetch Naver Best brands from trend_brands table
+ */
+export async function fetchNaverBestBrands({ categoryId = 'A', periodType = 'WEEKLY', limit = 30 } = {}) {
+    let qs = `select=*&period_type=eq.${periodType}&order=rank.asc&limit=${limit}`;
+    if (categoryId && categoryId !== 'A') {
+        qs += `&category_id=eq.${encodeURIComponent(categoryId)}`;
+    }
+    return await query('trend_brands', qs);
 }
 
 /**

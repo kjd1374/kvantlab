@@ -1,7 +1,7 @@
 /**
  * Korea Trend Source Bridge - AI 글로벌 트렌드 분석 대시보드 v2 (i18n + no-image)
  */
-import { fetchGlobalShoppingTrends, fetchOyProductByBrand, fetchNaverBestProducts } from '../supabase.js';
+import { fetchGlobalShoppingTrends, fetchOyProductByBrand, fetchNaverBestProducts, fetchNaverBestBrands } from '../supabase.js';
 
 // English → Korean brand name mapping for Olive Young product lookup
 const BRAND_KO_MAP = {
@@ -35,7 +35,13 @@ export const KoreaTrendBridge = {
         { id: 'naver_best', icon: '🇰🇷', label: 'tabs.naver_best' }
     ],
 
-    _naverCategoryFilter: 'ALL',
+    // Naver Best internal state
+    _nb: {
+        productCatId: 'A',        // selected category for products
+        productPeriod: 'DAILY',    // DAILY | WEEKLY
+        brandCatId: 'A',        // selected category for brands
+        brandPeriod: 'WEEKLY',   // WEEKLY | MONTHLY
+    },
 
     filterState: {
         country: 'ALL',
@@ -58,8 +64,15 @@ export const KoreaTrendBridge = {
     async fetchData(tabId, state) {
         // ── Naver Best tab ──────────────────────────────────────────
         if (tabId === 'naver_best') {
-            const res = await fetchNaverBestProducts({ limit: 100, category: this._naverCategoryFilter });
-            return { data: res.data || [], count: res.data?.length || 0, _isNaverBest: true };
+            const [pRes, bRes] = await Promise.all([
+                fetchNaverBestProducts({ limit: 50, categoryId: this._nb.productCatId }),
+                fetchNaverBestBrands({ categoryId: this._nb.brandCatId, periodType: this._nb.brandPeriod, limit: 30 }),
+            ]);
+            return {
+                products: pRes.data || [],
+                brands: bRes.data || [],
+                _isNaverBest: true,
+            };
         }
 
         // ── Global Trends tab (existing) ────────────────────────────
@@ -107,7 +120,7 @@ export const KoreaTrendBridge = {
     renderTabContent(tabId, result, state) {
         // Naver Best tab uses custom renderer
         if (result?._isNaverBest) {
-            return this._renderNaverBest(result.data || []);
+            return this._renderNaverBest(result.products || [], result.brands || []);
         }
         if (!result || !result._isDashboard) return null; // Fall back to default renderer
         const data = result.data || [];
@@ -257,85 +270,130 @@ export const KoreaTrendBridge = {
         </div>`;
     },
 
-    _renderNaverBest(products) {
-        if (!products || products.length === 0) {
-            return `<div class="gt-empty"><span>🇰🇷</span><p>네이버 쇼핑 베스트 데이터가 없습니다. 잠시 후 다시 시도해주세요.</p></div>`;
-        }
+    // ── Naver Best renderer (top-bottom layout) ───────────────────
+    _renderNaverBest(products, brands) {
+        const t = (key, fallback) => window.t?.(key) || fallback || key;
 
-        // Build category tabs from actual data
-        const categorySet = new Set(products.map(p => p.category).filter(Boolean));
-        const categories = ['ALL', ...Array.from(categorySet).slice(0, 8)];
+        // Fixed category list (Naver official)
+        const CATS = [
+            { id: 'A', label: t('naver_cat.A', '전체') },
+            { id: '50000000', label: t('naver_cat.50000000', '패션의류') },
+            { id: '50000001', label: t('naver_cat.50000001', '패션잡화') },
+            { id: '50000002', label: t('naver_cat.50000002', '화장품/미용') },
+            { id: '50000003', label: t('naver_cat.50000003', '디지털/가전') },
+            { id: '50000005', label: t('naver_cat.50000005', '출산/육아') },
+            { id: '50000008', label: t('naver_cat.50000008', '생활/건강') },
+        ];
+        const RANK_COLORS = ['#FFD700', '#C0C0C0', '#CD7F32'];
 
-        // Build brand aggregates (top 10)
-        const brandCount = {};
-        products.forEach(p => {
-            if (p.brand) brandCount[p.brand] = (brandCount[p.brand] || 0) + 1;
-        });
-        const topBrands = Object.entries(brandCount).sort((a, b) => b[1] - a[1]).slice(0, 8);
-        const maxBrand = topBrands[0]?.[1] || 1;
-
-        const rankColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
-        const productCards = products.slice(0, 50).map((p, i) => {
-            const rank = p.current_rank || (i + 1);
-            const rankBadge = rank <= 3
-                ? `<div class="nb-rank-badge" style="background:${rankColors[rank - 1]};">${rank}</div>`
-                : `<div class="nb-rank-badge nb-rank-badge-normal">${rank}</div>`;
-            const rankChange = p.rank_change ? (p.rank_change > 0 ? `<span style="color:#2ecc71">▲${p.rank_change}</span>` : `<span style="color:#e74c3c">▼${Math.abs(p.rank_change)}</span>`) : '';
-            const price = p.price ? `₩${p.price.toLocaleString()}` : '';
-            const img = p.image_url
-                ? `<img src="${p.image_url}" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:8px;" loading="lazy" onerror="this.style.display='none'">`
-                : `<div style="width:72px;height:72px;border-radius:8px;background:var(--card-bg2);display:flex;align-items:center;justify-content:center;font-size:24px;">🛍️</div>`;
-            return `
-            <div class="nb-product-card" onclick="window.open('${p.url || '#'}','_blank')" style="cursor:pointer;">
-                <div style="position:relative;flex-shrink:0;">
-                    ${img}
-                    ${rankBadge}
-                </div>
-                <div style="flex:1;min-width:0;">
-                    <div class="nb-product-brand">${p.brand || ''} ${rankChange}</div>
-                    <div class="nb-product-name">${p.name || ''}</div>
-                    <div class="nb-product-price">${price}</div>
-                    <div class="nb-product-category">${p.category || ''}</div>
-                </div>
-            </div>`;
+        // ── Product category tabs ───────────────────────────────
+        const pCatTabs = CATS.map(c => {
+            const active = this._nb.productCatId === c.id;
+            return `<button class="nb-cat-btn${active ? ' nb-cat-active' : ''}" data-section="prod" data-cat="${c.id}">${c.label}</button>`;
         }).join('');
 
-        const brandBars = topBrands.map(([brand, count]) => {
-            const pct = Math.round((count / maxBrand) * 100);
-            return `<div class="gt-bar-row"><span class="gt-bar-label">${brand}</span><div class="gt-bar-track"><div class="gt-bar-fill" style="width:${pct}%"></div></div><span class="gt-bar-value">${count}</span></div>`;
+        // Product period toggle
+        const pPeriods = [
+            { key: 'DAILY', label: t('naver_best.daily', '일간') },
+            { key: 'WEEKLY', label: t('naver_best.weekly', '주간') },
+        ];
+        const pPeriodBtns = pPeriods.map(p => {
+            const active = this._nb.productPeriod === p.key;
+            return `<button class="nb-period-btn${active ? ' nb-period-active' : ''}" data-section="prod" data-period="${p.key}">${p.label}</button>`;
         }).join('');
 
-        const catTabs = categories.map(cat => {
-            const active = (this._naverCategoryFilter === cat) ? 'style="background:var(--accent-blue);color:#fff;"' : '';
-            return `<button class="nb-cat-btn" data-cat="${cat}" ${active}>${cat === 'ALL' ? '전체' : cat}</button>`;
+        // Product cards (grid)
+        const productCards = products.length === 0
+            ? `<p style="color:var(--text-muted);padding:24px;text-align:center;">${t('naver_best.empty', '데이터 없음')}</p>`
+            : products.slice(0, 50).map((p, i) => {
+                const rank = p.current_rank || (i + 1);
+                const badge = rank <= 3
+                    ? `<div class="nb-rank-badge" style="background:${RANK_COLORS[rank - 1]};">${rank}</div>`
+                    : `<div class="nb-rank-badge nb-rank-badge-normal">${rank}</div>`;
+                const chg = p.rank_change
+                    ? (p.rank_change > 0
+                        ? `<span class="nb-chg-up">▲${p.rank_change}</span>`
+                        : `<span class="nb-chg-down">▼${Math.abs(p.rank_change)}</span>`)
+                    : '';
+                const price = p.price ? `₩${Number(p.price).toLocaleString()}` : '';
+                const img = p.image_url
+                    ? `<img src="${p.image_url}" alt="" class="nb-grid-img" loading="lazy" onerror="this.style.display='none'">`
+                    : `<div class="nb-grid-img nb-grid-no-img">🛍️</div>`;
+                return `<div class="nb-grid-card" onclick="window.open('${p.url || '#'}','_blank')">
+                    <div style="position:relative">${img}${badge}</div>
+                    <div class="nb-grid-info">
+                        <div class="nb-product-brand">${p.brand || ''}${chg ? ' ' + chg : ''}</div>
+                        <div class="nb-product-name">${p.name || ''}</div>
+                        <div class="nb-product-price">${price}</div>
+                    </div>
+                </div>`;
+            }).join('');
+
+        // ── Brand category tabs ───────────────────────────────
+        const bCatTabs = CATS.map(c => {
+            const active = this._nb.brandCatId === c.id;
+            return `<button class="nb-cat-btn${active ? ' nb-cat-active' : ''}" data-section="brand" data-cat="${c.id}">${c.label}</button>`;
         }).join('');
+
+        const bPeriods = [
+            { key: 'WEEKLY', label: t('naver_best.weekly', '주간') },
+            { key: 'MONTHLY', label: t('naver_best.monthly', '월간') },
+        ];
+        const bPeriodBtns = bPeriods.map(p => {
+            const active = this._nb.brandPeriod === p.key;
+            return `<button class="nb-period-btn${active ? ' nb-period-active' : ''}" data-section="brand" data-period="${p.key}">${p.label}</button>`;
+        }).join('');
+
+        // Brand rows
+        const brandRows = brands.length === 0
+            ? `<p style="color:var(--text-muted);padding:24px;text-align:center;">${t('naver_best.empty', '데이터 없음')}</p>`
+            : brands.map((b, i) => {
+                const rank = b.rank || (i + 1);
+                const badge = rank <= 3
+                    ? `<div class="nb-rank-badge" style="background:${RANK_COLORS[rank - 1]};position:static;width:28px;height:28px;font-size:13px;">${rank}</div>`
+                    : `<div class="nb-rank-badge nb-rank-badge-normal" style="position:static;width:28px;height:28px;">${rank}</div>`;
+                const logo = b.logo_url
+                    ? `<img src="${b.logo_url}" alt="" style="width:40px;height:40px;border-radius:8px;object-fit:cover;" onerror="this.style.display='none'">`
+                    : `<div style="width:40px;height:40px;border-radius:8px;background:var(--card-bg2);display:flex;align-items:center;justify-content:center;">🏢</div>`;
+                const tags = (b.hashtags || []).map(tag => `<span class="nb-hash">${tag}</span>`).join('');
+                const storeLink = b.store_url ? `onclick="window.open('${b.store_url}','_blank')" style="cursor:pointer;"` : '';
+                return `<div class="nb-brand-row" ${storeLink}>
+                    ${badge}
+                    ${logo}
+                    <div style="flex:1;min-width:0;">
+                        <div class="nb-brand-name">${b.brand_name || ''}</div>
+                        <div class="nb-brand-tags">${tags}</div>
+                    </div>
+                </div>`;
+            }).join('');
 
         return `
         <div class="nb-dashboard">
             <!-- Header -->
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-                <div style="background:linear-gradient(135deg,#03C75A,#00A455);border-radius:12px;padding:10px 16px;color:#fff;font-weight:700;font-size:15px;">🇰🇷 네이버 쇼핑 베스트</div>
-                <div style="color:var(--text-muted);font-size:13px;">오늘 가장 많이 구매된 베스트셀러 ${products.length}개</div>
+            <div class="nb-header">
+                <div class="nb-header-badge">${t('naver_best.header', '🇰🇷 네이버 쇼핑 베스트')}</div>
             </div>
 
-            <!-- Category Chips -->
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
-                ${catTabs}
+            <!-- ■ SECTION 1: Products -->
+            <div class="nb-section">
+                <div class="nb-section-header">
+                    <span class="nb-section-title">${t('naver_best.products_title', '🛍️ 베스트 상품 순위')}</span>
+                    <div class="nb-period-group">${pPeriodBtns}</div>
+                </div>
+                <div class="nb-cat-row">${pCatTabs}</div>
+                <div class="nb-product-grid">${productCards}</div>
             </div>
 
-            <!-- Two column layout -->
-            <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;">
-                <!-- Products -->
-                <div>
-                    <h3 style="font-size:14px;color:var(--text-muted);margin-bottom:12px;font-weight:600;">🛍️ 베스트 구매 순위</h3>
-                    <div class="nb-product-list">${productCards}</div>
-                </div>
+            <div class="nb-divider"></div>
 
-                <!-- Brand rankings -->
-                <div>
-                    <h3 style="font-size:14px;color:var(--text-muted);margin-bottom:12px;font-weight:600;">🏢 스토어 순위</h3>
-                    <div class="gt-bar-chart">${brandBars}</div>
+            <!-- ■ SECTION 2: Brands -->
+            <div class="nb-section">
+                <div class="nb-section-header">
+                    <span class="nb-section-title">${t('naver_best.brands_title', '🏢 베스트 브랜드 순위')}</span>
+                    <div class="nb-period-group">${bPeriodBtns}</div>
                 </div>
+                <div class="nb-cat-row">${bCatTabs}</div>
+                <div class="nb-brand-list">${brandRows}</div>
             </div>
         </div>`;
     },
@@ -371,12 +429,25 @@ export const KoreaTrendBridge = {
             }
         });
 
-        // Naver Best category chip filter (delegated)
+        // Naver Best: delegated handler for category + period buttons
         document.addEventListener('click', (e) => {
-            const btn = e.target.closest('.nb-cat-btn');
-            if (!btn) return;
-            this._naverCategoryFilter = btn.dataset.cat || 'ALL';
-            if (reloadCallback) reloadCallback();
+            const catBtn = e.target.closest('.nb-cat-btn');
+            if (catBtn) {
+                const section = catBtn.dataset.section;
+                const cat = catBtn.dataset.cat;
+                if (section === 'prod') this._nb.productCatId = cat;
+                else if (section === 'brand') this._nb.brandCatId = cat;
+                if (reloadCallback) reloadCallback();
+                return;
+            }
+            const periodBtn = e.target.closest('.nb-period-btn');
+            if (periodBtn) {
+                const section = periodBtn.dataset.section;
+                const period = periodBtn.dataset.period;
+                if (section === 'prod') this._nb.productPeriod = period;
+                else if (section === 'brand') this._nb.brandPeriod = period;
+                if (reloadCallback) reloadCallback();
+            }
         });
     }
 };
