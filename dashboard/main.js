@@ -667,14 +667,15 @@ function setupSortListeners() {
 
 // ─── K-Trend 전용 뷰 ────────────────────────
 async function loadKTrendView(tabId) {
-  const container = document.getElementById('tab-global_trends');
-  const grid = document.getElementById('global_trendsGrid');
+  // Use the requested tabId rather than hardcoding global_trends
+  const container = document.getElementById(`tab-${tabId}`);
+  const grid = document.getElementById(`${tabId}Grid`);
   if (!container || !grid) return;
 
-  // Ensure the correct tab-content pane is visible (body[data-platform] CSS handles tab-all hiding)
+  // Ensure the correct tab-content pane is visible
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   container.classList.add('active');
-  state.activeTab = 'global_trends';
+  state.activeTab = tabId;
 
   grid.innerHTML = '<div class="loading-skeleton"></div>';
 
