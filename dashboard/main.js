@@ -3654,7 +3654,7 @@ window.__sourcingRequestFromModal = async function (productId) {
   try {
     // Find and auto-save the product to wishlist if not already saved
     if (!window.currentModalIsSaved && productId) {
-      const wishBtn = document.querySelector('#productDetailModalOverlay .btn-store-premium');
+      const wishBtn = document.querySelector('#modalOverlay .btn-store-premium');
       if (wishBtn) {
         await window.__toggleWishlist(wishBtn, productId);
         if (wishBtn.classList.contains('active')) {
@@ -3668,7 +3668,7 @@ window.__sourcingRequestFromModal = async function (productId) {
   }
 
   // Get product info from modal itself before closing
-  const modalContent = document.getElementById('productDetailModalOverlay');
+  const modalContent = document.getElementById('modalOverlay');
   const nameEl = modalContent ? modalContent.querySelector('.modal-title-premium, .modal-title') : null;
   const brandEl = modalContent ? modalContent.querySelector('.modal-brand-premium, .modal-brand') : null;
   const imgEl = modalContent ? modalContent.querySelector('.modal-img-premium, .modal-main-image') : null;
