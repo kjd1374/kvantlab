@@ -813,7 +813,7 @@ async function loadTrending() {
       return;
     }
 
-    // Deduplicate by name + brand (keep highest rank_change or best current_rank)
+    // Deduplicate by name + brand (keep the most recently crawled data)
     const uniqueMap = new Map();
     filtered.forEach(p => {
       // Normalize name and brand for comparison
@@ -822,12 +822,14 @@ async function loadTrending() {
         uniqueMap.set(key, p);
       } else {
         const existing = uniqueMap.get(key);
-        // Prefer the one with higher rank change, or if same, better (lower) current_rank
-        const existingRC = existing.rank_change || 0;
-        const newRC = p.rank_change || 0;
-        if (newRC > existingRC) {
+        // Prefer the one with the latest created_at
+        const existingTime = existing.created_at ? new Date(existing.created_at).getTime() : 0;
+        const newTime = p.created_at ? new Date(p.created_at).getTime() : 0;
+
+        if (newTime > existingTime) {
           uniqueMap.set(key, p);
-        } else if (newRC === existingRC) {
+        } else if (newTime === existingTime) {
+          // Fallback if timestamps are identical
           const existingRank = existing.current_rank || 999;
           const newRank = p.current_rank || 999;
           if (newRank < existingRank) {
