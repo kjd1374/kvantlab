@@ -97,13 +97,20 @@ export const OliveYoungBridge = {
                 const kstTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
                 const kstTarget = new Date(kstTime);
 
+                const kstHour = kstTime.getHours();
+
+                // Between 9 PM and Midnight KST -> Hide Timer
+                if (kstHour >= 21) {
+                    timerEl.innerHTML = `<span style="font-size: 15px; font-weight: 500; font-family: Pretendard, sans-serif; opacity: 0.9;">✅ 금일 주문 마감 (내일 특가 준비중)</span>`;
+                    timerEl.style.letterSpacing = 'normal';
+                    return;
+                }
+
+                // Restore styles if transitioned from closed state
+                timerEl.style.letterSpacing = '2px';
+
                 // Target is 21:00 (9 PM) KST today
                 kstTarget.setHours(21, 0, 0, 0);
-
-                // If it's already past 9 PM today, count down to 9 PM tomorrow
-                if (kstTime > kstTarget) {
-                    kstTarget.setDate(kstTarget.getDate() + 1);
-                }
 
                 const diffMs = kstTarget - kstTime;
 
