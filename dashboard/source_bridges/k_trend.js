@@ -434,6 +434,8 @@ export const KoreaTrendBridge = {
         document.addEventListener('click', (e) => {
             const catBtn = e.target.closest('.nb-cat-btn');
             if (catBtn) {
+                e.preventDefault();
+                e.stopPropagation(); // Prevent bubbling up to the main tabs
                 const section = catBtn.dataset.section;
                 const cat = catBtn.dataset.cat;
                 if (section === 'prod') this._nb.productCatId = cat;
@@ -443,6 +445,8 @@ export const KoreaTrendBridge = {
             }
             const periodBtn = e.target.closest('.nb-period-btn');
             if (periodBtn) {
+                e.preventDefault();
+                e.stopPropagation(); // Prevent bubbling up to the main tabs
                 const section = periodBtn.dataset.section;
                 const period = periodBtn.dataset.period;
                 if (section === 'prod') this._nb.productPeriod = period;

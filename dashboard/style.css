@@ -2926,6 +2926,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0;
+  grid-column: 1 / -1;
+  width: 100%;
 }
 
 /* Header */
@@ -3026,8 +3028,12 @@ body {
 /* Product grid */
 .nb-product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 12px;
+  max-height: 800px;
+  overflow-y: auto;
+  align-content: start;
+  padding-bottom: 20px;
 }
 
 .nb-grid-card {
@@ -3126,6 +3132,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 8px;
+  /* for scrollbar */
 }
 
 .nb-brand-row {
