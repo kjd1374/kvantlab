@@ -105,10 +105,17 @@ async function setPlatform(platform) {
   if (window.attachPlatformListeners) window.attachPlatformListeners();
 
   // Reset Category & Search
+  // Reset Category & Search & Tab State
   state.activeCategory = null; // null로 명확히 초기화 (빈 문자열이면 !state.activeCategory가 false 될 수 있음)
   state.searchQuery = '';
   const searchInput = document.getElementById('searchInput');
   if (searchInput) searchInput.value = '';
+
+  // Ensure activeTab is valid for the new platform, otherwise default to the first tab
+  if (!state.activeBridge.tabs.some(t => t.id === state.activeTab)) {
+    state.activeTab = state.activeBridge.tabs[0].id;
+  }
+
 
   // Render Tabs for this platform
   renderTabs();
@@ -385,7 +392,14 @@ async function loadCategories() {
           }
         }
 
-        loadTab(state.activeTab);
+        // Ensure tab is valid for the current platform (e.g. if 'deals' tab doesn't exist here)
+        const isValidTab = state.activeBridge.tabs.some(t => t.id === state.activeTab);
+        if (!isValidTab) {
+          switchTab(state.activeBridge.tabs[0].id);
+        } else {
+          loadTab(state.activeTab);
+        }
+
       });
       container.appendChild(btn);
     });
@@ -833,6 +847,36 @@ async function loadDeals() {
   // Update section header with date
   const header = document.querySelector('#tab-deals .section-desc');
   if (header && date) header.textContent = `${date} 기준 올리브영 오늘의 특가 (${filtered.length}개)`;
+
+  // Start Deals Countdown Timer (Target: Midnight KST)
+  const timerEl = document.getElementById('dealsTimer');
+  if (timerEl) {
+    if (window.dealsTimerInterval) clearInterval(window.dealsTimerInterval);
+
+    const updateTimer = () => {
+      const now = new Date();
+      // Get current time in KST
+      const kstTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+      const kstMidnight = new Date(kstTime);
+      kstMidnight.setHours(24, 0, 0, 0); // Target next midnight
+
+      const diffMs = kstMidnight - kstTime;
+      if (diffMs <= 0) {
+        timerEl.textContent = '마감';
+        clearInterval(window.dealsTimerInterval);
+        return;
+      }
+
+      const h = Math.floor(diffMs / 3600000);
+      const m = Math.floor((diffMs % 3600000) / 60000);
+      const s = Math.floor((diffMs % 60000) / 1000);
+
+      timerEl.textContent = `⏰ ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')} 남음`;
+    };
+
+    updateTimer();
+    window.dealsTimerInterval = setInterval(updateTimer, 1000);
+  }
 
   const savedItems = await fetchSavedProducts();
   const savedIds = new Set(savedItems.data?.map(i => i.product_id) || []);
