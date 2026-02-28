@@ -23,6 +23,23 @@
         "terms_url": "/terms.html",
         "privacy_url": "/privacy.html"
     },
+    "landing": {
+        "hero_title_1": "이커머스 트렌드의 모든 것",
+        "hero_title_2": "AI가 분석하는 인사이트",
+        "hero_subtitle_1": "올리브영, 무신사, 에이블리의 실시간 랜킹부터 글로벌 K-것 트렌드까지.",
+        "hero_subtitle_2": "K-Vant에서 가장 빠르고 정확한 커머스 지표를 확인하세요.",
+        "feature1_title": "핵심 커머스 랜킹 종합",
+        "feature1_desc": "올리브영, 에이블리, 무신사, 신세계 등 국내 최고 플랫폼의 일간 순위를 한 곳에서 손쉽게 비교 기획하세요.",
+        "feature2_title": "AI 리뷰 마이닝",
+        "feature2_desc": "수청 개의 실사용 리뷰를 AI가 요약하여 감성, 효능, 단점을 크로스 분석해 제공합니다.",
+        "feature3_title": "글로벌 실구매 트렌드 추적",
+        "feature3_desc": "동남아시아 맷 인플루언서 및 구글 검색 빅데이터를 분석하여 해외 K-Trend를 발굴합니다.",
+        "announcements_title": "최신 업데이트 및 리포트",
+        "announcement_report": "리포트",
+        "announcement_update": "업데이트",
+        "announcement_notice": "공지사항",
+        "empty_announcements": "등록된 공지사항이 없습니다."
+    },
     "tabs": {
         "all": "전체 상품",
         "trending": "급상승 트렌드",

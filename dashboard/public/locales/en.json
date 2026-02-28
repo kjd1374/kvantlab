@@ -23,6 +23,23 @@
         "terms_url": "/terms_en.html",
         "privacy_url": "/privacy_en.html"
     },
+    "landing": {
+        "hero_title_1": "Everything About E-Commerce Trends",
+        "hero_title_2": "Insights Powered by AI",
+        "hero_subtitle_1": "From real-time rankings on Olive Young, Musinsa & Ably to global K-Beauty trends.",
+        "hero_subtitle_2": "Get the fastest and most accurate commerce metrics on K-Vant.",
+        "feature1_title": "Core Commerce Rankings",
+        "feature1_desc": "Compare daily rankings from Olive Young, Ably, Musinsa, SSG and more — all in one place.",
+        "feature2_title": "AI Review Mining",
+        "feature2_desc": "AI summarizes thousands of real-user reviews to cross-analyze sentiment, efficacy, and drawbacks.",
+        "feature3_title": "Global Purchase Trend Tracking",
+        "feature3_desc": "Discover overseas K-Trends by analyzing Southeast Asian beauty influencers and Google search big data.",
+        "announcements_title": "Latest Updates & Reports",
+        "announcement_report": "Report",
+        "announcement_update": "Update",
+        "announcement_notice": "Notice",
+        "empty_announcements": "No announcements yet."
+    },
     "tabs": {
         "all": "All Products",
         "trending": "Trending Now",

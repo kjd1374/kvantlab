@@ -1197,6 +1197,7 @@ function renderProductCard(p, mode = 'normal', isGlobalTrend = false, isWishlist
   const discountPct = p.discount_pct || p.discount_rate || (isDeal ? Math.round((1 - currentPrice / originalPrice) * 100) : 0);
   const showDeal = isDeal || (mode === 'deal' && discountPct > 0);
 
+  let priceHtml = '';
   if (isGlobalTrend) {
     priceHtml = `<div class="price-current" style="color:var(--accent-blue);font-size:16px;">💬 ${formatNumber(currentPrice)}건 언급</div>`;
   } else if (showDeal && discountPct > 0) {
