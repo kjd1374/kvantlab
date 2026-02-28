@@ -848,36 +848,6 @@ async function loadDeals() {
   const header = document.querySelector('#tab-deals .section-desc');
   if (header && date) header.textContent = `${date} 기준 올리브영 오늘의 특가 (${filtered.length}개)`;
 
-  // Start Deals Countdown Timer (Target: Midnight KST)
-  const timerEl = document.getElementById('dealsTimer');
-  if (timerEl) {
-    if (window.dealsTimerInterval) clearInterval(window.dealsTimerInterval);
-
-    const updateTimer = () => {
-      const now = new Date();
-      // Get current time in KST
-      const kstTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
-      const kstMidnight = new Date(kstTime);
-      kstMidnight.setHours(24, 0, 0, 0); // Target next midnight
-
-      const diffMs = kstMidnight - kstTime;
-      if (diffMs <= 0) {
-        timerEl.textContent = '마감';
-        clearInterval(window.dealsTimerInterval);
-        return;
-      }
-
-      const h = Math.floor(diffMs / 3600000);
-      const m = Math.floor((diffMs % 3600000) / 60000);
-      const s = Math.floor((diffMs % 60000) / 1000);
-
-      timerEl.textContent = `⏰ ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')} 남음`;
-    };
-
-    updateTimer();
-    window.dealsTimerInterval = setInterval(updateTimer, 1000);
-  }
-
   const savedItems = await fetchSavedProducts();
   const savedIds = new Set(savedItems.data?.map(i => i.product_id) || []);
 

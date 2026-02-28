@@ -66,7 +66,7 @@ export const OliveYoungBridge = {
     },
 
     renderCustomHeader(state) {
-        if (state.currentTab === 'deals') {
+        if (state.activeTab === 'deals') {
             return `
             <div style="background: linear-gradient(135deg, #111111, #333333); color: white; padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
                 <div>
@@ -84,5 +84,41 @@ export const OliveYoungBridge = {
             `;
         }
         return '';
+    },
+
+    bindCustomHeaderEvents(onTabSwitch) {
+        const timerEl = document.getElementById('oyDealTimer');
+        if (timerEl) {
+            if (window.dealsTimerInterval) clearInterval(window.dealsTimerInterval);
+
+            const updateTimer = () => {
+                const now = new Date();
+                // Get current time in KST
+                const kstTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+                const kstTarget = new Date(kstTime);
+
+                // Target is 21:00 (9 PM) KST today
+                kstTarget.setHours(21, 0, 0, 0);
+
+                // If it's already past 9 PM today, count down to 9 PM tomorrow
+                if (kstTime > kstTarget) {
+                    kstTarget.setDate(kstTarget.getDate() + 1);
+                }
+
+                const diffMs = kstTarget - kstTime;
+
+                const h = Math.floor(diffMs / 3600000);
+                const m = Math.floor((diffMs % 3600000) / 60000);
+                const s = Math.floor((diffMs % 60000) / 1000);
+
+                timerEl.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            };
+
+            updateTimer();
+            window.dealsTimerInterval = setInterval(updateTimer, 1000);
+        } else if (window.dealsTimerInterval) {
+            clearInterval(window.dealsTimerInterval);
+            window.dealsTimerInterval = null;
+        }
     }
 };
