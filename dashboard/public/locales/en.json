@@ -335,6 +335,7 @@
     },
     "deals": {
         "today_title": "Daily Deals Order Deadline",
-        "today_desc": "Orders close daily at 9 PM KST."
+        "today_desc": "Orders close daily at 9 PM KST.",
+        "closed_message": "✅ Closed for today (Preparing tomorrow's deals)"
     }
 }

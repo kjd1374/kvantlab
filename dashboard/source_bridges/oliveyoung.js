@@ -77,7 +77,7 @@ export const OliveYoungBridge = {
                         ${window.t('deals.today_desc') || 'KST(한국시간) 매일 저녁 9시에 주문이 마감됩니다.'}
                     </p>
                 </div>
-                <div id="oyDealTimer" style="font-size: 24px; font-weight: 800; font-family: monospace; background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 8px; letter-spacing: 2px;">
+                <div id="oyDealTimer" style="font-size: 24px; font-weight: 800; font-family: monospace; background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 8px; letter-spacing: 2px; white-space: nowrap;">
                     --:--:--
                 </div>
             </div>
@@ -101,7 +101,7 @@ export const OliveYoungBridge = {
 
                 // Between 9 PM and Midnight KST -> Hide Timer
                 if (kstHour >= 21) {
-                    timerEl.innerHTML = `<span style="font-size: 15px; font-weight: 500; font-family: Pretendard, sans-serif; opacity: 0.9;">✅ 금일 주문 마감 (내일 특가 준비중)</span>`;
+                    timerEl.innerHTML = `<span style="font-size: 14px; font-weight: 500; font-family: Pretendard, -apple-system, sans-serif; opacity: 0.9; white-space: nowrap;">${window.t('deals.closed_message') || '✅ 금일 주문 마감 (내일 특가 준비중)'}</span>`;
                     timerEl.style.letterSpacing = 'normal';
                     return;
                 }
