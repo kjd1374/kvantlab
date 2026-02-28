@@ -3208,6 +3208,9 @@ window.openQuoteModal = function (directItems = null) {
 
   const overlay = document.getElementById('quoteModalOverlay');
   if (overlay) overlay.classList.add('open');
+
+  // Ensure placeholders are loaded
+  if (typeof applyI18nPlaceholders === 'function') applyI18nPlaceholders();
 };
 
 window.closeQuoteModal = function () {
@@ -3666,9 +3669,12 @@ window.__sourcingRequestFromModal = async function (productId) {
 
   // Get product info from modal itself before closing
   const modalContent = document.getElementById('productDetailModalOverlay');
-  const name = modalContent ? modalContent.querySelector('.modal-title')?.innerText || 'Unknown' : 'Unknown';
-  const brand = modalContent ? modalContent.querySelector('.modal-brand')?.innerText || '' : '';
-  const imgEl = modalContent ? modalContent.querySelector('.modal-main-image') : null;
+  const nameEl = modalContent ? modalContent.querySelector('.modal-title-premium, .modal-title') : null;
+  const brandEl = modalContent ? modalContent.querySelector('.modal-brand-premium, .modal-brand') : null;
+  const imgEl = modalContent ? modalContent.querySelector('.modal-img-premium, .modal-main-image') : null;
+
+  const name = nameEl ? nameEl.innerText : 'Unknown';
+  const brand = brandEl ? brandEl.innerText : '';
   const image = imgEl ? imgEl.src : '';
 
   // Close product modal
