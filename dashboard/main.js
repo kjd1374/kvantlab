@@ -3152,22 +3152,28 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ─── Sourcing Quote Request ────────────────
-window.openQuoteModal = function () {
-  const inputs = document.querySelectorAll('#wishlistGrid .sourcing-qty-input');
-  const items = [];
+window.openQuoteModal = function (directItems = null) {
+  let items = [];
 
-  inputs.forEach(input => {
-    const card = input.closest('.product-card');
-    const checkbox = card ? card.querySelector('.sourcing-item-checkbox') : null;
-    if (checkbox && !checkbox.checked) return;
+  if (directItems && Array.isArray(directItems) && directItems.length > 0) {
+    items = directItems;
+  } else {
+    const inputs = document.querySelectorAll('#wishlistGrid .sourcing-qty-input');
+    inputs.forEach(input => {
+      const card = input.closest('.product-card');
+      const checkbox = card ? card.querySelector('.sourcing-item-checkbox') : null;
+      if (checkbox && !checkbox.checked) return;
 
-    const qty = parseInt(input.value) || 0;
-    if (qty > 0) {
-      const name = card ? (card.querySelector('.product-name')?.innerText || 'Unknown') : 'Unknown';
-      const brand = card ? (card.querySelector('.product-brand')?.innerText || '') : '';
-      items.push({ name, brand, qty });
-    }
-  });
+      const qty = parseInt(input.value) || 0;
+      if (qty > 0) {
+        const name = card ? (card.querySelector('.product-name')?.innerText || 'Unknown') : 'Unknown';
+        const brand = card ? (card.querySelector('.product-brand')?.innerText || '') : '';
+        const pid = input.getAttribute('data-product-id');
+        const img = card ? (card.querySelector('img')?.src || '') : '';
+        items.push({ product_id: pid, name, brand, qty: qty, quantity: qty, image: img });
+      }
+    });
+  }
 
   if (items.length === 0) {
     alert(window.t('sourcing.alert_empty_cart') || '장바구니가 비어 있습니다.');
@@ -3197,6 +3203,8 @@ window.openQuoteModal = function () {
       listContainer.lastElementChild.style.borderBottom = 'none';
     }
   }
+
+  window.__currentQuoteItems = items;
 
   const overlay = document.getElementById('quoteModalOverlay');
   if (overlay) overlay.classList.add('open');
@@ -3332,20 +3340,11 @@ window.submitQuoteRequest = async function () {
     if (snsLinks.length > 0) message += '\n\n📌 SNS/상품 링크:\n' + snsLinks.map((l, i) => `${i + 1}. ${l}`).join('\n');
     if (imageUrls.length > 0) message += '\n\n🖼️ 첨부 이미지:\n' + imageUrls.join('\n');
 
-    // Scrape items from DOM
-    const inputs = document.querySelectorAll('#wishlistGrid .sourcing-qty-input');
-    const items = [];
-    inputs.forEach(input => {
-      const card = input.closest('.product-card');
-      const checkbox = card ? card.querySelector('.sourcing-item-checkbox') : null;
-      if (checkbox && !checkbox.checked) return;
-      const qty = parseInt(input.value) || 0;
-      if (qty <= 0) return;
-      const name = card.querySelector('.product-name')?.innerText || '';
-      const brand = card.querySelector('.product-brand')?.innerText || '';
-      const pid = input.getAttribute('data-product-id');
-      const img = card.querySelector('img')?.src || '';
-      items.push({ product_id: pid, name, brand, quantity: qty, image: img });
+    // Use global items
+    const items = window.__currentQuoteItems || [];
+    // Map qty to quantity for legacy support
+    items.forEach(item => {
+      if (item.qty && !item.quantity) item.quantity = item.qty;
     });
 
     if (items.length === 0) throw new Error(window.t('sourcing.alert_empty_cart'));
@@ -3664,14 +3663,19 @@ window.__sourcingRequestFromModal = async function (productId) {
   } catch (e) {
     console.warn('Could not auto-add to wishlist:', e);
   }
-  // Close modal and open sourcing tab
-  const overlay = document.getElementById('productDetailModalOverlay');
-  if (overlay) overlay.classList.remove('open');
-  window.openMyPageModal();
-  setTimeout(() => {
-    const sourcingTab = document.querySelector('.auth-tab[data-mypage-tab="sourcing"]');
-    if (sourcingTab) sourcingTab.click();
-  }, 150);
+
+  // Get product info from modal itself before closing
+  const modalContent = document.getElementById('productDetailModalOverlay');
+  const name = modalContent ? modalContent.querySelector('.modal-title')?.innerText || 'Unknown' : 'Unknown';
+  const brand = modalContent ? modalContent.querySelector('.modal-brand')?.innerText || '' : '';
+  const imgEl = modalContent ? modalContent.querySelector('.modal-main-image') : null;
+  const image = imgEl ? imgEl.src : '';
+
+  // Close product modal
+  if (modalContent) modalContent.classList.remove('open');
+
+  // Open quote modal with this item only
+  window.openQuoteModal([{ product_id: productId, name: name, brand: brand, qty: 10, quantity: 10, image: image }]);
 };
 
 window.toggleSupportView = function (viewName) {
