@@ -82,11 +82,22 @@ export async function fetchSteadySellers() {
  * Fetch Naver Best products (source='naver_best')
  */
 export async function fetchNaverBestProducts({ limit = 50, categoryId = 'A' } = {}) {
-    let qs = `select=*&source=eq.naver_best&order=current_rank.asc&limit=${limit}`;
-    if (categoryId && categoryId !== 'A') {
-        qs += `&naver_category_id=eq.${encodeURIComponent(categoryId)}`;
+    const dateRes = await query('daily_rankings_v2', `select=date&source=eq.naver_best&order=date.desc&limit=1`);
+    const latestDate = dateRes.data?.[0]?.date;
+    if (!latestDate) return { data: [], count: 0 };
+
+    const catParam = encodeURIComponent(categoryId || 'A');
+    const qs = `select=*,products_master(*)&source=eq.naver_best&date=eq.${latestDate}&category_code=eq.${catParam}&order=rank.asc&limit=${limit}`;
+
+    const res = await query('daily_rankings_v2', qs);
+    if (res.data) {
+        res.data = res.data.map(r => ({
+            ...r,
+            ...(r.products_master || {}),
+            current_rank: r.rank
+        }));
     }
-    return await query('products_master', qs);
+    return res;
 }
 
 /**

@@ -54,17 +54,25 @@ def naver_get(path: str, params: dict = None) -> any:
         return []
 
 
-def upsert(table: str, records: list) -> None:
+def upsert(table: str, records: list, on_conflict: str = None) -> list:
     if not records:
-        return
+        return []
     url = f"{SUPABASE_URL}/rest/v1/{table}"
-    headers = {**HEADERS, "Prefer": "return=minimal,resolution=merge-duplicates"}
+    headers = {**HEADERS, "Prefer": "return=representation,resolution=merge-duplicates"}
+    params = {}
+    if on_conflict:
+        params["on_conflict"] = on_conflict
     try:
-        r = requests.post(url, headers=headers, json=records, timeout=30)
+        r = requests.post(url, headers=headers, params=params, json=records, timeout=30)
         r.raise_for_status()
         print(f"  ✅ {table}: {len(records)}개 저장")
+        return r.json()
     except Exception as e:
         print(f"  ❌ {table} 저장 실패: {e}")
+        # Print actual error body if available
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"  ❌ 상세 에러: {e.response.text}")
+        return []
 
 
 def delete_today_brands(category_id: str, period_type: str) -> None:
@@ -85,6 +93,7 @@ def delete_today_brands(category_id: str, period_type: str) -> None:
 
 def fetch_products_by_category() -> int:
     today = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    date_str = today[0:10]
     total = 0
     seen_ids = set()
 
@@ -126,7 +135,28 @@ def fetch_products_by_category() -> int:
                 "tags": {"sort_type": "PRODUCT_BUY", "period": "DAILY"},
             })
 
-        upsert("products_master", records)
+        saved_items = upsert("products_master", records, on_conflict="source,product_id")
+        
+        if saved_items:
+            # Create a lookup for internal ID by string product_id
+            pid_to_id = {item["product_id"]: item["id"] for item in saved_items if "id" in item}
+            
+            # Upsert into daily_rankings_v2
+            ranking_records = []
+            for item in records:
+                internal_id = pid_to_id.get(item["product_id"])
+                if internal_id:
+                    ranking_records.append({
+                        "product_id": internal_id,
+                        "rank": item["current_rank"],
+                        "date": date_str,
+                        "category_code": cat["id"],
+                        "source": "naver_best"
+                    })
+            
+            if ranking_records:
+                upsert("daily_rankings_v2", ranking_records)
+                
         print(f"  📦 [{cat['ko']}] {len(records)}개 상품")
         total += len(records)
 

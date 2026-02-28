@@ -683,18 +683,19 @@ async function loadKTrendView(tabId) {
     const result = await state.activeBridge.fetchData(tabId, state);
     const data = result.data || [];
 
-    if (data.length === 0) {
-      grid.innerHTML = emptyState(window.t('common.no_results') || '트렌드 데이터가 없습니다.');
-      return;
-    }
-
-    // If the bridge provides a custom dashboard renderer, use it
+    // If the bridge provides a custom dashboard renderer, use it FIRST
     if (state.activeBridge.renderTabContent) {
       const customHtml = state.activeBridge.renderTabContent(tabId, result, state);
       if (customHtml !== null && customHtml !== undefined) {
         grid.innerHTML = customHtml;
         return;
       }
+    }
+
+    // Fallback if no custom renderer exists
+    if (data.length === 0) {
+      grid.innerHTML = emptyState(window.t('common.no_results') || '트렌드 데이터가 없습니다.');
+      return;
     }
 
     // Fallback: standard product card grid
