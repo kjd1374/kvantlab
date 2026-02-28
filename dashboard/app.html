@@ -442,7 +442,58 @@
       <div class="my-page-content" id="myPageSourcingTab" style="display: none;">
         <h3 style="font-size: 16px; margin-bottom: 15px;" data-i18n="sourcing.history_title">📦 나의 소싱 견적 내역</h3>
         <div id="sourcingHistoryList"
-          style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;">
+          style="max-height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;">
+          <div class="loading-skeleton"></div>
+        </div>
+
+        <!-- Divider -->
+        <div style="margin: 28px 0 20px; border-top: 2px solid var(--border); position: relative;">
+          <span
+            style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--card-bg); padding: 0 14px; font-size: 12px; color: var(--text-muted); white-space: nowrap;"
+            data-i18n="sourcing.search_req_title">🔍 원하는 상품 검색 요청</span>
+        </div>
+
+        <!-- Product Search Request Form -->
+        <div id="searchRequestForm"
+          style="background: var(--surface-light); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 20px;">
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.6;"
+            data-i18n="sourcing.search_req_desc">담고 로 없는 상품을 원하시나요? SNS 링크나 이미지를 첨부하시면 K-Vant이 상품을 찾아 드립니다.</p>
+
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <input type="url" id="searchSnsLink" class="form-input" data-i18n="sourcing.search_sns_placeholder"
+              placeholder="📌 SNS 링크, 상품 URL 또는 상품명"
+              style="width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 9px; font-size: 13px;">
+
+            <textarea id="searchNote" class="form-input" rows="2" data-i18n="sourcing.search_note_placeholder"
+              placeholder="원하는 상품을 설명해주세요 (예: 색상, 사이즈, 수량)"
+              style="width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 9px; font-size: 13px; resize: vertical;"></textarea>
+
+            <!-- Image Upload Area -->
+            <div>
+              <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px;"
+                data-i18n="sourcing.search_upload_label">📷 상품 이미지 첨부 (1~5장)</div>
+              <label id="searchImageUploadLabel" for="searchImageInput"
+                style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px; border: 2px dashed var(--border); border-radius: 10px; cursor: pointer; background: var(--card-bg); font-size: 13px; color: var(--text-muted); transition: border-color 0.2s;"
+                ondragover="event.preventDefault(); this.style.borderColor='var(--accent-blue)'"
+                ondragleave="this.style.borderColor='var(--border)'"
+                ondrop="event.preventDefault(); window.__handleImageDrop(event)">
+                📁 클릭하거나 드래그해서 이미지 업로드
+              </label>
+              <input type="file" id="searchImageInput" multiple accept="image/*" style="display:none;"
+                onchange="window.__previewSearchImages(this.files)">
+              <div id="searchImagePreviews" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;"></div>
+            </div>
+
+            <button id="btnSubmitSearchRequest" class="btn-primary"
+              style="padding: 12px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; font-size: 14px;"
+              onclick="window.submitSearchRequest()" data-i18n="sourcing.search_btn_submit">검색 요청하기</button>
+          </div>
+        </div>
+
+        <!-- Search Request History -->
+        <h4 style="font-size: 14px; margin-bottom: 10px; color: var(--text);">📋 검색 요청 내역</h4>
+        <div id="searchRequestList"
+          style="max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;">
           <div class="loading-skeleton"></div>
         </div>
       </div>

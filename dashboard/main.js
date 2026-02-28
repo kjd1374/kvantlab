@@ -2953,6 +2953,7 @@ function switchMyPageTab(tabName) {
 
   if (tabName === 'sourcing') {
     window.loadSourcingHistory();
+    window.loadSearchRequests();
   } else if (tabName === 'support') {
     window.loadFaqs();
   }
@@ -3266,6 +3267,152 @@ window.submitQuoteRequest = async function () {
       btn.disabled = false;
       btn.innerText = window.t('sourcing.btn_submit');
     }
+  }
+};
+
+// ─── Product Search Request ────────────────
+let __searchImageFiles = [];
+
+window.__previewSearchImages = function (files) {
+  const newFiles = Array.from(files).slice(0, 5 - __searchImageFiles.length);
+  __searchImageFiles.push(...newFiles);
+  if (__searchImageFiles.length > 5) __searchImageFiles = __searchImageFiles.slice(0, 5);
+  renderSearchImagePreviews();
+};
+
+window.__handleImageDrop = function (event) {
+  const files = event.dataTransfer.files;
+  window.__previewSearchImages(files);
+  const label = document.getElementById('searchImageUploadLabel');
+  if (label) label.style.borderColor = 'var(--border)';
+};
+
+function renderSearchImagePreviews() {
+  const container = document.getElementById('searchImagePreviews');
+  if (!container) return;
+  container.innerHTML = __searchImageFiles.map((f, i) => {
+    const url = URL.createObjectURL(f);
+    return `<div style="position:relative; width:64px; height:64px;">
+      <img src="${url}" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">
+      <button onclick="window.__removeSearchImage(${i})" style="position:absolute; top:-5px; right:-5px; width:18px; height:18px; border-radius:50%; background:#e03131; color:white; font-size:10px; border:none; cursor:pointer; line-height:18px; text-align:center;">×</button>
+    </div>`;
+  }).join('');
+}
+
+window.__removeSearchImage = function (index) {
+  __searchImageFiles.splice(index, 1);
+  renderSearchImagePreviews();
+};
+
+window.submitSearchRequest = async function () {
+  const btn = document.getElementById('btnSubmitSearchRequest');
+  const snsLink = document.getElementById('searchSnsLink')?.value.trim();
+  const note = document.getElementById('searchNote')?.value.trim();
+  const session = getSession();
+  if (!session) { alert(window.t('sourcing.alert_login')); return; }
+
+  if (!snsLink && __searchImageFiles.length === 0 && !note) {
+    alert(i18n.currentLang === 'ko' ? 'SNS 링크, 이미지 또는 설명 중 하나 이상을 입력해주세요.' : 'Please provide at least one of: SNS link, image, or description.');
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.innerText = window.t('sourcing.search_btn_submitting'); }
+
+  try {
+    // 1. Upload images to Supabase Storage
+    const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
+    const _sb = createClient(
+      import.meta.env.VITE_SUPABASE_URL || window.__SUPABASE_URL__,
+      import.meta.env.VITE_SUPABASE_ANON_KEY || window.__SUPABASE_ANON_KEY__
+    );
+
+    const imageUrls = [];
+    for (const file of __searchImageFiles) {
+      const ext = file.name.split('.').pop();
+      const path = `${session.user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { data: upData, error: upErr } = await _sb.storage.from('search-request-images').upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: { publicUrl } } = _sb.storage.from('search-request-images').getPublicUrl(path);
+      imageUrls.push(publicUrl);
+    }
+
+    // 2. Submit request to backend
+    const res = await fetch('/api/search-request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: session.user.id,
+        user_email: session.user.email,
+        sns_link: snsLink,
+        image_urls: imageUrls,
+        note
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+
+    alert(window.t('sourcing.search_success'));
+    // Reset form
+    document.getElementById('searchSnsLink').value = '';
+    document.getElementById('searchNote').value = '';
+    __searchImageFiles = [];
+    renderSearchImagePreviews();
+    window.loadSearchRequests();
+  } catch (e) {
+    console.error('Search request error:', e);
+    alert('Error: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerText = window.t('sourcing.search_btn_submit'); }
+  }
+};
+
+window.loadSearchRequests = async function () {
+  const list = document.getElementById('searchRequestList');
+  if (!list) return;
+  list.innerHTML = '<div class="loading-skeleton"></div>';
+  const session = getSession();
+  if (!session) return;
+
+  try {
+    const res = await fetch(`/api/search-request/history/${session.user.id}`);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+
+    if (!data.requests || data.requests.length === 0) {
+      list.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">${window.t('sourcing.search_history_empty')}</div>`;
+      return;
+    }
+
+    list.innerHTML = data.requests.map(req => {
+      const dateStr = new Date(req.created_at).toLocaleString(i18n.currentLang === 'ko' ? 'ko-KR' : 'en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      let statusColor = '#e2e3e5'; let statusTxt = '#383d41'; let statusLabel = req.status;
+      if (req.status === 'pending') { statusColor = '#fff3cd'; statusTxt = '#856404'; statusLabel = window.t('sourcing.search_status_pending'); }
+      else if (req.status === 'found') { statusColor = '#d4edda'; statusTxt = '#155724'; statusLabel = window.t('sourcing.search_status_found'); }
+      else if (req.status === 'not_found') { statusColor = '#f8d7da'; statusTxt = '#721c24'; statusLabel = window.t('sourcing.search_status_not_found'); }
+
+      const imagesHtml = req.image_urls && req.image_urls.length > 0
+        ? `<div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">${req.image_urls.map(u => `<a href="${u}" target="_blank"><img src="${u}" style="width:54px; height:54px; object-fit:cover; border-radius:7px; border:1px solid #eee;"></a>`).join('')}</div>`
+        : '';
+
+      const replyHtml = req.admin_reply
+        ? `<div style="margin-top:8px; padding:8px 12px; background:#f0f7ff; border-radius:8px; border-left:3px solid var(--accent-blue); font-size:12px; color:#333; line-height:1.5;">
+            <span style="font-weight:600; font-size:11px; color:var(--accent-blue); display:block; margin-bottom:3px;">${window.t('sourcing.admin_reply_title')}</span>
+            ${escapeHtml(req.admin_reply)}
+          </div>` : '';
+
+      return `<div style="border:1px solid #e8e8ed; border-radius:12px; padding:14px; background:var(--card-bg);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <span style="font-size:11px; color:#aaa;">${dateStr}</span>
+          <span style="background:${statusColor}; color:${statusTxt}; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:600;">${statusLabel}</span>
+        </div>
+        ${req.sns_link ? `<div style="font-size:12px; color:var(--accent-blue); margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">🔗 ${escapeHtml(req.sns_link)}</div>` : ''}
+        ${req.note ? `<div style="font-size:12px; color:var(--text); margin-bottom:4px;">${escapeHtml(req.note)}</div>` : ''}
+        ${imagesHtml}
+        ${replyHtml}
+      </div>`;
+    }).join('');
+  } catch (e) {
+    list.innerHTML = `<div style="text-align:center; padding:15px; color:#e03131; font-size:13px;">${e.message}</div>`;
   }
 };
 

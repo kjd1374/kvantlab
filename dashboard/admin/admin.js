@@ -55,6 +55,7 @@ async function initAdmin() {
             if (tabId === 'sourcing') loadSourcingRequests();
             if (tabId === 'steadysellers') loadSteadySellers();
             if (tabId === 'support') loadSupportInquiries();
+            if (tabId === 'searchrequests') window.__adminLoadSearchRequests();
         });
     });
 
@@ -1013,6 +1014,90 @@ async function initAdmin() {
     });
 
     // Initial load
+    // ─── 8. Product Search Requests Admin ─────────────────
+    window.__adminLoadSearchRequests = async function () {
+        const container = document.getElementById('searchRequestsAdminList');
+        if (!container) return;
+        container.innerHTML = '<div style="padding: 40px; text-align: center; color: #888;">불러오는 중...</div>';
+        try {
+            const res = await fetch('/api/admin/search-requests');
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error);
+
+            if (!data.requests || data.requests.length === 0) {
+                container.innerHTML = '<div style="padding: 40px; text-align: center; color: #888;">접수된 검색 요청이 없습니다.</div>';
+                return;
+            }
+
+            window.__searchRequests = data.requests;
+
+            container.innerHTML = data.requests.map(req => {
+                const date = new Date(req.created_at).toLocaleString('ko-KR');
+                let badge = '';
+                if (req.status === 'pending') badge = '<span style="background:#fff3cd; color:#856404; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600;">처리중</span>';
+                else if (req.status === 'found') badge = '<span style="background:#d4edda; color:#155724; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600;">상품발견</span>';
+                else badge = '<span style="background:#f8d7da; color:#721c24; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600;">미발견</span>';
+
+                const imgsHtml = req.image_urls && req.image_urls.length > 0
+                    ? `<div style="display:flex; flex-wrap:wrap; gap:6px; margin:8px 0;">${req.image_urls.map(u => `<a href="${u}" target="_blank"><img src="${u}" style="width:60px; height:60px; object-fit:cover; border-radius:6px; border:1px solid #ddd;"></a>`).join('')}</div>`
+                    : '';
+
+                const replyPreview = req.admin_reply
+                    ? `<div style="margin-top:8px; font-size:12px; color:#0071e3;">💬 ${req.admin_reply.substring(0, 60)}${req.admin_reply.length > 60 ? '...' : ''}</div>`
+                    : '';
+
+                return `<div style="border:1px solid #e8e8ed; border-radius:12px; padding:16px; background:white;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <div>
+                            <strong style="font-size:14px;">${req.user_email || '(이메일 없음)'}</strong>
+                            <span style="font-size:12px; color:#aaa; margin-left:8px;">${date}</span>
+                        </div>
+                        ${badge}
+                    </div>
+                    ${req.sns_link ? `<div style="font-size:12px; color:#0071e3; margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">🔗 ${req.sns_link}</div>` : ''}
+                    ${req.note ? `<div style="font-size:13px; color:#333; margin-bottom:4px;">${req.note}</div>` : ''}
+                    ${imgsHtml}
+                    ${replyPreview}
+                    <button onclick="window.__adminOpenSearchReply('${req.id}')" class="btn-primary" style="margin-top:10px; padding:6px 14px; font-size:13px;">✏️ 답변하기</button>
+                </div>`;
+            }).join('');
+        } catch (e) {
+            container.innerHTML = `<div style="padding: 20px; text-align: center; color: #dc3545;">에러: ${e.message}</div>`;
+        }
+    };
+
+    window.__adminOpenSearchReply = function (id) {
+        const req = (window.__searchRequests || []).find(r => r.id === id);
+        if (!req) return;
+        document.getElementById('searchReplyId').value = id;
+        document.getElementById('searchReplyStatus').value = req.status || 'pending';
+        document.getElementById('searchReplyText').value = req.admin_reply || '';
+        const preview = `<strong>${req.user_email}</strong><br>${req.sns_link ? '🔗 ' + req.sns_link + '<br>' : ''}${req.note || ''}`;
+        document.getElementById('searchReplyPreview').innerHTML = preview;
+        document.getElementById('searchReplyModal').style.display = 'flex';
+    };
+
+    window.__adminSaveSearchReply = async function () {
+        const id = document.getElementById('searchReplyId').value;
+        const status = document.getElementById('searchReplyStatus').value;
+        const admin_reply = document.getElementById('searchReplyText').value.trim();
+        if (!id) return;
+        try {
+            const res = await fetch(`/api/admin/search-requests/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status, admin_reply })
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error);
+            alert('✅ 답변이 저장되었습니다.');
+            document.getElementById('searchReplyModal').style.display = 'none';
+            window.__adminLoadSearchRequests();
+        } catch (e) {
+            alert('저장 실패: ' + e.message);
+        }
+    };
+
 }
 
 document.addEventListener('DOMContentLoaded', initAdmin);

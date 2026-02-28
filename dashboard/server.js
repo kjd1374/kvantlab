@@ -350,6 +350,99 @@ app.put('/api/admin/sourcing/:id', async (req, res) => {
     }
 });
 
+// --- Product Search Request APIs ---
+
+// 1. Submit a search request (User)
+app.post('/api/search-request', async (req, res) => {
+    const { user_id, user_email, sns_link, image_urls, note } = req.body;
+    try {
+        const { data, error } = await supabase
+            .from('product_search_requests')
+            .insert([{ user_id, user_email, sns_link, image_urls: image_urls || [], note }])
+            .select();
+        if (error) throw error;
+
+        // Notify admin via dashboard notification (optional)
+        supabase.from('user_notifications').insert({
+            user_id: '00000000-0000-0000-0000-000000000000', // admin placeholder
+            type: 'search_request',
+            title: '🔍 새 상품 검색 요청',
+            message: `${user_email || '사용자'}이 새로운 상품 검색을 요청했습니다.`,
+            link: 'admin',
+            is_read: false
+        }).then(() => { });
+
+        res.json({ success: true, data: data[0] });
+    } catch (error) {
+        console.error('Search request failed:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 2. Get user's search request history
+app.get('/api/search-request/history/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { data, error } = await supabase
+            .from('product_search_requests')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        res.json({ success: true, requests: data });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 3. Admin — Get all search requests
+app.get('/api/admin/search-requests', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('product_search_requests')
+            .select('*')
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        res.json({ success: true, requests: data });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 4. Admin — Update search request (status + admin reply)
+app.put('/api/admin/search-requests/:id', async (req, res) => {
+    const { id } = req.params;
+    const { status, admin_reply } = req.body;
+    try {
+        const { data: reqData } = await supabase
+            .from('product_search_requests')
+            .select('user_id')
+            .eq('id', id)
+            .single();
+
+        const { error } = await supabase
+            .from('product_search_requests')
+            .update({ status, admin_reply, updated_at: new Date().toISOString() })
+            .eq('id', id);
+        if (error) throw error;
+
+        // Notify the user
+        if (reqData?.user_id) {
+            const title = status === 'found' ? '🎉 상품 검색 결과 안내' : '❌ 상품 검색 결과 안내';
+            const msg = status === 'found'
+                ? '요청하신 상품을 발견했습니다! 마이페이지에서 확인해주세요.'
+                : '요청하신 상품을 찾지 못했습니다. 관리자 메시지를 확인해주세요.';
+            supabase.from('user_notifications').insert({
+                user_id: reqData.user_id, type: 'search_request',
+                title, message: msg, link: 'sourcing', is_read: false
+            }).then(() => { });
+        }
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // Notifications Endpoint
 // Get unread notifications for a user
 app.get('/api/notifications', async (req, res) => {
