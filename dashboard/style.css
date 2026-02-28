@@ -755,25 +755,26 @@ body {
 .deal-price-row {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .deal-sale-price {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
   color: #ff5e00;
-  /* More vibrant orange */
   letter-spacing: -0.5px;
 }
 
 .deal-orig-price {
   position: relative;
-  font-size: 14px;
+  font-size: 13px;
   color: #94a3b8;
   font-weight: 400;
   text-decoration: none;
-  /* Remove default strike */
   margin-left: 2px;
 }
 

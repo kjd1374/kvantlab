@@ -286,7 +286,17 @@ function switchTab(tab) {
   const tabContent = document.getElementById(`tab-${tab}`);
   if (tabContent) tabContent.classList.add('active');
 
+  // Re-render custom header for platform if needed
+  const controls = document.getElementById('platformControls');
+  if (controls && state.activeBridge && state.activeBridge.renderCustomHeader) {
+    controls.innerHTML = state.activeBridge.renderCustomHeader(state);
+    if (state.activeBridge.bindCustomHeaderEvents) {
+      state.activeBridge.bindCustomHeaderEvents(() => loadTab(state.activeTab));
+    }
+  }
+
   loadTab(tab);
+
 }
 
 // ─── Tab Rendering ──────────────────────────
