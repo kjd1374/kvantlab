@@ -225,7 +225,8 @@ export async function fetchDailySpecials(platform = 'oliveyoung') {
                 url: p.url,
                 special_price: specialPrice,
                 original_price: origPrice,
-                discount_pct: discountPct
+                discount_pct: discountPct,
+                discount_rate: s.discount_rate || 0  // Always pass DB discount_rate for fallback
             };
         })
         .sort((a, b) => (b.discount_pct || 0) - (a.discount_pct || 0));
