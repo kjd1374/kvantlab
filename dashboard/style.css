@@ -475,6 +475,10 @@ body {
 /* ============================================
    Category Filter
    ============================================ */
+body[data-platform="k_trend"] .filter-bar {
+  display: none !important;
+}
+
 .filter-bar {
   display: flex;
   align-items: center;

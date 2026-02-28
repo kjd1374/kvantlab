@@ -46,7 +46,7 @@ const FALLBACK_STRINGS = {
 
     // Korea Trends – Tab names
     'tabs.global_trends': { ko: '🌏 글로벌 트렌드', en: '🌏 Global Trends' },
-    'tabs.naver_best': { ko: '🇰🇷 대한민국 트렌드', en: '🇰🇷 Korea Best' },
+    'tabs.naver_best': { ko: '🇰🇷 대한민국 트렌드 🇰🇷', en: '🇰🇷 Korea Best 🇰🇷' },
     'tabs.apply': { ko: '적용', en: 'Apply' },
 
     // Naver Best – Section titles
