@@ -1032,7 +1032,7 @@ async function translateProducts(products, targetLang) {
         const prompt = `Translate the following list to ${tgtLangName}. Return ONLY a valid JSON array of strings in exactly the same order. Do not wrap in markdown or backticks.\n\n` + JSON.stringify(qArray);
 
         const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1103,7 +1103,7 @@ async function translateKeywords(items, targetLang, targetType = 'category') {
     const prompt = `Translate the following list to ${tgtLangName}. Return ONLY a valid JSON array of strings in exactly the same order. Do not wrap in markdown or backticks.\n\n` + JSON.stringify(items);
 
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
