@@ -3556,10 +3556,6 @@ body[data-platform="k_trend"] #tab-all {
   display: none !important;
 }
 
-body[data-platform="k_trend"] #tab-global_trends {
-  display: block !important;
-}
-
 /* ── Dashboard container layout fix ──────────────────────
    #global_trendsGrid is normally a product card grid (minmax 300px).
    When it contains the dashboard, override to a simple block. */
