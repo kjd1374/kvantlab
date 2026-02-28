@@ -33,7 +33,8 @@ import {
   fetchProductHistory,
   fetchFaqs,
   fetchUserInquiries,
-  submitInquiry
+  submitInquiry,
+  toggleWishlistStatus
 } from './supabase.js?v=4';
 import { setupAuthUI } from './src/auth.js?v=12';
 import { i18n } from './src/i18n.js?v=7';
@@ -939,8 +940,6 @@ async function loadWishlist() {
     const kstOffset = 9 * 60;
     const kstTime = new Date(nowKst.getTime() + (nowKst.getTimezoneOffset() + kstOffset) * 60000);
     const kstHour = kstTime.getHours();
-
-    const { fetchDailySpecials, toggleWishlistStatus } = await import('./supabase.js');
     // Fetch today's deals to see if any wishlist item is actually an expired deal
     const dealsRes = await fetchDailySpecials('oliveyoung');
     const todayDeals = dealsRes.data || [];
@@ -958,11 +957,12 @@ async function loadWishlist() {
     const savedItems = await fetchSavedProducts();
 
     for (const p of savedItems?.data || []) {
+      const pId = p.product_id || p.id;
       // If the item is in today's deals and it has expired
-      if (p.platform === 'oliveyoung' && todayDealIds.has(p.product_id) && isDealExpired) {
+      if (p.platform === 'oliveyoung' && todayDealIds.has(pId) && isDealExpired) {
         // Auto-remove from wishlist
         try {
-          await toggleWishlistStatus(p.product_id, false);
+          await toggleWishlistStatus(pId, false);
           expiredCount++;
         } catch (e) { console.error("Failed to auto-remove expired deal:", e); }
       } else {
@@ -1012,6 +1012,7 @@ async function loadWishlist() {
       if (quoteItemCount) quoteItemCount.innerText = activeProducts.length;
     }
   } catch (e) {
+    console.error("loadWishlist error:", e);
     grid.innerHTML = `<div class="error-state">관심 상품을 불러오는데 실패했습니다: ${e.message}</div>`;
   }
 }
