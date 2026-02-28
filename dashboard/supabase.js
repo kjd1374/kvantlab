@@ -829,6 +829,19 @@ export async function checkIfSaved(productId) {
 }
 
 /**
+ * Toggle wishlist status for a product.
+ * @param {string} productId - The product ID
+ * @param {boolean} shouldSave - true to save, false to remove
+ */
+export async function toggleWishlistStatus(productId, shouldSave) {
+    if (shouldSave) {
+        return await saveProduct(productId);
+    } else {
+        return await removeProduct(productId);
+    }
+}
+
+/**
  * CRAWL LOGS FUNCTIONS
  */
 export async function fetchCrawlLogs() {
