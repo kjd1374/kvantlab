@@ -974,16 +974,18 @@ async function loadWishlist() {
 
 // ─── Render Helpers ───────────────────────
 
-// API Batch Translation (Name & Brand)
+// API Batch Translation (Name & Brand) using Gemini API
 const _translationCache = {};
 async function translateProducts(products, targetLang) {
   if (targetLang === 'ko') return;
 
-  const apiKey = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
   if (!apiKey) {
-    console.warn("VITE_GOOGLE_TRANSLATE_API_KEY is missing! Vercel dashboard needs this variable to run dynamic translations.");
+    console.warn("VITE_GEMINI_API_KEY is missing! Vercel dashboard needs this variable to run dynamic translations.");
     return;
   }
+
+  const langNames = { vi: 'Vietnamese', en: 'English', th: 'Thai', id: 'Indonesian', ja: 'Japanese' };
 
   // 1. Gather all tasks
   const tasks = []; // { type: 'name' | 'brand', p: product, text: string, cacheKey: string }
@@ -1010,15 +1012,7 @@ async function translateProducts(products, targetLang) {
   if (tasks.length === 0) return;
 
   // 2. Batch and request
-  const BATCH = 30;
-  for (let i = 0; i < tasks.length; i += BATCH) {
-    const batch = tasks.slice(i, i + BATCH);
-    const qArray = batch.map(t => t.text);
-
-    // We group by target language dynamically (names might be 'vi', brands are 'en')
-    // Wait, Google Translate API v2 only supports one target language per request!
-    // So we need to group tasks by target language first.
-  }
+  const BATCH = 25; // Gemini has strict RPM limits, 25 items per prompt is safer
 
   const groupedTasks = tasks.reduce((acc, t) => {
     const tgt = t.target || targetLang;
@@ -1028,27 +1022,46 @@ async function translateProducts(products, targetLang) {
   }, {});
 
   for (const [tgtLang, langTasks] of Object.entries(groupedTasks)) {
+    const tgtLangName = langNames[tgtLang] || tgtLang;
+
     for (let i = 0; i < langTasks.length; i += BATCH) {
       const batch = langTasks.slice(i, i + BATCH);
       const qArray = batch.map(t => t.text);
 
       try {
+        const prompt = `Translate the following list to ${tgtLangName}. Return ONLY a valid JSON array of strings in exactly the same order. Do not wrap in markdown or backticks.\n\n` + JSON.stringify(qArray);
+
         const res = await fetch(
-          `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              q: qArray,
-              target: tgtLang,
-              source: 'ko',
-              format: 'text'
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 0.1 }
             })
           }
         );
         if (!res.ok) continue;
+
         const data = await res.json();
-        const translated = data?.data?.translations?.map(t => t.translatedText) || [];
+        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!rawText) continue;
+
+        let translated = [];
+        try {
+          // strip markdown formatting if Gemini accidentally included it
+          const cleanText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+          translated = JSON.parse(cleanText);
+        } catch (err) {
+          console.error('Gemini JSON parse error:', err, rawText);
+          continue;
+        }
+
+        if (!Array.isArray(translated) || translated.length !== batch.length) {
+          console.warn('Gemini returned mismatched array length.');
+          continue;
+        }
 
         // Save and Update DOM
         batch.forEach((t, idx) => {
@@ -1070,89 +1083,56 @@ async function translateProducts(products, targetLang) {
           });
         });
       } catch (e) {
-        console.warn(`Translation batch error (${tgtLang}):`, e);
+        console.warn(`Gemini Translation batch error (${tgtLang}):`, e);
       }
     }
   }
 }
 
-// 브랜드명 배치 번역
-async function translateBrands(products) {
-  const lang = i18n.currentLang;
-  if (lang === 'ko') return;
-
-  const needsTr = products.filter(p => {
-    const pid = p.product_id || p.id;
-    return !p.brand_en && !localStorage.getItem(`br_en_${pid}`);
-  });
-
-  if (needsTr.length === 0) return;
-
-  const batchSize = 30;
-  for (let i = 0; i < needsTr.length; i += batchSize) {
-    const batch = needsTr.slice(i, i + batchSize);
-    const brands = [...new Set(batch.map(p => p.brand_ko || p.brand || '').filter(Boolean))];
-    if (brands.length === 0) continue;
-
-    const translated = await translateKeywords(brands, 'en', 'brand');
-    if (translated) {
-      const brandMap = {};
-      brands.forEach((b, idx) => brandMap[b] = translated[idx]);
-
-      batch.forEach(p => {
-        const koBrand = p.brand_ko || p.brand || '';
-        const enBrand = brandMap[koBrand];
-        if (enBrand) {
-          const pid = p.product_id || p.id;
-          localStorage.setItem(`br_en_${pid}`, enBrand);
-          // 메모리에 저장해 getLocalizedBrand 에서 즉시 접근 가능하게 함
-          p.brand_en = enBrand;
-          // DOM 업데이트 (상품 카드 및 리스트 테이블의 클래스명)
-          document.querySelectorAll(`.product-brand[data-brand-pid="${pid}"]`).forEach(el => {
-            el.textContent = enBrand;
-          });
-          // 카드뷰의 브랜드 요소 (data 속성 없을 경우를 대비해 텍스트 기반으로 찾진 않고 그냥 캐싱에 의존)
-          // 하지만 카드는 새로 렌더링될 수도 있으므로 p 객체를 업데이트하는게 중요
-        }
-      });
-      // 카드가 이미 그려진 상태에서 p.brand_en이 업데이트 되었으므로 카드뷰도 리렌더링 트리거 고려 (여기선 생략)
-    }
-  }
-}
-
-// Google Cloud Translation API 배치 번역 (브랜드/카테고리 등 짧은 키워드 번역)
+// Google Cloud Translation API 배치 번역 (브랜드/카테고리 등 짧은 키워드 번역) -> Gemini API로 변경
 async function translateKeywords(items, targetLang, targetType = 'category') {
   if (!items || items.length === 0) return;
-  // Cloud Translation API expects language codes like 'en', 'vi', 'th'
 
-  const apiKey = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
   if (!apiKey) return;
 
+  const langNames = { vi: 'Vietnamese', en: 'English', th: 'Thai', id: 'Indonesian', ja: 'Japanese' };
+  const tgtLangName = langNames[targetLang] || targetLang;
+
   try {
+    const prompt = `Translate the following list to ${tgtLangName}. Return ONLY a valid JSON array of strings in exactly the same order. Do not wrap in markdown or backticks.\n\n` + JSON.stringify(items);
+
     const res = await fetch(
-      `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          q: items,
-          target: targetLang,
-          source: 'ko',
-          format: 'text'
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.1 }
         })
       }
     );
     if (!res.ok) return null;
     const data = await res.json();
-    if (data && data.data && data.data.translations) {
-      return data.data.translations.map(t => t.translatedText);
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!rawText) return null;
+
+    let translated = [];
+    try {
+      const cleanText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+      translated = JSON.parse(cleanText);
+    } catch (err) {
+      return null;
     }
-    return null;
+
+    return Array.isArray(translated) && translated.length === items.length ? translated : null;
   } catch (e) {
     console.warn(`Keyword translation error (${targetType}):`, e);
     return null;
   }
 }
+
 
 function getLocalizedName(p) {
   const lang = i18n.currentLang;
