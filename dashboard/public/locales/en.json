@@ -39,7 +39,8 @@
         "trending": "Real-time Trending",
         "deals": "Daily Best Deals",
         "reviews": "Rising Reviews",
-        "total": "Total Products"
+        "total": "Total Products",
+        "total_steady": "Total Steady Sellers"
     },
     "filters": {
         "category": "Category",

@@ -11,7 +11,7 @@ export const SteadySellerBridge = {
     async getKPIs(currentPlatform) {
         const res = await fetchSteadySellers();
         return [
-            { id: 'total', icon: '📦', value: res.count || 0, label: '총 스테디 셀러' }
+            { id: 'total', icon: '📦', value: res.count || 0, label: 'kpi.total_steady' }
         ];
     },
 
@@ -27,7 +27,14 @@ export const SteadySellerBridge = {
         const categories = [{ category_code: 'ALL', name_ko: '전체 (All)', name_en: 'All Brands', depth: 1 }];
 
         brandList.forEach(brand => {
-            categories.push({ category_code: brand, name_ko: brand, name_en: brand, depth: 1 });
+            // Provide category_name for main.js to use in translateKeywords
+            categories.push({
+                category_code: brand,
+                category_name: brand,
+                name_ko: brand,
+                name_en: '', // Leave empty to trigger auto-translation in main.js
+                depth: 1
+            });
         });
 
         return {
@@ -40,7 +47,6 @@ export const SteadySellerBridge = {
         let res = await fetchSteadySellers();
         let sourceData = res.data || [];
 
-        // Apply category filter if one is selected (and not 'ALL')
         if (state.activeCategory && state.activeCategory !== 'ALL' && state.activeCategory !== 'all') {
             sourceData = sourceData.filter(item => item.brand === state.activeCategory);
         }
@@ -54,7 +60,7 @@ export const SteadySellerBridge = {
             name: item.product_name,
             current_rank: item.rank,
             special_price: item.price,
-            original_price: item.price, // Fallback
+            original_price: item.price,
             source: 'steady_sellers'
         }));
 
@@ -64,16 +70,15 @@ export const SteadySellerBridge = {
     renderCustomHeader(state) {
         return `
             <div class="steady-sellers-compact-header">
-                <h2>🏆 Steady Sellers</h2>
+                <h2>🏆 ${window.t('platforms.steady_sellers') || 'Steady Sellers'}</h2>
             </div>
         `;
     },
 
     renderTabContent(tabId, result, state) {
         const data = result.data || [];
-        if (data.length === 0) return `<div style="padding:40px; text-align:center; color:var(--text-muted);">${window.t('common.no_results') || '조건에 맞는 스테디셀러가 없습니다.'}</div>`;
+        if (data.length === 0) return `<div style="padding:40px; text-align:center; color:var(--text-muted);">${window.t('common.no_results')}</div>`;
 
-        // Group by brand
         const grouped = data.reduce((acc, item) => {
             const brand = item.brand || 'Other Brands';
             if (!acc[brand]) acc[brand] = [];
@@ -86,8 +91,8 @@ export const SteadySellerBridge = {
                 ${Object.entries(grouped).map(([brand, products]) => `
                     <div class="brand-group">
                         <div class="brand-group-header">
-                            <h3 class="brand-title">${brand}</h3>
-                            <span class="brand-count">${products.length} Products</span>
+                            <h3 class="brand-title product-brand" data-pid="${products[0].id}">${brand}</h3>
+                            <span class="brand-count">${products.length} Items</span>
                         </div>
                         <div class="brand-products-grid">
                             ${products.map(p => `
@@ -96,7 +101,7 @@ export const SteadySellerBridge = {
                                         <img src="${p.image_url}" alt="${p.name}" class="ss-product-img" loading="lazy">
                                     </div>
                                     <div class="ss-product-overlay">
-                                        <h4 class="ss-product-name">${p.name}</h4>
+                                        <h4 class="ss-product-name product-name" data-pid="${p.id}">${p.name}</h4>
                                         <div class="ss-product-price">
                                             <span class="currency">₩</span>
                                             <span class="amount">${new Intl.NumberFormat().format(p.special_price)}</span>

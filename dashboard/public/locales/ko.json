@@ -42,7 +42,8 @@
         "total": "전체 수집 상품",
         "total_musinsa": "무신사 수집 상품",
         "style_trends": "스타일 트렌드",
-        "musinsa_brands": "입점 브랜드"
+        "musinsa_brands": "입점 브랜드",
+        "total_steady": "총 스테디 셀러"
     },
     "filters": {
         "category": "카테고리",
