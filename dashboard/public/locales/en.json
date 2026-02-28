@@ -25,12 +25,15 @@
     },
     "tabs": {
         "all": "All Products",
-        "trending": "Trending",
+        "trending": "Trending Now",
         "deals": "Daily Deals",
         "reviews": "Review Analysis",
         "insights": "Market Insights",
         "favorites": "Interests",
-        "crawl_logs": "Crawl Logs"
+        "crawl_logs": "Crawl Logs",
+        "musinsa_ranking": "Musinsa Rankings",
+        "global_trends": "Global Trends",
+        "apply": "Apply"
     },
     "kpi": {
         "trending": "Real-time Trending",
@@ -88,23 +91,25 @@
     },
     "sections": {
         "all": "Category Rankings",
-        "all_desc": "Product list based on Olive Young category rankings",
+        "all_desc": "Product rankings by Olive Young categories",
         "trending": "7-Day Trending",
-        "trending_desc": "Products with the biggest rank jumps in the last 7 days",
-        "deals": "Daily Deals",
-        "deals_desc": "Highest discount products available today",
-        "reviews": "Review Leaders",
+        "trending_desc": "Products with the highest rank jumps in 7 days",
+        "deals": "Daily Best Deals",
+        "deals_desc": "Products with the highest discount rates today",
+        "reviews": "Popular by Reviews",
         "reviews_desc": "Proven popular products with the most reviews",
         "favorites": "My Interests",
-        "favorites_desc": "View all your bookmarked products in one place",
-        "insights": "Market Analysis",
-        "insights_desc": "Comprehensive market statistics based on collected data",
-        "logs": "Collection Logs",
+        "favorites_desc": "View all your bookmarked products at a glance",
+        "insights": "Market Insights & Analysis",
+        "insights_desc": "Comprehensive market statistics based on collected data.",
+        "logs": "Crawl Logs",
         "logs_desc": "Daily automated data collection status",
         "fav_login_required": "Login Required",
-        "fav_login_desc": "Please login to view your favorites",
-        "fav_empty": "No favorites yet",
-        "fav_empty_desc": "Click the heart icon on any product to add it here"
+        "fav_login_desc": "Please log in to view your favorite items",
+        "fav_empty": "No items in Wishlist",
+        "fav_empty_desc": "Click the heart icon on products to save them",
+        "global_trends": "Global K-Beauty Trends",
+        "global_trends_desc": "Popular K-Beauty products and mentions across international platforms"
     },
     "insights": {
         "category_share": "Category Share",
@@ -250,7 +255,10 @@
         "coming_soon": "This feature is coming soon."
     },
     "sourcing": {
-        "mypage_tab": "Pricing/Sourcing"
+        "mypage_tab": "Pricing/Sourcing",
+        "cart_title": "My Sourcing Cart & Interests",
+        "cart_desc": "View your saved items and request B2B sourcing quotes.",
+        "qty_label": "Quantity"
     },
     "deals": {
         "today_title": "Daily Deals Order Deadline",

@@ -153,8 +153,8 @@ export const KoreaTrendBridge = {
                 <div class="gt-product-row">
                     ${imgHtml}
                     <div class="gt-product-info">
-                        <div class="gt-product-brand">${item.brand_name || ''} ${matchBadge}</div>
-                        <div class="gt-product-name">${item.product_name}</div>
+                        <div class="gt-product-brand" data-pid="${item.product_id}">${item.brand_name || ''} ${matchBadge}</div>
+                        <div class="gt-product-name" data-pid="${item.product_id}">${item.product_name}</div>
                         <div class="gt-product-tags">${tags}</div>
                     </div>
                     <div class="gt-product-meta">

@@ -31,7 +31,9 @@
         "insights": "시장 분석",
         "favorites": "관심 상품",
         "crawl_logs": "수집 로그",
-        "musinsa_ranking": "무신사 랭킹"
+        "musinsa_ranking": "무신사 랭킹",
+        "global_trends": "글로벌 트렌드",
+        "apply": "적용"
     },
     "kpi": {
         "trending": "실시간 급상승",
@@ -109,7 +111,9 @@
         "fav_login_required": "로그인이 필요합니다",
         "fav_login_desc": "관심 상품을 보려면 로그인해 주세요",
         "fav_empty": "관심 상품이 없습니다",
-        "fav_empty_desc": "상품의 하트 아이콘을 눌러 추가해 보세요"
+        "fav_empty_desc": "상품의 하트 아이콘을 눌러 추가해 보세요",
+        "global_trends": "글로벌 K-뷰티 트렌드",
+        "global_trends_desc": "해외 각국 주요 플랫폼의 K-뷰티 언급량 및 인기 제품"
     },
     "insights": {
         "category_share": "카테고리별 점유율",
@@ -256,7 +260,10 @@
         "coming_soon": "해당 기능은 준비중입니다."
     },
     "sourcing": {
-        "mypage_tab": "견적 / 소싱 내역"
+        "mypage_tab": "견적 / 소싱 내역",
+        "cart_title": "나의 관심 상품 & 소싱 카트",
+        "cart_desc": "찜한 상품들을 체계적으로 모아보고 B2B 견적을 요청하세요",
+        "qty_label": "요청 수량"
     },
     "deals": {
         "today_title": "오늘의 특가 주문 마감까지",

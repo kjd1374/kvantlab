@@ -522,6 +522,11 @@ async function loadBridgeTab(tabId) {
         // Hide the original grid/tbody if it's separate
         if (grid) grid.style.display = 'none';
 
+        // Custom tabs like k_trend shouldn't skip translation if they have products
+        if (i18n.currentLang !== 'ko' && tabId !== 'crawl_logs' && data && data.length > 0) {
+          translateProducts(data, i18n.currentLang);
+        }
+
         i18n.documentUpdate();
         renderPagination(0);
         return;
@@ -555,8 +560,7 @@ async function loadBridgeTab(tabId) {
       }).join('');
       // 비-한국어 언어 설정이면 상품명/브랜드 배치 번역 비동기 실행
       if (i18n.currentLang !== 'ko') {
-        translateProductNames(data, i18n.currentLang);
-        translateBrands(data);
+        translateProducts(data, i18n.currentLang);
       }
     } else {
       grid.innerHTML = data.map(p => {
@@ -566,8 +570,7 @@ async function loadBridgeTab(tabId) {
 
       // 카드 형태에서도 번역 트리거
       if (i18n.currentLang !== 'ko') {
-        translateProductNames(data, i18n.currentLang);
-        translateBrands(data);
+        translateProducts(data, i18n.currentLang);
       }
     }
 
@@ -678,8 +681,7 @@ async function loadKTrendView(tabId) {
     }).join('');
 
     if (i18n.currentLang !== 'ko') {
-      translateProductNames(data, i18n.currentLang);
-      translateBrands(data);
+      translateProducts(data, i18n.currentLang);
     }
   } catch (err) {
     console.error('K-Trend fetch error:', err);
@@ -972,68 +974,104 @@ async function loadWishlist() {
 
 // ─── Render Helpers ───────────────────────
 
-// Gemini API 배치 번역 (상품명 목록을 한 번에 번역)
+// API Batch Translation (Name & Brand)
 const _translationCache = {};
-async function translateProductNames(products, targetLang) {
-  const langNames = { vi: 'Vietnamese', en: 'English', th: 'Thai', id: 'Indonesian', ja: 'Japanese' };
-  const langName = langNames[targetLang] || targetLang;
-
-  // 번역이 필요한 상품만 필터링
-  const needsTranslation = products.filter(p => {
-    const pid = p.product_id || p.id;
-    const cacheKey = `tr_${targetLang}_${pid}`;
-    if (_translationCache[cacheKey]) return false; // 메모리 캐시 있으면 스킵
-    // localStorage 확인
-    const stored = localStorage.getItem(cacheKey);
-    if (stored) { _translationCache[cacheKey] = stored; return false; }
-    return !p[`name_${targetLang}`]; // DB에 번역 없을 때만
-  });
-
-  if (needsTranslation.length === 0) return;
+async function translateProducts(products, targetLang) {
+  if (targetLang === 'ko') return;
 
   const apiKey = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
-  if (!apiKey) return;
+  if (!apiKey) {
+    console.warn("VITE_GOOGLE_TRANSLATE_API_KEY is missing! Vercel dashboard needs this variable to run dynamic translations.");
+    return;
+  }
 
-  // 배치: 20개씩 나눠서 번역
-  const BATCH = 20;
-  for (let i = 0; i < needsTranslation.length; i += BATCH) {
-    const batch = needsTranslation.slice(i, i + BATCH);
-    const items = batch.map((p, idx) => `${idx + 1}. ${p.name_ko || p.name || ''}`).join('\n');
+  // 1. Gather all tasks
+  const tasks = []; // { type: 'name' | 'brand', p: product, text: string, cacheKey: string }
 
-    try {
-      const qArray = batch.map(p => p.name_ko || p.name || '');
+  products.forEach(p => {
+    const pid = p.product_id || p.id;
+    const nameCacheKey = `tr_${targetLang}_${pid}`;
+    const brandCacheKey = `br_en_${pid}`; // Brands are always translated to English per user req
 
-      const res = await fetch(
-        `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            q: qArray,
-            target: targetLang,
-            source: 'ko',
-            format: 'text'
-          })
-        }
-      );
-      if (!res.ok) continue;
-      const data = await res.json();
-      const translated = data?.data?.translations?.map(t => t.translatedText) || [];
+    const rawName = p.name_ko || p.name || p.product_name;
+    const rawBrand = p.brand_ko || p.brand || p.brand_name;
 
-      // 캐시 저장 & DOM 즉시 업데이트
-      batch.forEach((p, idx) => {
-        const name = translated[idx] || p.name || '';
-        const pid = p.product_id || p.id;
-        const cacheKey = `tr_${targetLang}_${pid}`;
-        _translationCache[cacheKey] = name;
-        localStorage.setItem(cacheKey, name);
+    // Name translation (to targetLang)
+    if (!p[`name_${targetLang}`] && !_translationCache[nameCacheKey] && !localStorage.getItem(nameCacheKey) && rawName) {
+      tasks.push({ type: 'name', p, text: rawName, cacheKey: nameCacheKey });
+    }
 
-        // DOM에서 해당 상품명 셀 찾아서 바로 업데이트
-        const cells = document.querySelectorAll(`.product-name[data-pid="${pid}"]`);
-        cells.forEach(cell => { cell.textContent = name; });
-      });
-    } catch (e) {
-      console.warn('Translation batch error:', e);
+    // Brand translation (to English always)
+    if (!p.brand_en && !localStorage.getItem(brandCacheKey) && rawBrand) {
+      tasks.push({ type: 'brand', p, text: rawBrand, cacheKey: brandCacheKey, target: 'en' });
+    }
+  });
+
+  if (tasks.length === 0) return;
+
+  // 2. Batch and request
+  const BATCH = 30;
+  for (let i = 0; i < tasks.length; i += BATCH) {
+    const batch = tasks.slice(i, i + BATCH);
+    const qArray = batch.map(t => t.text);
+
+    // We group by target language dynamically (names might be 'vi', brands are 'en')
+    // Wait, Google Translate API v2 only supports one target language per request!
+    // So we need to group tasks by target language first.
+  }
+
+  const groupedTasks = tasks.reduce((acc, t) => {
+    const tgt = t.target || targetLang;
+    if (!acc[tgt]) acc[tgt] = [];
+    acc[tgt].push(t);
+    return acc;
+  }, {});
+
+  for (const [tgtLang, langTasks] of Object.entries(groupedTasks)) {
+    for (let i = 0; i < langTasks.length; i += BATCH) {
+      const batch = langTasks.slice(i, i + BATCH);
+      const qArray = batch.map(t => t.text);
+
+      try {
+        const res = await fetch(
+          `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              q: qArray,
+              target: tgtLang,
+              source: 'ko',
+              format: 'text'
+            })
+          }
+        );
+        if (!res.ok) continue;
+        const data = await res.json();
+        const translated = data?.data?.translations?.map(t => t.translatedText) || [];
+
+        // Save and Update DOM
+        batch.forEach((t, idx) => {
+          let resText = translated[idx] || t.text;
+          // Clean up common weird translations
+          if (t.type === 'brand') { resText = resText.replace(/ /g, ''); } // basic brand cleanup
+
+          _translationCache[t.cacheKey] = resText;
+          localStorage.setItem(t.cacheKey, resText);
+
+          // Directly update DOM
+          const pid = t.p.product_id || t.p.id;
+          const selector = t.type === 'name'
+            ? `.product-name[data-pid="${pid}"], .gt-product-name[data-pid="${pid}"]`
+            : `.product-brand[data-pid="${pid}"], .gt-product-brand[data-pid="${pid}"]`;
+
+          document.querySelectorAll(selector).forEach(cell => {
+            cell.textContent = resText;
+          });
+        });
+      } catch (e) {
+        console.warn(`Translation batch error (${tgtLang}):`, e);
+      }
     }
   }
 }
