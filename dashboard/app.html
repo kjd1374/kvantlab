@@ -319,15 +319,43 @@
           <!-- Populated dynamically via JS -->
         </div>
 
-        <textarea id="quoteMessage" class="form-input" rows="4" data-i18n="sourcing.modal_placeholder"
-          placeholder="추가 요구사항을 남겨주세요 (예: 베트남 호치민으로 이달 말까지 배송 원합니다.)"
-          style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; resize: vertical; margin-bottom: 10px;"></textarea>
+        <textarea id="quoteMessage" class="form-input" rows="3" id-i18n-placeholder="sourcing.modal_placeholder"
+          style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; resize: vertical; margin-bottom: 14px;"></textarea>
 
-        <input type="url" id="quoteSnsLink" class="form-input" data-i18n="sourcing.modal_sns_placeholder"
-          placeholder="📌 원하시는 상품 이미지 URL 또는 SNS 링크 (선택)"
-          style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: #fafafa;">
+        <!-- Multi SNS Links -->
+        <div style="margin-bottom: 12px;">
+          <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px;"
+            data-i18n="sourcing.quote_sns_label">📌 SNS / 상품 링크 (최대 5개)</div>
+          <div id="quoteSnsLinksContainer" style="display: flex; flex-direction: column; gap: 7px;">
+            <div class="sns-link-row" style="display: flex; gap: 6px; align-items: center;">
+              <input type="url" class="form-input quote-sns-input" id-i18n-placeholder="sourcing.modal_sns_placeholder"
+                style="flex:1; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;">
+              <button type="button" onclick="window.__addSnsInput()"
+                style="padding: 8px 11px; border-radius: 8px; border: 1px solid var(--accent-blue); background: transparent; color: var(--accent-blue); font-size: 16px; cursor: pointer; font-weight: 700; line-height: 1;"
+                title="추가">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Image Upload -->
+        <div style="margin-bottom: 14px;">
+          <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px;"
+            data-i18n="sourcing.quote_img_label">📷 상품 이미지 첨부 (최대 5장)</div>
+          <label for="quoteImageInput" id="quoteImageDropZone"
+            style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border: 2px dashed var(--border); border-radius: 10px; cursor: pointer; background: var(--card-bg); font-size: 13px; color: var(--text-muted); transition: border-color 0.2s;"
+            ondragover="event.preventDefault(); this.style.borderColor='var(--accent-blue)'"
+            ondragleave="this.style.borderColor='var(--border)'"
+            ondrop="event.preventDefault(); window.__handleQuoteImageDrop(event)"
+            data-i18n="sourcing.quote_img_upload_hint">
+            📁 클릭 또는 드래그하여 업로드
+          </label>
+          <input type="file" id="quoteImageInput" multiple accept="image/*" style="display:none;"
+            onchange="window.__previewQuoteImages(this.files)">
+          <div id="quoteImagePreviews" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;"></div>
+        </div>
+
         <div
-          style="margin-top: 15px; margin-bottom: 20px; padding: 12px; border-radius: 8px; background: rgba(255, 77, 79, 0.05); border: 1px solid rgba(255, 77, 79, 0.2);">
+          style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: rgba(255, 77, 79, 0.05); border: 1px solid rgba(255, 77, 79, 0.2);">
           <p style="color: #ff4d4f; font-size: 13px; font-weight: 500; line-height: 1.5; margin: 0; display: flex; gap: 8px;"
             data-i18n="sourcing.modal_warning">
             ⚠️ 견적 산출에는 약간의 시간이 소요될 수 있습니다. 완료 시 대시보드 알림과 메일로 안내해 드립니다.

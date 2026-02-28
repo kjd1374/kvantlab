@@ -3196,17 +3196,90 @@ window.__updateSourcingQty = function (btn, delta) {
   }
 };
 
+// ─── Quote Modal: Multi-SNS + Image Upload ────────────────
+let __quoteImageFiles = [];
+
+window.__addSnsInput = function () {
+  const container = document.getElementById('quoteSnsLinksContainer');
+  if (!container) return;
+  const rows = container.querySelectorAll('.sns-link-row');
+  if (rows.length >= 5) return;
+  const placeholder = window.t('sourcing.modal_sns_placeholder') || '📌 SNS 링크 / 상품 URL';
+  const row = document.createElement('div');
+  row.className = 'sns-link-row';
+  row.style.cssText = 'display: flex; gap: 6px; align-items: center;';
+  row.innerHTML = `
+    <input type="url" class="form-input quote-sns-input" placeholder="${placeholder}"
+      style="flex:1; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;">
+    <button type="button" onclick="window.__removeSnsInput(this)"
+      style="padding: 8px 11px; border-radius: 8px; border: 1px solid #e03131; background: transparent; color: #e03131; font-size: 16px; cursor: pointer; font-weight: 700; line-height: 1;">−</button>`;
+  container.appendChild(row);
+};
+
+window.__removeSnsInput = function (btn) {
+  const row = btn.closest('.sns-link-row');
+  if (row) row.remove();
+};
+
+window.__previewQuoteImages = function (files) {
+  const newFiles = Array.from(files).slice(0, 5 - __quoteImageFiles.length);
+  __quoteImageFiles.push(...newFiles);
+  if (__quoteImageFiles.length > 5) __quoteImageFiles = __quoteImageFiles.slice(0, 5);
+  renderQuoteImagePreviews();
+};
+
+window.__handleQuoteImageDrop = function (event) {
+  const files = event.dataTransfer.files;
+  window.__previewQuoteImages(files);
+  const zone = document.getElementById('quoteImageDropZone');
+  if (zone) zone.style.borderColor = 'var(--border)';
+};
+
+window.__removeQuoteImage = function (index) {
+  __quoteImageFiles.splice(index, 1);
+  renderQuoteImagePreviews();
+};
+
+function renderQuoteImagePreviews() {
+  const container = document.getElementById('quoteImagePreviews');
+  if (!container) return;
+  container.innerHTML = __quoteImageFiles.map((f, i) => {
+    const url = URL.createObjectURL(f);
+    return `<div style="position:relative; width:64px; height:64px;">
+      <img src="${url}" style="width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">
+      <button onclick="window.__removeQuoteImage(${i})" style="position:absolute; top:-5px; right:-5px; width:18px; height:18px; border-radius:50%; background:#e03131; color:white; font-size:10px; border:none; cursor:pointer; line-height:18px; text-align:center;">×</button>
+    </div>`;
+  }).join('');
+}
+
+// Update placeholder translations dynamically (for id-i18n-placeholder attributes)
+function applyI18nPlaceholders() {
+  document.querySelectorAll('[id-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('id-i18n-placeholder');
+    const translated = window.t(key);
+    if (translated) el.placeholder = translated;
+  });
+}
+// Hook into the existing applyTranslations call
+const _origApply = window.applyTranslations;
+if (typeof _origApply === 'function') {
+  window.applyTranslations = function (...args) {
+    _origApply(...args);
+    applyI18nPlaceholders();
+  };
+}
+
 window.submitQuoteRequest = async function () {
   const btn = document.getElementById('btnSubmitQuote');
   const msgInput = document.getElementById('quoteMessage');
-  const snsInput = document.getElementById('quoteSnsLink');
+  let message = msgInput ? msgInput.value.trim() : '';
 
-  let message = msgInput ? msgInput.value : '';
-  const snsLink = snsInput ? snsInput.value.trim() : '';
-
-  if (snsLink) {
-    message += `\n\n📌 상품/SNS 링크: ${snsLink}`;
-  }
+  // Collect all SNS links
+  const snsLinks = [];
+  document.querySelectorAll('.quote-sns-input').forEach(input => {
+    const v = input.value.trim();
+    if (v) snsLinks.push(v);
+  });
 
   if (btn) {
     btn.disabled = true;
@@ -3217,17 +3290,36 @@ window.submitQuoteRequest = async function () {
     const session = getSession();
     if (!session) throw new Error(window.t('sourcing.alert_login'));
 
-    // Scrape items from DOM (in wishlist grid)
+    // Upload images to Supabase Storage
+    const imageUrls = [];
+    if (__quoteImageFiles.length > 0) {
+      const { createClient: mkClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
+      const _sb = mkClient(window.__SUPABASE_URL__, window.__SUPABASE_ANON_KEY__);
+      for (const file of __quoteImageFiles) {
+        const ext = file.name.split('.').pop();
+        const path = `quotes/${session.user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error: upErr } = await _sb.storage.from('search-request-images').upload(path, file, { upsert: true });
+        if (upErr) console.warn('Image upload warning:', upErr.message);
+        else {
+          const { data: { publicUrl } } = _sb.storage.from('search-request-images').getPublicUrl(path);
+          imageUrls.push(publicUrl);
+        }
+      }
+    }
+
+    // Append SNS links and image URLs to message
+    if (snsLinks.length > 0) message += '\n\n📌 SNS/상품 링크:\n' + snsLinks.map((l, i) => `${i + 1}. ${l}`).join('\n');
+    if (imageUrls.length > 0) message += '\n\n🖼️ 첨부 이미지:\n' + imageUrls.join('\n');
+
+    // Scrape items from DOM
     const inputs = document.querySelectorAll('#wishlistGrid .sourcing-qty-input');
     const items = [];
     inputs.forEach(input => {
       const card = input.closest('.product-card');
       const checkbox = card ? card.querySelector('.sourcing-item-checkbox') : null;
       if (checkbox && !checkbox.checked) return;
-
       const qty = parseInt(input.value) || 0;
       if (qty <= 0) return;
-
       const name = card.querySelector('.product-name')?.innerText || '';
       const brand = card.querySelector('.product-brand')?.innerText || '';
       const pid = input.getAttribute('data-product-id');
@@ -3235,33 +3327,33 @@ window.submitQuoteRequest = async function () {
       items.push({ product_id: pid, name, brand, quantity: qty, image: img });
     });
 
-    if (items.length === 0) {
-      throw new Error(window.t('sourcing.alert_empty_cart'));
-    }
-
-    const payload = {
-      user_id: session.user.id,
-      user_email: session.user.email,
-      items: items,
-      user_message: message
-    };
+    if (items.length === 0) throw new Error(window.t('sourcing.alert_empty_cart'));
 
     const res = await fetch('/api/sourcing/request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ user_id: session.user.id, user_email: session.user.email, items, user_message: message })
     });
-
     const data = await res.json();
     if (!data.success) throw new Error(data.error || window.t('sourcing.alert_fail'));
 
     alert(window.t('sourcing.alert_success'));
     closeQuoteModal();
     if (msgInput) msgInput.value = '';
-    if (snsInput) snsInput.value = '';
+    // Reset SNS inputs
+    const container = document.getElementById('quoteSnsLinksContainer');
+    if (container) {
+      container.innerHTML = `<div class="sns-link-row" style="display: flex; gap: 6px; align-items: center;">
+        <input type="url" class="form-input quote-sns-input" placeholder="${window.t('sourcing.modal_sns_placeholder') || ''}"
+          style="flex:1; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;">
+        <button type="button" onclick="window.__addSnsInput()" style="padding: 8px 11px; border-radius: 8px; border: 1px solid var(--accent-blue); background: transparent; color: var(--accent-blue); font-size: 16px; cursor: pointer; font-weight: 700; line-height: 1;">+</button>
+      </div>`;
+    }
+    __quoteImageFiles = [];
+    renderQuoteImagePreviews();
   } catch (e) {
-    console.error("Quote Submit Error:", e);
-    alert("❌ Error: " + e.message);
+    console.error('Quote Submit Error:', e);
+    alert('❌ Error: ' + e.message);
   } finally {
     if (btn) {
       btn.disabled = false;
