@@ -116,18 +116,9 @@ async function sendUserNotificationEmail(userEmail, title, messageBody) {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ─── Custom Email OTP Store ──────────────────────────────────────────────────
-const otpStore = new Map(); // email -> { code, expiresAt }
-
+// ─── Custom Email OTP Helpers ─────────────────────────────────────────────────
 function generateOtp() {
     return Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit
-}
-
-function cleanExpiredOtps() {
-    const now = Date.now();
-    for (const [email, data] of otpStore) {
-        if (data.expiresAt < now) otpStore.delete(email);
-    }
 }
 
 async function sendOtpEmail(toEmail, code) {
@@ -191,6 +182,7 @@ app.use(bodyParser.json());
 // --- Custom Email OTP Endpoints ---
 
 // Send OTP via our SMTP (bypasses Supabase email rate limits)
+// OTP stored in Supabase DB for persistence across serverless invocations
 app.post('/api/auth/send-otp', async (req, res) => {
     const { email } = req.body;
     if (!email || !email.includes('@')) {
@@ -198,12 +190,17 @@ app.post('/api/auth/send-otp', async (req, res) => {
     }
 
     try {
-        cleanExpiredOtps();
         const code = generateOtp();
-        otpStore.set(email.toLowerCase(), {
-            code,
-            expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
-        });
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes
+
+        // Upsert OTP into DB (replace if same email already has one)
+        const { error: dbError } = await supabase
+            .from('email_otp')
+            .upsert({ email: email.toLowerCase(), code, expires_at: expiresAt }, { onConflict: 'email' });
+        if (dbError) {
+            console.error('[OTP] DB upsert error:', dbError.message);
+            throw new Error('Failed to store OTP');
+        }
 
         await sendOtpEmail(email, code);
         res.json({ success: true });
@@ -220,22 +217,29 @@ app.post('/api/auth/verify-otp', async (req, res) => {
         return res.status(400).json({ success: false, error: 'Email and code are required' });
     }
 
-    const stored = otpStore.get(email.toLowerCase());
-    if (!stored) {
-        return res.status(400).json({ success: false, error: '인증번호가 만료되었거나 요청되지 않았습니다. / OTP not found or expired.' });
-    }
-    if (stored.expiresAt < Date.now()) {
-        otpStore.delete(email.toLowerCase());
-        return res.status(400).json({ success: false, error: '인증번호가 만료되었습니다. 다시 발송해주세요. / OTP expired.' });
-    }
-    if (stored.code !== code) {
-        return res.status(400).json({ success: false, error: '인증번호가 일치하지 않습니다. / Invalid OTP.' });
-    }
-
-    // OTP verified — clean up
-    otpStore.delete(email.toLowerCase());
-
     try {
+        // Read OTP from DB
+        const { data: stored, error: readError } = await supabase
+            .from('email_otp')
+            .select('code, expires_at')
+            .eq('email', email.toLowerCase())
+            .single();
+
+        if (readError || !stored) {
+            return res.status(400).json({ success: false, error: '인증번호가 만료되었거나 요청되지 않았습니다. / OTP not found or expired.' });
+        }
+        if (new Date(stored.expires_at) < new Date()) {
+            // Clean up expired OTP
+            await supabase.from('email_otp').delete().eq('email', email.toLowerCase());
+            return res.status(400).json({ success: false, error: '인증번호가 만료되었습니다. 다시 발송해주세요. / OTP expired.' });
+        }
+        if (stored.code !== code) {
+            return res.status(400).json({ success: false, error: '인증번호가 일치하지 않습니다. / Invalid OTP.' });
+        }
+
+        // OTP verified — clean up from DB
+        await supabase.from('email_otp').delete().eq('email', email.toLowerCase());
+
         // Check if user already exists in Supabase Auth
         const { data: { users } } = await supabase.auth.admin.listUsers();
         let user = users.find(u => u.email === email.toLowerCase());
@@ -252,14 +256,6 @@ app.post('/api/auth/verify-otp', async (req, res) => {
             user = newUser.user;
         }
 
-        // Generate a session token for this user
-        const { data: sessionData, error: tokenError } = await supabase.auth.admin.generateLink({
-            type: 'magiclink',
-            email: email.toLowerCase()
-        });
-
-        // Since we can't directly get a session via admin, use signInWithPassword isn't possible
-        // Instead, we'll return user info and a verified flag. The frontend will handle the session.
         res.json({
             success: true,
             verified: true,
