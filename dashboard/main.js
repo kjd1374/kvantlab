@@ -3384,12 +3384,16 @@ window.__addSnsInput = function () {
   const placeholder = window.t('sourcing.modal_sns_placeholder') || '📌 SNS 링크 / 상품 URL';
   const row = document.createElement('div');
   row.className = 'sns-link-row';
-  row.style.cssText = 'display: flex; gap: 6px; align-items: center;';
+  row.style.cssText = 'display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px;';
   row.innerHTML = `
-    <input type="url" class="form-input quote-sns-input" placeholder="${placeholder}"
-      style="flex:1; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;">
-    <button type="button" onclick="window.__removeSnsInput(this)"
-      style="padding: 8px 11px; border-radius: 8px; border: 1px solid #e03131; background: transparent; color: #e03131; font-size: 16px; cursor: pointer; font-weight: 700; line-height: 1;">−</button>`;
+    <div style="display: flex; gap: 6px; align-items: center;">
+      <input type="url" class="form-input quote-sns-input" placeholder="${placeholder}"
+        style="flex:1; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;"
+        oninput="window.__validateSnsInput(this)">
+      <button type="button" onclick="window.__removeSnsInput(this)"
+        style="padding: 8px 11px; border-radius: 8px; border: 1px solid #e03131; background: transparent; color: #e03131; font-size: 16px; cursor: pointer; font-weight: 700; line-height: 1;">−</button>
+    </div>
+    <div class="sns-error" style="display:none; font-size:11px; color:#e03131; padding-left:2px;">올바른 URL 형식을 입력해주세요. (예: https://www.instagram.com/...)</div>`;
   container.appendChild(row);
 };
 
@@ -3398,8 +3402,47 @@ window.__removeSnsInput = function (btn) {
   if (row) row.remove();
 };
 
+window.__validateSnsInput = function (input) {
+  const val = input.value.trim();
+  const row = input.closest('.sns-link-row');
+  const errEl = row ? row.querySelector('.sns-error') : null;
+  if (!val) {
+    input.style.borderColor = 'var(--border)';
+    if (errEl) errEl.style.display = 'none';
+    return true;
+  }
+  let isValid = false;
+  try {
+    const url = new URL(val);
+    isValid = (url.protocol === 'http:' || url.protocol === 'https:');
+  } catch (_) { isValid = false; }
+  if (isValid) {
+    input.style.borderColor = 'var(--accent-green, #34c759)';
+    if (errEl) errEl.style.display = 'none';
+  } else {
+    input.style.borderColor = '#e03131';
+    if (errEl) errEl.style.display = 'block';
+  }
+  return isValid;
+};
+
 window.__previewQuoteImages = function (files) {
-  const newFiles = Array.from(files).slice(0, 5 - __quoteImageFiles.length);
+  const MAX_SIZE_MB = 5;
+  const allowed = [];
+  const rejected = [];
+  Array.from(files).forEach(file => {
+    if (!file.type.startsWith('image/')) {
+      rejected.push(`${file.name} (이미지 파일만 업로드 가능합니다)`);
+    } else if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      rejected.push(`${file.name} (파일 크기가 5MB를 초과합니다)`);
+    } else {
+      allowed.push(file);
+    }
+  });
+  if (rejected.length > 0) {
+    alert('⚠️ 업로드 불가 파일:\n' + rejected.join('\n'));
+  }
+  const newFiles = allowed.slice(0, 5 - __quoteImageFiles.length);
   __quoteImageFiles.push(...newFiles);
   if (__quoteImageFiles.length > 5) __quoteImageFiles = __quoteImageFiles.slice(0, 5);
   renderQuoteImagePreviews();
@@ -3451,12 +3494,21 @@ window.submitQuoteRequest = async function () {
   const msgInput = document.getElementById('quoteMessage');
   let message = msgInput ? msgInput.value.trim() : '';
 
-  // Collect all SNS links
+  // Collect and validate SNS links
   const snsLinks = [];
+  let hasInvalidLink = false;
   document.querySelectorAll('.quote-sns-input').forEach(input => {
     const v = input.value.trim();
-    if (v) snsLinks.push(v);
+    if (v) {
+      const valid = window.__validateSnsInput(input);
+      if (!valid) hasInvalidLink = true;
+      else snsLinks.push(v);
+    }
   });
+  if (hasInvalidLink) {
+    alert('⚠️ 올바른 URL 형식이 아닌 링크가 있습니다. 확인 후 다시 시도해주세요.');
+    return;
+  }
 
   if (btn) {
     btn.disabled = true;

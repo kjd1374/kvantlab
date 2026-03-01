@@ -338,12 +338,18 @@
           <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px;"
             data-i18n="sourcing.quote_sns_label">📌 SNS / 상품 링크 (최대 5개)</div>
           <div id="quoteSnsLinksContainer" style="display: flex; flex-direction: column; gap: 7px;">
-            <div class="sns-link-row" style="display: flex; gap: 6px; align-items: center;">
-              <input type="url" class="form-input quote-sns-input" id-i18n-placeholder="sourcing.modal_sns_placeholder"
-                style="flex:1; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;">
-              <button type="button" onclick="window.__addSnsInput()"
-                style="padding: 8px 11px; border-radius: 8px; border: 1px solid var(--accent-blue); background: transparent; color: var(--accent-blue); font-size: 16px; cursor: pointer; font-weight: 700; line-height: 1;"
-                title="추가">+</button>
+            <div class="sns-link-row" style="display: flex; flex-direction: column; gap: 4px;">
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <input type="url" class="form-input quote-sns-input"
+                  id-i18n-placeholder="sourcing.modal_sns_placeholder"
+                  style="flex:1; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;"
+                  oninput="window.__validateSnsInput(this)">
+                <button type="button" onclick="window.__addSnsInput()"
+                  style="padding: 8px 11px; border-radius: 8px; border: 1px solid var(--accent-blue); background: transparent; color: var(--accent-blue); font-size: 16px; cursor: pointer; font-weight: 700; line-height: 1;"
+                  title="추가">+</button>
+              </div>
+              <div class="sns-error" style="display:none; font-size:11px; color:#e03131; padding-left:2px;">올바른 URL 형식을
+                입력해주세요. (예: https://www.instagram.com/...)</div>
             </div>
           </div>
         </div>
