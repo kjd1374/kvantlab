@@ -812,6 +812,11 @@ async function loadKTrendView(tabId) {
       const customHtml = state.activeBridge.renderTabContent(tabId, result, state);
       if (customHtml !== null && customHtml !== undefined) {
         grid.innerHTML = customHtml;
+
+        // Translate Naver Best brand/product names and hashtags for non-Korean languages
+        if (i18n.currentLang !== 'ko') {
+          _translateNaverBestElements(grid, i18n.currentLang);
+        }
         return;
       }
     }
@@ -1152,6 +1157,62 @@ async function loadWishlist() {
 }
 
 // ─── Render Helpers ───────────────────────
+
+// Translate Naver Best elements (brand names, product names, hashtags) in-place
+async function _translateNaverBestElements(container, targetLang) {
+  if (targetLang === 'ko') return;
+  const apiKey = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+  if (!apiKey) return;
+
+  // Collect all translatable elements
+  const selectors = '.nb-brand-name, .nb-product-brand, .nb-product-name, .nb-hash';
+  const elements = container.querySelectorAll(selectors);
+  if (elements.length === 0) return;
+
+  // Deduplicate texts and map elements
+  const textToElements = {};
+  elements.forEach(el => {
+    const text = el.textContent.trim();
+    if (!text || text.length < 2) return;
+    const cacheKey = `nb_${targetLang}_${text}`;
+    // Check cache first
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      el.textContent = cached;
+      return;
+    }
+    if (!textToElements[text]) textToElements[text] = { cacheKey, elements: [] };
+    textToElements[text].elements.push(el);
+  });
+
+  const entries = Object.entries(textToElements);
+  if (entries.length === 0) return;
+
+  // Batch translate (max 25 per request)
+  const BATCH = 25;
+  for (let i = 0; i < entries.length; i += BATCH) {
+    const batch = entries.slice(i, i + BATCH);
+    const qParams = batch.map(([text]) => `q=${encodeURIComponent(text)}`).join('&');
+    try {
+      const res = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `target=${targetLang}&source=ko&${qParams}`
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const translations = data?.data?.translations?.map(t => t.translatedText) || [];
+
+      batch.forEach(([text, info], idx) => {
+        const translated = translations[idx] || text;
+        localStorage.setItem(info.cacheKey, translated);
+        info.elements.forEach(el => { el.textContent = translated; });
+      });
+    } catch (e) {
+      console.warn('Naver Best translation error:', e);
+    }
+  }
+}
 
 // API Batch Translation (Name & Brand) - Using Google Translation API (V2) for Ranking speed
 const _translationCache = {};
