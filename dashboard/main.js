@@ -212,6 +212,7 @@ async function init() {
       if (state.currentPlatform !== plat) {
         state.activeCategory = cat || null; // Restore category early so setPlatform uses it
         state.activeTab = tb;
+        state.currentPlatform = null; // Force setPlatform to run its UI updates
         await setPlatform(plat);
       } else {
         let needsReload = false;
