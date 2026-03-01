@@ -3146,27 +3146,47 @@ document.getElementById('btnSaveProfile')?.addEventListener('click', async () =>
 });
 
 document.getElementById('btnDeleteAccount')?.addEventListener('click', async () => {
-  if (!confirm('정말 회원 탈퇴를 진행하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
+  const siteLang = i18n?.currentLang || 'ko';
+  const confirmMsg = siteLang === 'ko'
+    ? '정말 회원 탈퇴를 진행하시겠습니까?\n\n• 모든 데이터(프로필, 관심상품, 견적내역 등)가 영구 삭제됩니다.\n• 활성 구독이 있다면 자동으로 해지됩니다.\n• 이 작업은 되돌릴 수 없습니다.'
+    : 'Are you sure you want to delete your account?\n\n• All data (profile, wishlists, quotes, etc.) will be permanently deleted.\n• Active subscriptions will be automatically cancelled.\n• This action cannot be undone.';
+
+  if (!confirm(confirmMsg)) return;
+
+  // Double confirm for safety
+  const doubleConfirm = siteLang === 'ko'
+    ? '마지막 확인: 정말로 탈퇴하시겠습니까?'
+    : 'Final confirmation: Are you sure?';
+  if (!confirm(doubleConfirm)) return;
+
   const session = getSession();
   if (!session) return;
 
   const btn = document.getElementById('btnDeleteAccount');
   const origText = btn.innerText;
-  btn.innerText = '처리 중...';
+  btn.innerText = siteLang === 'ko' ? '처리 중...' : 'Processing...';
   btn.disabled = true;
 
   try {
-    const { updateUserProfile } = await import('./supabase.js');
-    // Soft delete: set deleted_at to current timestamp
-    const { error } = await updateUserProfile(session.user.id, { deleted_at: new Date().toISOString() });
-    if (error) throw new Error(error.message || '탈퇴 처리 실패');
+    const res = await fetch('/api/user/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: session.user.id })
+    });
+    const data = await res.json();
 
-    alert('탈퇴 처리가 완료되었습니다. 이용해 주셔서 감사합니다.');
-    const { signOut } = await import('./supabase.js');
-    await signOut();
-    window.location.href = '/';
+    if (data.success) {
+      alert(siteLang === 'ko'
+        ? '탈퇴 처리가 완료되었습니다. 이용해 주셔서 감사합니다.'
+        : 'Account deleted successfully. Thank you for using our service.');
+      // Clear local storage and redirect
+      localStorage.clear();
+      window.location.href = '/';
+    } else {
+      throw new Error(data.error || '탈퇴 처리 실패');
+    }
   } catch (e) {
-    alert('오류: ' + e.message);
+    alert((siteLang === 'ko' ? '오류: ' : 'Error: ') + e.message);
     btn.innerText = origText;
     btn.disabled = false;
   }

@@ -205,14 +205,87 @@ app.post('/api/admin/users/reset-password', async (req, res) => {
     }
 });
 
-// 3. Delete User
+// 3. Delete User (Admin)
 app.delete('/api/admin/users/:id', async (req, res) => {
     const { id } = req.params;
     try {
+        // Clean up related data first
+        await supabase.from('sourcing_requests').delete().eq('user_id', id);
+        await supabase.from('search_requests').delete().eq('user_id', id);
+        await supabase.from('user_notifications').delete().eq('user_id', id);
+        await supabase.from('wishlists').delete().eq('user_id', id);
+        await supabase.from('profiles').delete().eq('id', id);
+
+        // Delete from Supabase Auth
         const { error } = await supabase.auth.admin.deleteUser(id);
         if (error) throw error;
         res.json({ success: true, message: 'User deleted successfully.' });
     } catch (error) {
+        console.error('Admin delete user error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 3.1 Self-delete User (called by the user themselves from My Page)
+app.post('/api/user/delete', async (req, res) => {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ success: false, error: 'Missing userId' });
+
+    try {
+        // Cancel PayPal subscription if active
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('subscription_id')
+            .eq('id', userId)
+            .single();
+
+        if (profile?.subscription_id) {
+            try {
+                const clientId = process.env.PAYPAL_CLIENT_ID;
+                const secret = process.env.PAYPAL_SECRET;
+                const environmentUrl = process.env.PAYPAL_MODE === 'live'
+                    ? 'https://api-m.paypal.com'
+                    : 'https://api-m.sandbox.paypal.com';
+                const auth = Buffer.from(`${clientId}:${secret}`).toString('base64');
+                const tokenResponse = await fetch(`${environmentUrl}/v1/oauth2/token`, {
+                    method: 'POST',
+                    body: 'grant_type=client_credentials',
+                    headers: {
+                        'Authorization': `Basic ${auth}`,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                });
+                const tokenData = await tokenResponse.json();
+                if (tokenResponse.ok) {
+                    await fetch(`${environmentUrl}/v1/billing/subscriptions/${profile.subscription_id}/cancel`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${tokenData.access_token}`
+                        },
+                        body: JSON.stringify({ reason: 'User account deletion' })
+                    });
+                }
+            } catch (ppErr) {
+                console.warn('PayPal cancel during delete (non-fatal):', ppErr.message);
+            }
+        }
+
+        // Clean up related data
+        await supabase.from('sourcing_requests').delete().eq('user_id', userId);
+        await supabase.from('search_requests').delete().eq('user_id', userId);
+        await supabase.from('user_notifications').delete().eq('user_id', userId);
+        await supabase.from('wishlists').delete().eq('user_id', userId);
+        await supabase.from('profiles').delete().eq('id', userId);
+
+        // Delete from Supabase Auth
+        const { error } = await supabase.auth.admin.deleteUser(userId);
+        if (error) throw error;
+
+        console.log(`User ${userId} fully deleted (self-delete).`);
+        res.json({ success: true, message: 'Account deleted successfully.' });
+    } catch (error) {
+        console.error('Self-delete user error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
