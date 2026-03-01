@@ -149,8 +149,11 @@ async function setPlatform(platform) {
     state.activeTab = 'all';
   }
 
-  // Clean up stale content from previous platform (e.g., k_trend grids)
-  document.querySelectorAll('.custom-content-area').forEach(el => { el.innerHTML = ''; el.style.display = 'none'; });
+  // Clean up stale content from previous platform (only dynamically-added custom areas in tab-all)
+  const tabAll = document.getElementById('tab-all');
+  if (tabAll) {
+    tabAll.querySelectorAll('.custom-content-area').forEach(el => { el.innerHTML = ''; el.style.display = 'none'; });
+  }
 
   // Render Tabs for this platform
   renderTabs();
