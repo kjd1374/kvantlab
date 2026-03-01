@@ -507,6 +507,7 @@ async function loadBridgeTab(tabId) {
   const titleEl = document.getElementById('rankingTitle');
   const descEl = document.getElementById('rankingDesc');
   if (titleEl) {
+    titleEl.removeAttribute('data-i18n');
     if (state.searchQuery) {
       titleEl.textContent = `${window.t('sections.all')} - ${state.searchQuery}`;
     } else if (state.currentPlatform === 'steady_sellers') {
@@ -518,6 +519,7 @@ async function loadBridgeTab(tabId) {
     }
   }
   if (descEl) {
+    descEl.removeAttribute('data-i18n');
     if (state.currentPlatform === 'steady_sellers') {
       descEl.textContent = "K-Vant가 엄선한 최고의 상품 컬렉션";
     } else {
