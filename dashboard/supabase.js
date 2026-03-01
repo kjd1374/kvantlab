@@ -707,9 +707,23 @@ export async function fetchAnnouncements() {
     return await query('board_announcements', 'order=created_at.desc');
 }
 
-export async function insertAnnouncement(title, content, type, is_published, title_en = '', content_en = '') {
+export async function insertAnnouncement(title, content, type, is_published, extra_langs = {}) {
     const session = getSession();
     if (!session) return { error: 'Not authenticated' };
+
+    const bodyData = {
+        title, content, type, is_published,
+        title_en: extra_langs.title_en || '',
+        content_en: extra_langs.content_en || '',
+        title_ja: extra_langs.title_ja || '',
+        content_ja: extra_langs.content_ja || '',
+        title_th: extra_langs.title_th || '',
+        content_th: extra_langs.content_th || '',
+        title_vi: extra_langs.title_vi || '',
+        content_vi: extra_langs.content_vi || '',
+        title_id: extra_langs.title_id || '',
+        content_id: extra_langs.content_id || ''
+    };
 
     const response = await fetch(`${SUPABASE_URL}/rest/v1/board_announcements`, {
         method: 'POST',
@@ -719,7 +733,7 @@ export async function insertAnnouncement(title, content, type, is_published, tit
             'Content-Type': 'application/json',
             'Prefer': 'return=representation'
         },
-        body: JSON.stringify({ title, content, type, is_published, title_en, content_en })
+        body: JSON.stringify(bodyData)
     });
     if (!response.ok) {
         const err = await response.json();
@@ -728,9 +742,23 @@ export async function insertAnnouncement(title, content, type, is_published, tit
     return await response.json();
 }
 
-export async function updateAnnouncement(id, title, content, type, is_published, title_en = '', content_en = '') {
+export async function updateAnnouncement(id, title, content, type, is_published, extra_langs = {}) {
     const session = getSession();
     if (!session) return { error: 'Not authenticated' };
+
+    const bodyData = {
+        title, content, type, is_published,
+        title_en: extra_langs.title_en || '',
+        content_en: extra_langs.content_en || '',
+        title_ja: extra_langs.title_ja || '',
+        content_ja: extra_langs.content_ja || '',
+        title_th: extra_langs.title_th || '',
+        content_th: extra_langs.content_th || '',
+        title_vi: extra_langs.title_vi || '',
+        content_vi: extra_langs.content_vi || '',
+        title_id: extra_langs.title_id || '',
+        content_id: extra_langs.content_id || ''
+    };
 
     const response = await fetch(`${SUPABASE_URL}/rest/v1/board_announcements?id=eq.${id}`, {
         method: 'PATCH',
@@ -740,7 +768,7 @@ export async function updateAnnouncement(id, title, content, type, is_published,
             'Content-Type': 'application/json',
             'Prefer': 'return=representation'
         },
-        body: JSON.stringify({ title, content, type, is_published, title_en, content_en })
+        body: JSON.stringify(bodyData)
     });
     if (!response.ok) {
         const err = await response.json();

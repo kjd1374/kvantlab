@@ -257,8 +257,22 @@ async function initAdmin() {
     const saveAnnouncementBtn = document.getElementById('saveAnnouncementBtn');
 
     // Form elements
+    const aIdInput = document.getElementById('announcementId');
+    const aTitleInput = document.getElementById('aTitle');
+    const aContentInput = document.getElementById('aContent');
+    const aTypeInput = document.getElementById('aType');
+    const aPublishedInput = document.getElementById('aPublished');
     const aTitleEnInput = document.getElementById('aTitleEn');
     const aContentEnInput = document.getElementById('aContentEn');
+    const aTitleJaInput = document.getElementById('aTitleJa');
+    const aContentJaInput = document.getElementById('aContentJa');
+    const aTitleThInput = document.getElementById('aTitleTh');
+    const aContentThInput = document.getElementById('aContentTh');
+    const aTitleViInput = document.getElementById('aTitleVi');
+    const aContentViInput = document.getElementById('aContentVi');
+    const aTitleIdInput = document.getElementById('aTitleId');
+    const aContentIdInput = document.getElementById('aContentId');
+
     const aiTranslateBtn = document.getElementById('aiTranslateBtn');
     const aModalTitle = document.getElementById('announcementModalTitle');
 
@@ -325,6 +339,14 @@ async function initAdmin() {
         aContentInput.value = item.content || '';
         aTitleEnInput.value = item.title_en || '';
         aContentEnInput.value = item.content_en || '';
+        aTitleJaInput.value = item.title_ja || '';
+        aContentJaInput.value = item.content_ja || '';
+        aTitleThInput.value = item.title_th || '';
+        aContentThInput.value = item.content_th || '';
+        aTitleViInput.value = item.title_vi || '';
+        aContentViInput.value = item.content_vi || '';
+        aTitleIdInput.value = item.title_id || '';
+        aContentIdInput.value = item.content_id || '';
         aTypeInput.value = item.type;
         aPublishedInput.checked = item.is_published;
 
@@ -350,6 +372,14 @@ async function initAdmin() {
         aContentInput.value = '';
         aTitleEnInput.value = '';
         aContentEnInput.value = '';
+        aTitleJaInput.value = '';
+        aContentJaInput.value = '';
+        aTitleThInput.value = '';
+        aContentThInput.value = '';
+        aTitleViInput.value = '';
+        aContentViInput.value = '';
+        aTitleIdInput.value = '';
+        aContentIdInput.value = '';
         aTypeInput.value = 'notice';
         aPublishedInput.checked = true;
         announcementModal.style.display = 'flex';
@@ -360,12 +390,24 @@ async function initAdmin() {
     });
 
     saveAnnouncementBtn?.addEventListener('click', async () => {
+        const id = aIdInput.value;
         const title = aTitleInput.value.trim();
         const content = aContentInput.value.trim();
-        const titleEn = aTitleEnInput.value.trim();
-        const contentEn = aContentEnInput.value.trim();
         const type = aTypeInput.value;
         const isPublished = aPublishedInput.checked;
+
+        const extraLangs = {
+            title_en: aTitleEnInput.value.trim(),
+            content_en: aContentEnInput.value.trim(),
+            title_ja: aTitleJaInput.value.trim(),
+            content_ja: aContentJaInput.value.trim(),
+            title_th: aTitleThInput.value.trim(),
+            content_th: aContentThInput.value.trim(),
+            title_vi: aTitleViInput.value.trim(),
+            content_vi: aContentViInput.value.trim(),
+            title_id: aTitleIdInput.value.trim(),
+            content_id: aContentIdInput.value.trim()
+        };
 
         if (!title) return alert('제목을 입력해주세요.');
 
@@ -373,12 +415,12 @@ async function initAdmin() {
         try {
             if (id) {
                 // Update existing
-                const { error } = await updateAnnouncement(id, title, content, type, isPublished, titleEn, contentEn);
+                const { error } = await updateAnnouncement(id, title, content, type, isPublished, extraLangs);
                 if (error) throw new Error(error.message || JSON.stringify(error));
                 alert('업데이트 성공');
             } else {
                 // Create new
-                const { error } = await insertAnnouncement(title, content, type, isPublished, titleEn, contentEn);
+                const { error } = await insertAnnouncement(title, content, type, isPublished, extraLangs);
                 if (error) throw new Error(error.message || JSON.stringify(error));
                 alert('등록 성공');
             }
@@ -405,26 +447,38 @@ async function initAdmin() {
         aiTranslateBtn.innerText = '⌛ 번역 중...';
 
         try {
-            // Translate Title
-            if (titleKo) {
-                const resTitle = await fetch('/api/admin/translate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: titleKo })
-                });
-                const dataTitle = await resTitle.json();
-                if (dataTitle.success) aTitleEnInput.value = dataTitle.translatedText;
-            }
+            const targetLangs = [
+                { code: 'en', titleEl: aTitleEnInput, contentEl: aContentEnInput },
+                { code: 'ja', titleEl: aTitleJaInput, contentEl: aContentJaInput },
+                { code: 'th', titleEl: aTitleThInput, contentEl: aContentThInput },
+                { code: 'vi', titleEl: aTitleViInput, contentEl: aContentViInput },
+                { code: 'id', titleEl: aTitleIdInput, contentEl: aContentIdInput },
+            ];
 
-            // Translate Content
-            if (contentKo) {
-                const resContent = await fetch('/api/admin/translate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: contentKo })
-                });
-                const dataContent = await resContent.json();
-                if (dataContent.success) aContentEnInput.value = dataContent.translatedText;
+            for (const lang of targetLangs) {
+                aiTranslateBtn.innerText = `⌛ 번역 중 (${lang.code.toUpperCase()})...`;
+
+                // Translate Title
+                if (titleKo) {
+                    const resTitle = await fetch('/api/admin/translate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: titleKo, target_lang: lang.code })
+                    });
+                    const dataTitle = await resTitle.json();
+                    if (dataTitle.success) lang.titleEl.value = dataTitle.translatedText;
+                }
+
+                // Translate Content
+                if (contentKo) {
+                    const resContent = await fetch('/api/admin/translate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: contentKo, target_lang: lang.code })
+                    });
+                    const dataContent = await resContent.json();
+                    if (dataContent.success) lang.contentEl.value = dataContent.translatedText;
+                }
             }
         } catch (err) {
             alert('번역 중 오류가 발생했습니다: ' + err.message);

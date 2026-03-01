@@ -489,9 +489,9 @@
                     }
 
                     listEl.innerHTML = data.map(item => {
-                        const isEn = window.i18n && window.i18n.currentLang === 'en';
-                        const displayTitle = (isEn && item.title_en) ? item.title_en : item.title;
-                        const displayContent = (isEn && item.content_en) ? item.content_en : (item.content || '');
+                        const lang = window.i18n ? window.i18n.currentLang : 'ko';
+                        const displayTitle = (lang !== 'ko' && item[`title_${lang}`]) ? item[`title_${lang}`] : item.title;
+                        const displayContent = (lang !== 'ko' && item[`content_${lang}`]) ? item[`content_${lang}`] : (item.content || '');
 
                         const badgeText = item.type === 'report' ? (window.t ? window.t('landing.announcement_report') : '리포트')
                             : item.type === 'update' ? (window.t ? window.t('landing.announcement_update') : '업데이트')
