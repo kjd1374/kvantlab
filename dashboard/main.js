@@ -3203,6 +3203,9 @@ function switchMyPageTab(tabName) {
   if (tabName === 'billing') {
     const profile = getProfile() || {};
     const tier = (profile.subscription_tier || 'free').toLowerCase();
+    const expiryDate = profile.subscription_expires_at ? new Date(profile.subscription_expires_at) : null;
+    const isExpired = expiryDate ? expiryDate < new Date() : false;
+    const effectiveTier = (tier === 'pro' && isExpired) ? 'free' : tier;
 
     // Map K-Vant language to PayPal locale
     const siteLang = localStorage.getItem('app_lang') || 'ko';
@@ -3221,8 +3224,11 @@ function switchMyPageTab(tabName) {
     }
     window.__paypalLocale = ppLocale;
 
+    // Determine if PayPal button should show (for non-active-pro users)
+    const shouldShowPayPal = effectiveTier !== 'pro';
+
     const renderPayPal = () => {
-      if (tier !== 'pro' && !window.__paypalRendered && window.paypal) {
+      if (shouldShowPayPal && !window.__paypalRendered && window.paypal) {
         const container = document.getElementById('paypal-button-container');
         if (container) {
           container.innerHTML = ''; // Clear just in case
@@ -3269,9 +3275,9 @@ function switchMyPageTab(tabName) {
           window.__paypalRendered = true;
         }
 
-      } else if (tier === 'pro') {
+      } else if (!shouldShowPayPal) {
         const container = document.getElementById('paypal-button-container');
-        if (container) container.innerHTML = ''; // hide if already pro
+        if (container) container.innerHTML = ''; // hide if already active pro
       }
     };
 
