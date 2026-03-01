@@ -200,32 +200,32 @@ export const KoreaTrendBridge = {
         const brandBars = brandEntries.map(([brand, count]) => {
             const pct = Math.round((count / maxBrandCount) * 100);
             return `
-    < div class="gt-bar-row" >
+    <div class="gt-bar-row">
                     <span class="gt-bar-label">${brand}</span>
                     <div class="gt-bar-track">
                         <div class="gt-bar-fill" style="width:${pct}%"></div>
                     </div>
                     <span class="gt-bar-value">${count}</span>
-                </div > `;
+                </div>`;
         }).join('');
 
         // ── Keyword Chips ───────────────────────────────────────
         const maxKwCount = kwEntries[0]?.[1] || 1;
         const kwChips = kwEntries.map(([kw, count]) => {
             const size = count >= maxKwCount * 0.7 ? 'lg' : count >= maxKwCount * 0.4 ? 'md' : 'sm';
-            return `< span class="gt-kw-chip gt-kw-${size}" > #${kw} <em>${count}</em></span > `;
+            return `<span class="gt-kw-chip gt-kw-${size}"> #${kw} <em>${count}</em></span>`;
         }).join('');
 
         // ── Category Donut (text-based) ─────────────────────────
         const catTotal = Object.values(catMap).reduce((s, v) => s + v, 0);
         const catBars = Object.entries(catMap).sort((a, b) => b[1] - a[1]).map(([cat, cnt]) => {
             const pct = Math.round((cnt / catTotal) * 100);
-            return `< div class="gt-cat-row" ><span class="gt-cat-label">${cat}</span><div class="gt-cat-bar-track"><div class="gt-cat-bar-fill" style="width:${pct}%"></div></div><span class="gt-cat-pct">${pct}%</span></div > `;
+            return `<div class="gt-cat-row"><span class="gt-cat-label">${cat}</span><div class="gt-cat-bar-track"><div class="gt-cat-bar-fill" style="width:${pct}%"></div></div><span class="gt-cat-pct">${pct}%</span></div>`;
         }).join('');
 
         return `
-    < div class="gt-dashboard" >
-            < !--KPI Row-- >
+    <div class="gt-dashboard">
+            <!--KPI Row-->
             <div class="gt-kpi-row">
                 <div class="gt-kpi-card">
                     <div class="gt-kpi-icon">📦</div>
@@ -249,7 +249,7 @@ export const KoreaTrendBridge = {
                 </div>
             </div>
 
-            <!--Charts Row-- >
+            <!--Charts Row-->
             <div class="gt-charts-row">
                 <div class="gt-chart-card">
                     <h3 class="gt-chart-title">${window.t('gt.gt_brand_chart') || '📊 브랜드별 언급수'}</h3>
@@ -267,12 +267,12 @@ export const KoreaTrendBridge = {
                 <div class="gt-kw-cloud">${kwChips}</div>
             </div>
 
-            <!--Product List-- >
+            <!--Product List-->
     <div class="gt-list-card">
         <h3 class="gt-chart-title">${window.t('gt.gt_product_list') || '🧴 제품 리스트 (언급순)'}</h3>
         <div class="gt-product-list">${productRows}</div>
     </div>
-        </div > `;
+        </div>`;
     },
 
     // ── Naver Best renderer (top-bottom layout) ───────────────────
@@ -416,7 +416,7 @@ export const KoreaTrendBridge = {
 
     renderCustomHeader(state) {
         return `
-    < div class="k-trend-filters" style = "display:flex; gap:10px; padding:10px 20px; border-bottom:1px solid var(--border-color); overflow-x:auto; align-items:center;" >
+    <div class="k-trend-filters" style="display:flex; gap:10px; padding:10px 20px; border-bottom:1px solid var(--border-color); overflow-x:auto; align-items:center;">
                 <select id="kTrendCountry" style="padding:8px; border-radius:8px; border:1px solid #ccc;">
                     <option value="VN" ${this.filterState.country === 'VN' ? 'selected' : ''} data-i18n="countries.vn">${window.t('countries.vn') || '🇻🇳 베트남 (Vietnam)'}</option>
                     <option value="TH" ${this.filterState.country === 'TH' ? 'selected' : ''} data-i18n="countries.th">${window.t('countries.th') || '🇹🇭 태국 (Thailand)'}</option>
@@ -430,7 +430,7 @@ export const KoreaTrendBridge = {
                     <option value="Makeup" ${this.filterState.category === 'Makeup' ? 'selected' : ''} data-i18n="categories.makeup">${window.t('categories.makeup') || '메이크업 (Makeup)'}</option>
                 </select>
                 <button id="kTrendApply" style="padding:8px 16px; background:var(--accent-blue); color:white; border:none; border-radius:8px; cursor:pointer;" data-i18n="tabs.apply">적용</button>
-            </div >
+            </div>
     `;
     },
 

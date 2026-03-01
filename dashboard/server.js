@@ -305,7 +305,8 @@ app.post('/api/auth/complete-signup', async (req, res) => {
         });
         if (pwError) throw pwError;
 
-        // Upsert profile data
+        // Upsert profile data — 2-week Pro trial for new signups
+        const trialExpiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
         const { error: profileError } = await supabase
             .from('profiles')
             .upsert({
@@ -314,8 +315,8 @@ app.post('/api/auth/complete-signup', async (req, res) => {
                 company: company || '',
                 primary_platform: primary_platform || '',
                 primary_category: primary_category || '',
-                subscription_tier: 'free',
-                subscription_expires_at: null,
+                subscription_tier: 'pro',
+                subscription_expires_at: trialExpiresAt,
                 daily_usage: 0,
                 role: 'user'
             }, { onConflict: 'id' });
