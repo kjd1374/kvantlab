@@ -6,7 +6,9 @@ import { fetchSteadySellers } from '../supabase.js';
 export const SteadySellerBridge = {
     id: 'steady_sellers',
     name: 'Steady Sellers',
-    tabs: [],
+    tabs: [
+        { id: 'all', icon: '🏆', label: 'platforms.steady_sellers' }
+    ],
 
     async getKPIs(currentPlatform) {
         const res = await fetchSteadySellers();

@@ -117,8 +117,12 @@ async function setPlatform(platform) {
   if (searchInput) searchInput.value = '';
 
   // Ensure activeTab is valid for the new platform, otherwise default to the first tab
-  if (!state.activeBridge.tabs.some(t => t.id === state.activeTab)) {
-    state.activeTab = state.activeBridge.tabs[0].id;
+  if (state.activeBridge.tabs && state.activeBridge.tabs.length > 0) {
+    if (!state.activeBridge.tabs.some(t => t.id === state.activeTab)) {
+      state.activeTab = state.activeBridge.tabs[0].id;
+    }
+  } else {
+    state.activeTab = 'all';
   }
 
 
