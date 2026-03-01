@@ -120,19 +120,22 @@ export const KoreaTrendBridge = {
     },
 
     renderTabContent(tabId, result, state) {
+        const profile = typeof window.getProfile === 'function' ? window.getProfile() : (JSON.parse(localStorage.getItem('sb-profile') || 'null'));
+        const isPro = typeof window.__isProMember === 'function' ? window.__isProMember(profile) : true;
+
         // Naver Best tab uses custom renderer
         if (result?._isNaverBest) {
-            return this._renderNaverBest(result.products || [], result.brands || []);
+            return this._renderNaverBest(result.products || [], result.brands || [], isPro);
         }
         if (!result || !result._isDashboard) return null; // Fall back to default renderer
         const data = result.data || [];
         if (data.length === 0) {
             return `<div class="gt-empty"><span>🌏</span><p>${window.t('sections.k_trend_empty') || '선택한 조건에 해당하는 글로벌 트렌드 데이터가 없습니다.'}</p></div>`;
         }
-        return this._renderDashboard(data);
+        return this._renderDashboard(data, isPro);
     },
 
-    _renderDashboard(data) {
+    _renderDashboard(data, isPro) {
         // ── KPI Aggregates ──────────────────────────────────────
         const totalMentions = data.reduce((s, d) => s + (d.mention_count || 0), 0);
         const topBrandEntry = data.reduce((max, d) => (d.mention_count > (max?.mention_count || 0) ? d : max), null);
@@ -179,16 +182,16 @@ export const KoreaTrendBridge = {
                 ? `<div class="gt-product-img gt-no-image"><span>${window.t('gt.gt_no_image') || '이미지 없음'}</span></div>`
                 : `<img class="gt-product-img" src="${item.imageUrl}" alt="${item.product_name}" loading="lazy" onerror="this.outerHTML='<div class=&quot;gt-product-img gt-no-image&quot;><span>${window.t('gt.gt_no_image') || '이미지 없음'}</span></div>'">`;
             return `
-                <div class="gt-product-row">
+                <div class="gt-product-row ${!isPro ? 'locked-card' : ''}">
                     ${imgHtml}
                     <div class="gt-product-info">
-                        <div class="gt-product-brand" data-pid="${item.product_id}">${item.brand_name || ''} ${matchBadge}</div>
-                        <div class="gt-product-name" data-pid="${item.product_id}">${item.product_name}</div>
+                        <div class="gt-product-brand" data-pid="${item.product_id}">${!isPro && typeof window.__maskText === 'function' ? window.__maskText(item.brand_name || '') : (item.brand_name || '')} ${matchBadge}</div>
+                        <div class="gt-product-name" data-pid="${item.product_id}">${!isPro && typeof window.__maskText === 'function' ? window.__maskText(item.product_name || '') : (item.product_name || '')}</div>
                         <div class="gt-product-tags">${tags}</div>
                     </div>
                     <div class="gt-product-meta">
                         <div class="gt-mention-count">💬 ${item.mention_count}${window.t('gt.gt_mentions') || '건 언급'}</div>
-                        ${oyLinks}
+                        ${isPro ? oyLinks : ''}
                     </div>
                 </div>`;
         }).join('');
@@ -197,32 +200,32 @@ export const KoreaTrendBridge = {
         const brandBars = brandEntries.map(([brand, count]) => {
             const pct = Math.round((count / maxBrandCount) * 100);
             return `
-                <div class="gt-bar-row">
+    < div class="gt-bar-row" >
                     <span class="gt-bar-label">${brand}</span>
                     <div class="gt-bar-track">
                         <div class="gt-bar-fill" style="width:${pct}%"></div>
                     </div>
                     <span class="gt-bar-value">${count}</span>
-                </div>`;
+                </div > `;
         }).join('');
 
         // ── Keyword Chips ───────────────────────────────────────
         const maxKwCount = kwEntries[0]?.[1] || 1;
         const kwChips = kwEntries.map(([kw, count]) => {
             const size = count >= maxKwCount * 0.7 ? 'lg' : count >= maxKwCount * 0.4 ? 'md' : 'sm';
-            return `<span class="gt-kw-chip gt-kw-${size}">#${kw} <em>${count}</em></span>`;
+            return `< span class="gt-kw-chip gt-kw-${size}" > #${kw} <em>${count}</em></span > `;
         }).join('');
 
         // ── Category Donut (text-based) ─────────────────────────
         const catTotal = Object.values(catMap).reduce((s, v) => s + v, 0);
         const catBars = Object.entries(catMap).sort((a, b) => b[1] - a[1]).map(([cat, cnt]) => {
             const pct = Math.round((cnt / catTotal) * 100);
-            return `<div class="gt-cat-row"><span class="gt-cat-label">${cat}</span><div class="gt-cat-bar-track"><div class="gt-cat-bar-fill" style="width:${pct}%"></div></div><span class="gt-cat-pct">${pct}%</span></div>`;
+            return `< div class="gt-cat-row" ><span class="gt-cat-label">${cat}</span><div class="gt-cat-bar-track"><div class="gt-cat-bar-fill" style="width:${pct}%"></div></div><span class="gt-cat-pct">${pct}%</span></div > `;
         }).join('');
 
         return `
-        <div class="gt-dashboard">
-            <!-- KPI Row -->
+    < div class="gt-dashboard" >
+            < !--KPI Row-- >
             <div class="gt-kpi-row">
                 <div class="gt-kpi-card">
                     <div class="gt-kpi-icon">📦</div>
@@ -246,7 +249,7 @@ export const KoreaTrendBridge = {
                 </div>
             </div>
 
-            <!-- Charts Row -->
+            <!--Charts Row-- >
             <div class="gt-charts-row">
                 <div class="gt-chart-card">
                     <h3 class="gt-chart-title">${window.t('gt.gt_brand_chart') || '📊 브랜드별 언급수'}</h3>
@@ -258,22 +261,22 @@ export const KoreaTrendBridge = {
                 </div>
             </div>
 
-            <!-- Keywords -->
+            <!--Keywords -->
             <div class="gt-kw-card">
                 <h3 class="gt-chart-title">${window.t('gt.gt_keywords') || '✨ 인기 효능 · 키워드'}</h3>
                 <div class="gt-kw-cloud">${kwChips}</div>
             </div>
 
-            <!-- Product List -->
-            <div class="gt-list-card">
-                <h3 class="gt-chart-title">${window.t('gt.gt_product_list') || '🧴 제품 리스트 (언급순)'}</h3>
-                <div class="gt-product-list">${productRows}</div>
-            </div>
-        </div>`;
+            <!--Product List-- >
+    <div class="gt-list-card">
+        <h3 class="gt-chart-title">${window.t('gt.gt_product_list') || '🧴 제품 리스트 (언급순)'}</h3>
+        <div class="gt-product-list">${productRows}</div>
+    </div>
+        </div > `;
     },
 
     // ── Naver Best renderer (top-bottom layout) ───────────────────
-    _renderNaverBest(products, brands) {
+    _renderNaverBest(products, brands, isPro) {
         const t = (key, fallback) => window.t?.(key) || fallback || key;
 
         // Fixed category list (Naver official)
@@ -292,7 +295,7 @@ export const KoreaTrendBridge = {
         const P_CATS = CATS.filter(c => c.id !== 'A');
         const pCatTabs = P_CATS.map(c => {
             const active = this._nb.productCatId === c.id;
-            return `<button class="nb-cat-btn${active ? ' nb-cat-active' : ''}" data-section="prod" data-cat="${c.id}">${c.label}</button>`;
+            return `< button class="nb-cat-btn${active ? ' nb-cat-active' : ''}" data - section="prod" data - cat="${c.id}" > ${c.label}</button > `;
         }).join('');
 
         // Product period toggle
@@ -302,40 +305,47 @@ export const KoreaTrendBridge = {
         ];
         const pPeriodBtns = pPeriods.map(p => {
             const active = this._nb.productPeriod === p.key;
-            return `<button class="nb-period-btn${active ? ' nb-period-active' : ''}" data-section="prod" data-period="${p.key}">${p.label}</button>`;
+            return `< button class="nb-period-btn${active ? ' nb-period-active' : ''}" data - section="prod" data - period="${p.key}" > ${p.label}</button > `;
         }).join('');
 
         // Product cards (grid)
         const productCards = products.length === 0
-            ? `<p style="color:var(--text-muted);padding:24px;text-align:center;">${t('naver_best.empty', '데이터 없음')}</p>`
+            ? `< p style = "color:var(--text-muted);padding:24px;text-align:center;" > ${t('naver_best.empty', '데이터 없음')}</p > `
             : products.slice(0, 50).map((p, i) => {
                 const rank = p.current_rank || (i + 1);
                 const badge = rank <= 3
-                    ? `<div class="nb-rank-badge" style="background:${RANK_COLORS[rank - 1]};">${rank}</div>`
-                    : `<div class="nb-rank-badge nb-rank-badge-normal">${rank}</div>`;
+                    ? `< div class="nb-rank-badge" style = "background:${RANK_COLORS[rank - 1]};" > ${rank}</div > `
+                    : `< div class="nb-rank-badge nb-rank-badge-normal" > ${rank}</div > `;
                 const chg = p.rank_change
                     ? (p.rank_change > 0
-                        ? `<span class="nb-chg-up">▲${p.rank_change}</span>`
-                        : `<span class="nb-chg-down">▼${Math.abs(p.rank_change)}</span>`)
+                        ? `< span class="nb-chg-up" >▲${p.rank_change}</span > `
+                        : `< span class="nb-chg-down" >▼${Math.abs(p.rank_change)}</span > `)
                     : '';
-                const price = p.price ? `₩${Number(p.price).toLocaleString()}` : '';
+                const price = p.price ? `₩${Number(p.price).toLocaleString()} ` : '';
                 const img = p.image_url
-                    ? `<img src="${p.image_url}" alt="" class="nb-grid-img" loading="lazy" onerror="this.style.display='none'">`
-                    : `<div class="nb-grid-img nb-grid-no-img">🛍️</div>`;
-                return `<div class="nb-grid-card" onclick="window.open('${p.url || '#'}','_blank')">
-                    <div style="position:relative">${img}${badge}</div>
-                    <div class="nb-grid-info">
-                        <div class="nb-product-brand">${p.brand || ''}${chg ? ' ' + chg : ''}</div>
-                        <div class="nb-product-name">${p.name || ''}</div>
-                        <div class="nb-product-price">${price}</div>
+                    ? `< img src = "${p.image_url}" alt = "" class="nb-grid-img" loading = "lazy" onerror = "this.style.display='none'" > `
+                    : `< div class="nb-grid-img nb-grid-no-img" >🛍️</div > `;
+                const isLocked = !isPro;
+                const displayBrand = isLocked && typeof window.__maskText === 'function' ? window.__maskText(p.brand || '') : (p.brand || '');
+                const displayName = isLocked && typeof window.__maskText === 'function' ? window.__maskText(p.name || '') : (p.name || '');
+
+                return `< div class="nb-grid-card ${isLocked ? 'locked-card' : ''}" onclick = "${isLocked ? '' : `window.open('${p.url || '#'}','_blank')`}" >
+                    <div style="position:relative">
+                        ${isLocked ? `<div class="locked-overlay" style="border-radius:12px;"><span>PRO Only</span></div>` : ''}
+                        ${img}${badge}
                     </div>
-                </div>`;
+                    <div class="nb-grid-info">
+                        <div class="nb-product-brand">${displayBrand}${chg ? ' ' + chg : ''}</div>
+                        <div class="nb-product-name">${displayName}</div>
+                        <div class="nb-product-price">${isLocked ? '₩ -' : price}</div>
+                    </div>
+                </div > `;
             }).join('');
 
         // ── Brand category tabs ───────────────────────────────
         const bCatTabs = CATS.map(c => {
             const active = this._nb.brandCatId === c.id;
-            return `<button class="nb-cat-btn${active ? ' nb-cat-active' : ''}" data-section="brand" data-cat="${c.id}">${c.label}</button>`;
+            return `< button class="nb-cat-btn${active ? ' nb-cat-active' : ''}" data - section="brand" data - cat="${c.id}" > ${c.label}</button > `;
         }).join('');
 
         const bPeriods = [
@@ -344,35 +354,35 @@ export const KoreaTrendBridge = {
         ];
         const bPeriodBtns = bPeriods.map(p => {
             const active = this._nb.brandPeriod === p.key;
-            return `<button class="nb-period-btn${active ? ' nb-period-active' : ''}" data-section="brand" data-period="${p.key}">${p.label}</button>`;
+            return `< button class="nb-period-btn${active ? ' nb-period-active' : ''}" data - section="brand" data - period="${p.key}" > ${p.label}</button > `;
         }).join('');
 
         // Brand rows
         const brandRows = brands.length === 0
-            ? `<p style="color:var(--text-muted);padding:24px;text-align:center;">${t('naver_best.empty', '데이터 없음')}</p>`
+            ? `< p style = "color:var(--text-muted);padding:24px;text-align:center;" > ${t('naver_best.empty', '데이터 없음')}</p > `
             : brands.map((b, i) => {
                 const rank = b.rank || (i + 1);
                 const badge = rank <= 3
-                    ? `<div class="nb-rank-badge" style="background:${RANK_COLORS[rank - 1]};position:static;width:28px;height:28px;font-size:13px;">${rank}</div>`
-                    : `<div class="nb-rank-badge nb-rank-badge-normal" style="position:static;width:28px;height:28px;">${rank}</div>`;
+                    ? `< div class="nb-rank-badge" style = "background:${RANK_COLORS[rank - 1]};position:static;width:28px;height:28px;font-size:13px;" > ${rank}</div > `
+                    : `< div class="nb-rank-badge nb-rank-badge-normal" style = "position:static;width:28px;height:28px;" > ${rank}</div > `;
                 const logo = b.logo_url
-                    ? `<img src="${b.logo_url}" alt="" style="width:40px;height:40px;border-radius:8px;object-fit:cover;" onerror="this.style.display='none'">`
-                    : `<div style="width:40px;height:40px;border-radius:8px;background:var(--card-bg2);display:flex;align-items:center;justify-content:center;">🏢</div>`;
-                const tags = (b.hashtags || []).map(tag => `<span class="nb-hash">${tag}</span>`).join('');
-                const storeLink = b.store_url ? `onclick="window.open('${b.store_url}','_blank')" style="cursor:pointer;"` : '';
-                return `<div class="nb-brand-row" ${storeLink}>
-                    ${badge}
+                    ? `< img src = "${b.logo_url}" alt = "" style = "width:40px;height:40px;border-radius:8px;object-fit:cover;" onerror = "this.style.display='none'" > `
+                    : `< div style = "width:40px;height:40px;border-radius:8px;background:var(--card-bg2);display:flex;align-items:center;justify-content:center;" >🏢</div > `;
+                const tags = (b.hashtags || []).map(tag => `< span class="nb-hash" > ${tag}</span > `).join('');
+                const storeLink = b.store_url ? `onclick = "window.open('${b.store_url}','_blank')" style = "cursor:pointer;"` : '';
+                return `< div class="nb-brand-row" ${storeLink}>
+    ${badge}
                     ${logo}
-                    <div style="flex:1;min-width:0;">
-                        <div class="nb-brand-name">${b.brand_name || ''}</div>
-                        <div class="nb-brand-tags">${tags}</div>
-                    </div>
-                </div>`;
+<div style="flex:1;min-width:0;">
+    <div class="nb-brand-name">${b.brand_name || ''}</div>
+    <div class="nb-brand-tags">${tags}</div>
+</div>
+                </div > `;
             }).join('');
 
         return `
-        <div class="nb-dashboard">
-            <!-- Header Tabs -->
+    < div class="nb-dashboard" >
+            < !--Header Tabs-- >
             <div class="nb-main-tabs">
                 <button class="nb-main-tab ${this._nb.activeTab === 'prod' ? 'nb-main-tab-active' : ''}" data-tab="prod">
                     ${t('naver_best.products_title', '🛍️ 베스트 상품 순위')}
@@ -382,7 +392,7 @@ export const KoreaTrendBridge = {
                 </button>
             </div>
 
-            <!-- ■ SECTION 1: Products -->
+            <!-- ■ SECTION 1: Products-- >
             <div class="nb-section" style="display: ${this._nb.activeTab === 'prod' ? 'block' : 'none'};">
                 <div class="nb-section-header">
                     <span class="nb-section-title">${t('naver_best.products_title', '🛍️ 베스트 상품 순위')}</span>
@@ -392,21 +402,21 @@ export const KoreaTrendBridge = {
                 <div class="nb-product-grid">${productCards}</div>
             </div>
 
-            <!-- ■ SECTION 2: Brands -->
-            <div class="nb-section" style="display: ${this._nb.activeTab === 'brand' ? 'block' : 'none'};">
-                <div class="nb-section-header">
-                    <span class="nb-section-title">${t('naver_best.brands_title', '🏢 베스트 브랜드 순위')}</span>
-                    <div class="nb-period-group">${bPeriodBtns}</div>
-                </div>
-                <div class="nb-cat-row">${bCatTabs}</div>
-                <div class="nb-brand-list">${brandRows}</div>
-            </div>
-        </div>`;
+            <!-- ■ SECTION 2: Brands-- >
+    <div class="nb-section" style="display: ${this._nb.activeTab === 'brand' ? 'block' : 'none'};">
+        <div class="nb-section-header">
+            <span class="nb-section-title">${t('naver_best.brands_title', '🏢 베스트 브랜드 순위')}</span>
+            <div class="nb-period-group">${bPeriodBtns}</div>
+        </div>
+        <div class="nb-cat-row">${bCatTabs}</div>
+        <div class="nb-brand-list">${brandRows}</div>
+    </div>
+        </div > `;
     },
 
     renderCustomHeader(state) {
         return `
-            <div class="k-trend-filters" style="display:flex; gap:10px; padding:10px 20px; border-bottom:1px solid var(--border-color); overflow-x:auto; align-items:center;">
+    < div class="k-trend-filters" style = "display:flex; gap:10px; padding:10px 20px; border-bottom:1px solid var(--border-color); overflow-x:auto; align-items:center;" >
                 <select id="kTrendCountry" style="padding:8px; border-radius:8px; border:1px solid #ccc;">
                     <option value="VN" ${this.filterState.country === 'VN' ? 'selected' : ''} data-i18n="countries.vn">${window.t('countries.vn') || '🇻🇳 베트남 (Vietnam)'}</option>
                     <option value="TH" ${this.filterState.country === 'TH' ? 'selected' : ''} data-i18n="countries.th">${window.t('countries.th') || '🇹🇭 태국 (Thailand)'}</option>
@@ -420,8 +430,8 @@ export const KoreaTrendBridge = {
                     <option value="Makeup" ${this.filterState.category === 'Makeup' ? 'selected' : ''} data-i18n="categories.makeup">${window.t('categories.makeup') || '메이크업 (Makeup)'}</option>
                 </select>
                 <button id="kTrendApply" style="padding:8px 16px; background:var(--accent-blue); color:white; border:none; border-radius:8px; cursor:pointer;" data-i18n="tabs.apply">적용</button>
-            </div>
-        `;
+            </div >
+    `;
     },
 
     bindCustomHeaderEvents(reloadCallback) {

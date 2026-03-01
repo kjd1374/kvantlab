@@ -7,7 +7,7 @@
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, name, company, subscription_tier, expires_at)
+  INSERT INTO public.profiles (id, email, name, company, subscription_tier, subscription_expires_at)
   VALUES (
     new.id,
     new.email,
@@ -22,5 +22,5 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- (Optional) If you want to update existing 'free' users to have a 14-day trial from today:
 -- UPDATE public.profiles 
--- SET subscription_tier = 'pro', expires_at = now() + interval '14 days' 
+-- SET subscription_tier = 'pro', subscription_expires_at = now() + interval '14 days' 
 -- WHERE subscription_tier = 'free' OR subscription_tier IS NULL;

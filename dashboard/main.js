@@ -834,8 +834,16 @@ async function loadKTrendView(tabId) {
 function renderTableRow(p, index) {
   const rank = (state.currentPage - 1) * state.perPage + index + 1;
   const profile = getProfile();
-  const isPro = profile && (profile.subscription_tier === 'pro' || profile.role === 'admin');
-  const isLocked = !isPro && (rank <= 5 || rank > 10);
+  const isPro = isProMember(profile);
+  const isLocked = !isPro;
+
+  let name = escapeHtml(getLocalizedName(p));
+  let brand = escapeHtml(getLocalizedBrand(p));
+
+  if (isLocked) {
+    name = maskText(name);
+    brand = maskText(brand);
+  }
 
   return `
       <tr class="${isLocked ? 'locked-row' : ''}" 
@@ -844,9 +852,9 @@ function renderTableRow(p, index) {
         <td><span class="rank-num">${rank}</span></td>
         <td><img class="thumb" src="${p.image_url || ''}" alt="" loading="lazy" onerror="this.style.display='none'" /></td>
         <td style="max-width:280px">
-          <div class="product-name" data-pid="${p.product_id || p.id}" style="-webkit-line-clamp:1">${escapeHtml(getLocalizedName(p))}</div>
+          <div class="product-name" data-pid="${p.product_id || p.id}" style="-webkit-line-clamp:1">${name}</div>
         </td>
-        <td><span class="product-brand" data-brand-pid="${p.product_id || p.id}">${escapeHtml(getLocalizedBrand(p))}</span></td>
+        <td><span class="product-brand" data-brand-pid="${p.product_id || p.id}">${brand}</span></td>
         <td>${formatPrice(p.price || p.price_current)}</td>
         <td>${formatNumber(p.review_count)}</td>
         <td>${p.review_rating && !isNaN(p.review_rating) ? p.review_rating : '-'}</td>
@@ -1353,8 +1361,19 @@ function getLocalizedBrand(p) {
 function renderProductCard(p, mode = 'normal', isGlobalTrend = false, isWishlistTab = false) {
   const isWishlist = !!p.is_saved;
   const productId = p.product_id || p.id;
-  const name = escapeHtml(getLocalizedName(p));
-  const brand = escapeHtml(getLocalizedBrand(p));
+
+  // Membership Check
+  const profile = getProfile();
+  const isPro = isProMember(profile);
+  const isLocked = !isPro && !isGlobalTrend;
+
+  let name = escapeHtml(getLocalizedName(p));
+  let brand = escapeHtml(getLocalizedBrand(p));
+
+  if (isLocked) {
+    name = maskText(name);
+    brand = maskText(brand);
+  }
 
   // Price Logic
   const currentPrice = p.special_price || p.price || p.price_current || 0;
@@ -1380,12 +1399,6 @@ function renderProductCard(p, mode = 'normal', isGlobalTrend = false, isWishlist
   }
 
   const isTrend = ['google_trends', 'naver_datalab'].includes(p.source);
-
-  // Membership Check
-  const profile = getProfile();
-  const isPro = profile && (profile.subscription_tier === 'pro' || profile.role === 'admin');
-  const rank = p.current_rank || p.rank || 999;
-  const isLocked = !isPro && !isGlobalTrend && (rank <= 5 || rank > 10);
 
   let imgHtml = '';
   if (isTrend) {
@@ -1708,7 +1721,7 @@ function showMembershipAlert() {
 window.__openProduct = async function (product) {
   // Membership & Usage Guard
   const profile = getProfile();
-  const isPro = profile && (profile.subscription_tier === 'pro' || profile.role === 'admin');
+  const isPro = isProMember(profile);
 
   if (!isPro) {
     const viewCount = getDailyViewCount();
@@ -2851,6 +2864,35 @@ function emptyState(title, subtitle = '') {
 }
 
 // ─── Notification Logic ─────────────────────
+// ─── Help Functions for Subscription & Masking ──────────────────────────────
+/**
+ * Check if the user is a PRO member (Admin or Active Pro with non-expired date)
+ */
+function isProMember(profile) {
+  if (!profile) return false;
+  if (profile.role === 'admin') return true;
+  if (profile.subscription_tier !== 'pro') return false;
+
+  if (!profile.subscription_expires_at) return false;
+  const expiryDate = new Date(profile.subscription_expires_at);
+  return expiryDate > new Date();
+}
+
+/**
+ * Mask text for limited preview (e.g. "Samsung" -> "Sa****")
+ */
+function maskText(text) {
+  if (!text) return '';
+  const str = String(text);
+  if (str.length <= 1) return '*';
+  if (str.length <= 3) return str.substring(0, 1) + '**';
+  return str.substring(0, 2) + '****';
+}
+// Expose to window for bridges
+window.__isProMember = isProMember;
+window.__maskText = maskText;
+// ─────────────────────────────────────────────────────────────────────────────
+
 async function initNotificationSystem() {
   const session = getSession();
   if (!session) return;

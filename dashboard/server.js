@@ -660,7 +660,7 @@ app.post('/api/paypal/capture', async (req, res) => {
                 .update({
                     subscription_tier: 'pro',
                     subscription_id: subscriptionID, // Store the Sub ID for cancellations later
-                    expires_at: expiresAt.toISOString()
+                    subscription_expires_at: expiresAt.toISOString()
                 })
                 .eq('id', userId);
 

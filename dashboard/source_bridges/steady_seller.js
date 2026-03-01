@@ -88,6 +88,9 @@ export const SteadySellerBridge = {
             return acc;
         }, {});
 
+        const profile = typeof window.getProfile === 'function' ? window.getProfile() : (JSON.parse(localStorage.getItem('sb-profile') || 'null'));
+        const isPro = typeof window.__isProMember === 'function' ? window.__isProMember(profile) : true;
+
         return `
             <div class="steady-sellers-container">
                 ${Object.entries(grouped).map(([brand, products]) => `
@@ -97,20 +100,25 @@ export const SteadySellerBridge = {
                             <span class="brand-count">${products.length} Items</span>
                         </div>
                         <div class="brand-products-grid">
-                            ${products.map(p => `
-                                <div class="ss-product-card overlay-card" onclick="window.__openProduct(${JSON.stringify(p).replace(/"/g, '&quot;')})">
+                            ${products.map(p => {
+            const isLocked = !isPro;
+            const displayName = isLocked && typeof window.__maskText === 'function' ? window.__maskText(p.name) : p.name;
+
+            return `
+                                <div class="ss-product-card overlay-card ${isLocked ? 'locked-card' : ''}" onclick="${isLocked ? '' : `window.__openProduct(${JSON.stringify(p).replace(/"/g, '&quot;')})`}">
+                                    ${isLocked ? `<div class="locked-overlay"><span>PRO Only</span></div>` : ''}
                                     <div class="ss-product-img-wrapper">
-                                        <img src="${p.image_url}" alt="${p.name}" class="ss-product-img" loading="lazy">
+                                        <img src="${p.image_url}" alt="${displayName}" class="ss-product-img" loading="lazy">
                                     </div>
                                     <div class="ss-product-overlay">
-                                        <h4 class="ss-product-name product-name" data-pid="${p.id}">${p.name}</h4>
+                                        <h4 class="ss-product-name product-name" data-pid="${p.id}">${displayName}</h4>
                                         <div class="ss-product-price">
                                             <span class="currency">₩</span>
                                             <span class="amount">${new Intl.NumberFormat().format(p.special_price)}</span>
                                         </div>
                                     </div>
                                 </div>
-                            `).join('')}
+                            `}).join('')}
                         </div>
                     </div>
                 `).join('')}
