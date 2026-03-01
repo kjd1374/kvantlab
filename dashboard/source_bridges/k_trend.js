@@ -295,7 +295,7 @@ export const KoreaTrendBridge = {
         const P_CATS = CATS.filter(c => c.id !== 'A');
         const pCatTabs = P_CATS.map(c => {
             const active = this._nb.productCatId === c.id;
-            return `< button class="nb-cat-btn${active ? ' nb-cat-active' : ''}" data - section="prod" data - cat="${c.id}" > ${c.label}</button > `;
+            return `<button class="nb-cat-btn${active ? ' nb-cat-active' : ''}" data-section="prod" data-cat="${c.id}">${c.label}</button>`;
         }).join('');
 
         // Product period toggle
@@ -305,31 +305,31 @@ export const KoreaTrendBridge = {
         ];
         const pPeriodBtns = pPeriods.map(p => {
             const active = this._nb.productPeriod === p.key;
-            return `< button class="nb-period-btn${active ? ' nb-period-active' : ''}" data - section="prod" data - period="${p.key}" > ${p.label}</button > `;
+            return `<button class="nb-period-btn${active ? ' nb-period-active' : ''}" data-section="prod" data-period="${p.key}">${p.label}</button>`;
         }).join('');
 
         // Product cards (grid)
         const productCards = products.length === 0
-            ? `< p style = "color:var(--text-muted);padding:24px;text-align:center;" > ${t('naver_best.empty', '데이터 없음')}</p > `
+            ? `<p style="color:var(--text-muted);padding:24px;text-align:center;">${t('naver_best.empty', '데이터 없음')}</p>`
             : products.slice(0, 50).map((p, i) => {
                 const rank = p.current_rank || (i + 1);
                 const badge = rank <= 3
-                    ? `< div class="nb-rank-badge" style = "background:${RANK_COLORS[rank - 1]};" > ${rank}</div > `
-                    : `< div class="nb-rank-badge nb-rank-badge-normal" > ${rank}</div > `;
+                    ? `<div class="nb-rank-badge" style="background:${RANK_COLORS[rank - 1]};">${rank}</div>`
+                    : `<div class="nb-rank-badge nb-rank-badge-normal">${rank}</div>`;
                 const chg = p.rank_change
                     ? (p.rank_change > 0
-                        ? `< span class="nb-chg-up" >▲${p.rank_change}</span > `
-                        : `< span class="nb-chg-down" >▼${Math.abs(p.rank_change)}</span > `)
+                        ? `<span class="nb-chg-up">▲${p.rank_change}</span>`
+                        : `<span class="nb-chg-down">▼${Math.abs(p.rank_change)}</span>`)
                     : '';
                 const price = p.price ? `₩${Number(p.price).toLocaleString()} ` : '';
                 const img = p.image_url
-                    ? `< img src = "${p.image_url}" alt = "" class="nb-grid-img" loading = "lazy" onerror = "this.style.display='none'" > `
-                    : `< div class="nb-grid-img nb-grid-no-img" >🛍️</div > `;
+                    ? `<img src="${p.image_url}" alt="" class="nb-grid-img" loading="lazy" onerror="this.style.display='none'">`
+                    : `<div class="nb-grid-img nb-grid-no-img">🛍️</div>`;
                 const isLocked = !isPro;
                 const displayBrand = isLocked && typeof window.__maskText === 'function' ? window.__maskText(p.brand || '') : (p.brand || '');
                 const displayName = isLocked && typeof window.__maskText === 'function' ? window.__maskText(p.name || '') : (p.name || '');
 
-                return `< div class="nb-grid-card ${isLocked ? 'locked-card' : ''}" onclick = "${isLocked ? '' : `window.open('${p.url || '#'}','_blank')`}" >
+                return `<div class="nb-grid-card ${isLocked ? 'locked-card' : ''}" onclick="${isLocked ? '' : `window.open('${p.url || '#'}','_blank')`}">
                     <div style="position:relative">
                         ${isLocked ? `<div class="locked-overlay" style="border-radius:12px;"><span>PRO Only</span></div>` : ''}
                         ${img}${badge}
@@ -339,13 +339,13 @@ export const KoreaTrendBridge = {
                         <div class="nb-product-name">${displayName}</div>
                         <div class="nb-product-price">${isLocked ? '₩ -' : price}</div>
                     </div>
-                </div > `;
+                </div>`;
             }).join('');
 
         // ── Brand category tabs ───────────────────────────────
         const bCatTabs = CATS.map(c => {
             const active = this._nb.brandCatId === c.id;
-            return `< button class="nb-cat-btn${active ? ' nb-cat-active' : ''}" data - section="brand" data - cat="${c.id}" > ${c.label}</button > `;
+            return `<button class="nb-cat-btn${active ? ' nb-cat-active' : ''}" data-section="brand" data-cat="${c.id}">${c.label}</button>`;
         }).join('');
 
         const bPeriods = [
@@ -354,35 +354,35 @@ export const KoreaTrendBridge = {
         ];
         const bPeriodBtns = bPeriods.map(p => {
             const active = this._nb.brandPeriod === p.key;
-            return `< button class="nb-period-btn${active ? ' nb-period-active' : ''}" data - section="brand" data - period="${p.key}" > ${p.label}</button > `;
+            return `<button class="nb-period-btn${active ? ' nb-period-active' : ''}" data-section="brand" data-period="${p.key}">${p.label}</button>`;
         }).join('');
 
         // Brand rows
         const brandRows = brands.length === 0
-            ? `< p style = "color:var(--text-muted);padding:24px;text-align:center;" > ${t('naver_best.empty', '데이터 없음')}</p > `
+            ? `<p style="color:var(--text-muted);padding:24px;text-align:center;">${t('naver_best.empty', '데이터 없음')}</p>`
             : brands.map((b, i) => {
                 const rank = b.rank || (i + 1);
                 const badge = rank <= 3
-                    ? `< div class="nb-rank-badge" style = "background:${RANK_COLORS[rank - 1]};position:static;width:28px;height:28px;font-size:13px;" > ${rank}</div > `
-                    : `< div class="nb-rank-badge nb-rank-badge-normal" style = "position:static;width:28px;height:28px;" > ${rank}</div > `;
+                    ? `<div class="nb-rank-badge" style="background:${RANK_COLORS[rank - 1]};position:static;width:28px;height:28px;font-size:13px;">${rank}</div>`
+                    : `<div class="nb-rank-badge nb-rank-badge-normal" style="position:static;width:28px;height:28px;">${rank}</div>`;
                 const logo = b.logo_url
-                    ? `< img src = "${b.logo_url}" alt = "" style = "width:40px;height:40px;border-radius:8px;object-fit:cover;" onerror = "this.style.display='none'" > `
-                    : `< div style = "width:40px;height:40px;border-radius:8px;background:var(--card-bg2);display:flex;align-items:center;justify-content:center;" >🏢</div > `;
-                const tags = (b.hashtags || []).map(tag => `< span class="nb-hash" > ${tag}</span > `).join('');
-                const storeLink = b.store_url ? `onclick = "window.open('${b.store_url}','_blank')" style = "cursor:pointer;"` : '';
-                return `< div class="nb-brand-row" ${storeLink}>
+                    ? `<img src="${b.logo_url}" alt="" style="width:40px;height:40px;border-radius:8px;object-fit:cover;" onerror="this.style.display='none'">`
+                    : `<div style="width:40px;height:40px;border-radius:8px;background:var(--card-bg2);display:flex;align-items:center;justify-content:center;">🏢</div>`;
+                const tags = (b.hashtags || []).map(tag => `<span class="nb-hash">${tag}</span>`).join('');
+                const storeLink = b.store_url ? `onclick="window.open('${b.store_url}','_blank')" style="cursor:pointer;"` : '';
+                return `<div class="nb-brand-row" ${storeLink}>
     ${badge}
                     ${logo}
 <div style="flex:1;min-width:0;">
     <div class="nb-brand-name">${b.brand_name || ''}</div>
     <div class="nb-brand-tags">${tags}</div>
 </div>
-                </div > `;
+                </div>`;
             }).join('');
 
         return `
-    < div class="nb-dashboard" >
-            < !--Header Tabs-- >
+    <div class="nb-dashboard">
+            <!--Header Tabs-->
             <div class="nb-main-tabs">
                 <button class="nb-main-tab ${this._nb.activeTab === 'prod' ? 'nb-main-tab-active' : ''}" data-tab="prod">
                     ${t('naver_best.products_title', '🛍️ 베스트 상품 순위')}
@@ -392,7 +392,7 @@ export const KoreaTrendBridge = {
                 </button>
             </div>
 
-            <!-- ■ SECTION 1: Products-- >
+            <!-- ■ SECTION 1: Products-->
             <div class="nb-section" style="display: ${this._nb.activeTab === 'prod' ? 'block' : 'none'};">
                 <div class="nb-section-header">
                     <span class="nb-section-title">${t('naver_best.products_title', '🛍️ 베스트 상품 순위')}</span>
@@ -402,7 +402,7 @@ export const KoreaTrendBridge = {
                 <div class="nb-product-grid">${productCards}</div>
             </div>
 
-            <!-- ■ SECTION 2: Brands-- >
+            <!-- ■ SECTION 2: Brands-->
     <div class="nb-section" style="display: ${this._nb.activeTab === 'brand' ? 'block' : 'none'};">
         <div class="nb-section-header">
             <span class="nb-section-title">${t('naver_best.brands_title', '🏢 베스트 브랜드 순위')}</span>
@@ -411,7 +411,7 @@ export const KoreaTrendBridge = {
         <div class="nb-cat-row">${bCatTabs}</div>
         <div class="nb-brand-list">${brandRows}</div>
     </div>
-        </div > `;
+        </div>`;
     },
 
     renderCustomHeader(state) {
