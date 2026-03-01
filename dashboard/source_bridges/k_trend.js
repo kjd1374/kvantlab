@@ -374,10 +374,10 @@ export const KoreaTrendBridge = {
             <!-- Header Tabs -->
             <div class="nb-main-tabs">
                 <button class="nb-main-tab ${this._nb.activeTab === 'prod' ? 'nb-main-tab-active' : ''}" data-tab="prod">
-                    🛍️ ${t('naver_best.products_title', '베스트 상품 순위')}
+                    ${t('naver_best.products_title', '🛍️ 베스트 상품 순위')}
                 </button>
                 <button class="nb-main-tab ${this._nb.activeTab === 'brand' ? 'nb-main-tab-active' : ''}" data-tab="brand">
-                    🏢 ${t('naver_best.brands_title', '베스트 브랜드 순위')}
+                    ${t('naver_best.brands_title', '🏢 베스트 브랜드 순위')}
                 </button>
             </div>
 
