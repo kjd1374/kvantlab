@@ -104,7 +104,12 @@ export async function fetchNaverBestProducts({ limit = 50, categoryId = 'A' } = 
  * Fetch Naver Best brands from trend_brands table
  */
 export async function fetchNaverBestBrands({ categoryId = 'A', periodType = 'WEEKLY', limit = 30 } = {}) {
-    let qs = `select=*&period_type=eq.${periodType}&order=rank.asc&limit=${limit}`;
+    const dateRes = await query('trend_brands', `select=created_at&order=created_at.desc&limit=1`);
+    const latestDateStr = dateRes.data?.[0]?.created_at;
+    if (!latestDateStr) return { data: [], count: 0 };
+    const latestDatePrefix = latestDateStr.substring(0, 10);
+
+    let qs = `select=*&period_type=eq.${periodType}&created_at=gte.${latestDatePrefix}T00:00:00&order=rank.asc&limit=${limit}`;
     if (categoryId && categoryId !== 'A') {
         qs += `&category_id=eq.${encodeURIComponent(categoryId)}`;
     }

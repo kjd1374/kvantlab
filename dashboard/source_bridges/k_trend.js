@@ -37,7 +37,7 @@ export const KoreaTrendBridge = {
 
     // Naver Best internal state
     _nb: {
-        productCatId: 'A',        // selected category for products
+        productCatId: '50000000',  // default to 패션의류
         productPeriod: 'DAILY',    // DAILY | WEEKLY
         brandCatId: 'A',        // selected category for brands
         brandPeriod: 'WEEKLY',   // WEEKLY | MONTHLY
@@ -289,7 +289,8 @@ export const KoreaTrendBridge = {
         const RANK_COLORS = ['#FFD700', '#C0C0C0', '#CD7F32'];
 
         // ── Product category tabs ───────────────────────────────
-        const pCatTabs = CATS.map(c => {
+        const P_CATS = CATS.filter(c => c.id !== 'A');
+        const pCatTabs = P_CATS.map(c => {
             const active = this._nb.productCatId === c.id;
             return `<button class="nb-cat-btn${active ? ' nb-cat-active' : ''}" data-section="prod" data-cat="${c.id}">${c.label}</button>`;
         }).join('');
