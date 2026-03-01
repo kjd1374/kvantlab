@@ -96,9 +96,13 @@ async function setPlatform(platform) {
   // Render Platform-specific controls
   const controls = document.getElementById('platformControls');
   if (controls) {
-    controls.innerHTML = state.activeBridge.renderCustomHeader(state);
-    if (state.activeBridge.bindCustomHeaderEvents) {
-      state.activeBridge.bindCustomHeaderEvents(() => loadTab(state.activeTab));
+    if (state.activeBridge.renderCustomHeader) {
+      controls.innerHTML = state.activeBridge.renderCustomHeader(state);
+      if (state.activeBridge.bindCustomHeaderEvents) {
+        state.activeBridge.bindCustomHeaderEvents(() => loadTab(state.activeTab));
+      }
+    } else {
+      controls.innerHTML = ''; // Clear previous platform's controls
     }
   }
 
