@@ -116,6 +116,64 @@ async function sendUserNotificationEmail(userEmail, title, messageBody) {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─── Custom Email OTP Store ──────────────────────────────────────────────────
+const otpStore = new Map(); // email -> { code, expiresAt }
+
+function generateOtp() {
+    return Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit
+}
+
+function cleanExpiredOtps() {
+    const now = Date.now();
+    for (const [email, data] of otpStore) {
+        if (data.expiresAt < now) otpStore.delete(email);
+    }
+}
+
+async function sendOtpEmail(toEmail, code) {
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPassword = process.env.SMTP_PASSWORD;
+    const smtpServer = process.env.SMTP_SERVER || 'smtp.gmail.com';
+    const smtpPort = parseInt(process.env.SMTP_PORT || '587');
+
+    if (!smtpUser || !smtpPassword) {
+        throw new Error('SMTP credentials not configured');
+    }
+
+    const transporter = nodemailer.createTransport({
+        host: smtpServer,
+        port: smtpPort,
+        secure: smtpPort === 465,
+        auth: { user: smtpUser, pass: smtpPassword }
+    });
+
+    const mailOptions = {
+        from: `"K-Vant" <${smtpUser}>`,
+        to: toEmail,
+        subject: `[K-Vant] 이메일 인증번호 / Email Verification Code`,
+        html: `
+            <div style="font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;max-width:500px;margin:0 auto;padding:30px 20px;">
+                <div style="text-align:center;margin-bottom:30px;">
+                    <h1 style="color:#0071e3;font-size:24px;margin:0;">K-Vant</h1>
+                    <p style="color:#86868b;font-size:13px;margin-top:4px;">DataPool 회원가입 인증</p>
+                </div>
+                <div style="background:#f5f5f7;border-radius:16px;padding:32px;text-align:center;margin-bottom:20px;">
+                    <p style="color:#1d1d1f;font-size:14px;margin:0 0 16px 0;">아래의 인증번호를 가입 화면에 입력해주세요.</p>
+                    <div style="background:#fff;border-radius:12px;padding:20px;display:inline-block;margin:0 auto;">
+                        <span style="font-size:36px;font-weight:800;letter-spacing:8px;color:#0071e3;">${code}</span>
+                    </div>
+                    <p style="color:#86868b;font-size:12px;margin-top:16px;">이 인증번호는 5분간 유효합니다.</p>
+                </div>
+                <p style="color:#86868b;font-size:11px;text-align:center;">본인이 요청하지 않은 경우 이 메일을 무시해주세요.<br/>This email was sent automatically from K-Vant.</p>
+            </div>
+        `
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`[OTP] ✅ Verification code sent to ${toEmail}`);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 
 // Supabase Admin Client
 const SUPABASE_URL = 'https://hgxblbbjlnsfkffwvfao.supabase.co';
@@ -129,6 +187,149 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
 
 app.use(cors());
 app.use(bodyParser.json());
+
+// --- Custom Email OTP Endpoints ---
+
+// Send OTP via our SMTP (bypasses Supabase email rate limits)
+app.post('/api/auth/send-otp', async (req, res) => {
+    const { email } = req.body;
+    if (!email || !email.includes('@')) {
+        return res.status(400).json({ success: false, error: 'Invalid email address' });
+    }
+
+    try {
+        cleanExpiredOtps();
+        const code = generateOtp();
+        otpStore.set(email.toLowerCase(), {
+            code,
+            expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
+        });
+
+        await sendOtpEmail(email, code);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('[OTP] Send error:', error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Verify OTP and create/get user
+app.post('/api/auth/verify-otp', async (req, res) => {
+    const { email, code } = req.body;
+    if (!email || !code) {
+        return res.status(400).json({ success: false, error: 'Email and code are required' });
+    }
+
+    const stored = otpStore.get(email.toLowerCase());
+    if (!stored) {
+        return res.status(400).json({ success: false, error: '인증번호가 만료되었거나 요청되지 않았습니다. / OTP not found or expired.' });
+    }
+    if (stored.expiresAt < Date.now()) {
+        otpStore.delete(email.toLowerCase());
+        return res.status(400).json({ success: false, error: '인증번호가 만료되었습니다. 다시 발송해주세요. / OTP expired.' });
+    }
+    if (stored.code !== code) {
+        return res.status(400).json({ success: false, error: '인증번호가 일치하지 않습니다. / Invalid OTP.' });
+    }
+
+    // OTP verified — clean up
+    otpStore.delete(email.toLowerCase());
+
+    try {
+        // Check if user already exists in Supabase Auth
+        const { data: { users } } = await supabase.auth.admin.listUsers();
+        let user = users.find(u => u.email === email.toLowerCase());
+
+        if (!user) {
+            // Create a new user with a temporary password (will be updated during signup)
+            const tempPassword = `TEMP_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+            const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+                email: email.toLowerCase(),
+                password: tempPassword,
+                email_confirm: true
+            });
+            if (createError) throw createError;
+            user = newUser.user;
+        }
+
+        // Generate a session token for this user
+        const { data: sessionData, error: tokenError } = await supabase.auth.admin.generateLink({
+            type: 'magiclink',
+            email: email.toLowerCase()
+        });
+
+        // Since we can't directly get a session via admin, use signInWithPassword isn't possible
+        // Instead, we'll return user info and a verified flag. The frontend will handle the session.
+        res.json({
+            success: true,
+            verified: true,
+            user: {
+                id: user.id,
+                email: user.email
+            }
+        });
+
+    } catch (error) {
+        console.error('[OTP] Verify error:', error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Complete signup: set password + update profile (called after OTP verification)
+app.post('/api/auth/complete-signup', async (req, res) => {
+    const { userId, email, password, name, company, primary_platform, primary_category } = req.body;
+
+    if (!userId || !email || !password) {
+        return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+
+    try {
+        // Set the user's permanent password via admin API
+        const { error: pwError } = await supabase.auth.admin.updateUserById(userId, {
+            password: password
+        });
+        if (pwError) throw pwError;
+
+        // Upsert profile data
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert({
+                id: userId,
+                name: name || '',
+                company: company || '',
+                primary_platform: primary_platform || '',
+                primary_category: primary_category || '',
+                subscription_tier: 'free',
+                subscription_expires_at: null,
+                daily_usage: 0,
+                role: 'user'
+            }, { onConflict: 'id' });
+
+        if (profileError) {
+            console.warn('[Signup] Profile update warning:', profileError.message);
+        }
+
+        // Sign the user in to get a valid session token
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+
+        if (signInError) throw signInError;
+
+        res.json({
+            success: true,
+            session: {
+                access_token: signInData.session?.access_token,
+                user: signInData.user
+            }
+        });
+
+    } catch (error) {
+        console.error('[Signup] Complete signup error:', error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 
 // --- User Management APIs ---
 

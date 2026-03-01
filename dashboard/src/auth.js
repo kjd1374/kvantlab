@@ -430,29 +430,41 @@ function setupAuthModals() {
           throw new Error(window.t('auth.err_req_pf') || '주요 활용 플랫폼과 주력 카테고리를 선택해주세요.');
         }
 
-        // 1. User is already authenticated via OTP. We just need to update their password.
-        const pwResult = await updateUserPassword(password);
-        if (pwResult.error) throw new Error(pwResult.error_description || pwResult.error.message);
-
-        // 2. Update their profile with the extended B2B fields
-        // Note: The user.id is stored in local storage from the getSession() / OTP verification step
+        // Get user info from OTP verification step
         const sessionStr = localStorage.getItem('sb-user');
         if (!sessionStr) throw new Error(window.t('auth.err_session') || '세션 정보를 찾을 수 없습니다. 다시 시도해주세요.');
-
         const userObj = JSON.parse(sessionStr);
-        const profileUpdateResult = await updateUserProfile(userObj.id, {
-          name: name,
-          company: company,
-          primary_platform: platform,
-          primary_category: category,
-          subscription_tier: 'free',
-          subscription_expires_at: null,
-          daily_usage: 0
-        });
 
-        if (profileUpdateResult.error) {
-          console.error('Profile update warning:', profileUpdateResult.error);
-          // Non-blocking warning
+        // Complete signup via server (sets password + profile + returns session)
+        const signupRes = await fetch('/api/auth/complete-signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: userObj.id,
+            email: email,
+            password: password,
+            name: name,
+            company: company,
+            primary_platform: platform,
+            primary_category: category
+          })
+        });
+        const signupData = await signupRes.json();
+
+        if (!signupRes.ok || !signupData.success) {
+          throw new Error(signupData.error || '가입 처리에 실패했습니다.');
+        }
+
+        // Store session token for authenticated requests
+        if (signupData.session) {
+          localStorage.setItem('sb-token', signupData.session.access_token);
+          localStorage.setItem('sb-user', JSON.stringify(signupData.session.user));
+          // Fetch and store profile
+          try {
+            const { fetchUserProfile } = await import('../supabase.js');
+            const profile = await fetchUserProfile(signupData.session.user.id);
+            if (profile) localStorage.setItem('sb-profile', JSON.stringify(profile));
+          } catch (e) { }
         }
 
         alert(window.t('auth.signup_success') || '회원가입이 완료되었습니다!');

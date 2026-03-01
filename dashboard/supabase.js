@@ -546,57 +546,47 @@ export async function signUp(email, password, metadata = {}) {
 }
 
 export async function sendOtp(email) {
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/otp`, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({ email, create_user: true })
-    });
-    // Supabase OTP returns empty body on success (200), need to handle it safely
-    if (res.ok) return {};
-    return await res.json();
+    try {
+        const res = await fetch(`/api/auth/send-otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+            return { error: data.error || '인증번호 전송에 실패했습니다.' };
+        }
+        return {};
+    } catch (e) {
+        return { error: e.message || '네트워크 오류가 발생했습니다.' };
+    }
 }
 
 export async function verifyOtp(email, token) {
-    let res = await fetch(`${SUPABASE_URL}/auth/v1/verify`, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({ email, token, type: 'signup' })
-    });
-    let data = await res.json();
-
-    // If signup token fails, it might be an existing user receiving a magiclink token
-    if (!res.ok && data.msg === 'Token has expired or is invalid') {
-        res = await fetch(`${SUPABASE_URL}/auth/v1/verify`, {
+    try {
+        const res = await fetch(`/api/auth/verify-otp`, {
             method: 'POST',
-            headers: headers,
-            body: JSON.stringify({ email, token, type: 'magiclink' })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, code: token })
         });
-        data = await res.json();
-    }
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+            return { error: data.error || '인증번호가 올바르지 않습니다.' };
+        }
 
-    // Fallback to email OTP just in case
-    if (!res.ok && data.msg === 'Token has expired or is invalid') {
-        res = await fetch(`${SUPABASE_URL}/auth/v1/verify`, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify({ email, token, type: 'email' })
-        });
-        data = await res.json();
+        // Store user info for later use during signup
+        if (data.user) {
+            localStorage.setItem('sb-user', JSON.stringify(data.user));
+            // Fetch and store profile if exists
+            try {
+                const profile = await fetchUserProfile(data.user.id);
+                if (profile) localStorage.setItem('sb-profile', JSON.stringify(profile));
+            } catch (e) { }
+        }
+        return data;
+    } catch (e) {
+        return { error: e.message || '네트워크 오류가 발생했습니다.' };
     }
-
-    if (!res.ok) {
-        return { error: data.msg || data.message || data.error_description || '유효하지 않거나 만료된 인증번호입니다.' };
-    }
-    // Auto-login on successful verification
-    if (data.access_token) {
-        localStorage.setItem('sb-token', data.access_token);
-        localStorage.setItem('sb-user', JSON.stringify(data.user));
-        try {
-            const profile = await fetchUserProfile(data.user.id);
-            if (profile) localStorage.setItem('sb-profile', JSON.stringify(profile));
-        } catch (e) { }
-    }
-    return data;
 }
 
 export async function updateUserPassword(password) {
