@@ -6,6 +6,7 @@ import { promisify } from 'util';
 import path from 'path';
 import { promises as fs } from 'fs';
 import { fileURLToPath } from 'url';
+import nodemailer from 'nodemailer';
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -15,6 +16,43 @@ const __dirname = path.dirname(__filename);
 const execAsync = promisify(exec);
 const app = express();
 const PORT = 6002;
+
+// ─── Email Notification Helper ────────────────────────────────────────────────
+async function sendSourcingEmailNotification(userEmail, messageBody, itemCount) {
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPassword = process.env.SMTP_PASSWORD;
+    const smtpServer = process.env.SMTP_SERVER || 'smtp.gmail.com';
+    const smtpPort = parseInt(process.env.SMTP_PORT || '587');
+    const toEmail = process.env.NOTIFICATION_EMAIL || smtpUser;
+
+    if (!smtpUser || !smtpPassword) {
+        console.warn('[Email] SMTP credentials not found in .env. Skipping email.');
+        return;
+    }
+
+    const transporter = nodemailer.createTransport({
+        host: smtpServer,
+        port: smtpPort,
+        secure: smtpPort === 465,
+        auth: { user: smtpUser, pass: smtpPassword }
+    });
+
+    const mailOptions = {
+        from: `"K-Vant Sourcing" <${smtpUser}>`,
+        to: toEmail,
+        subject: `[K-Vant Sourcing] \uc0c8\ub85c\uc6b4 \uacac\uc801 \uc694\uccad (\uc694\uccad\uc790: ${userEmail})`,
+        text: `\uc0c8\ub85c\uc6b4 B2B \uc18c\uc2f1 \uacac\uc801 \uc694\uccad\uc774 \uc811\uc218\ub418\uc5c8\uc2b5\ub2c8\ub2e4.\n\n\u25a0 \uc694\uccad\uc790: ${userEmail}\n\u25a0 \uc694\uccad \uc0c1\ud488 \uc885\ub958: ${itemCount}\uac1c\n\u25a0 \ucd94\uac00 \uba54\uc2dc\uc9c0: \n${messageBody}\n\nK-Vant \uc5b4\ub4dc\ubbfc \ud398\uc774\uc9c0 '\uc18c\uc2f1/\uacac\uc801 \uad00\ub9ac' \ud0ed\uc5d0\uc11c \ub0b4\uc5ed\uc744 \ud655\uc778\ud558\uace0 \uacac\uc801\uc744 \ud68c\uc2e0\ud574\uc8fc\uc138\uc694.`
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log('[Email] \u2705 Sourcing notification email sent to', toEmail);
+    } catch (e) {
+        console.error('[Email] \u274c Failed to send email:', e.message);
+    }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 
 // Supabase Admin Client
 const SUPABASE_URL = 'https://hgxblbbjlnsfkffwvfao.supabase.co';
@@ -214,18 +252,9 @@ app.post('/api/sourcing/request', async (req, res) => {
 
         if (error) throw error;
 
-        // Send Email Notification in background
-        const scriptPath = path.join(__dirname, 'notify_sourcing.py');
+        // Send Email Notification asynchronously (non-blocking)
         const count = Array.isArray(items) ? items.length : 0;
-        // Escape arguments to prevent injection
-        const cleanEmail = String(user_email).replace(/"/g, '\\"');
-        const cleanMsg = String(user_message || '없음').replace(/"/g, '\\"');
-
-        const command = `source venv/bin/activate && python "${scriptPath}" "${cleanEmail}" "${cleanMsg}" "${count}"`;
-        exec(command, { cwd: __dirname, shell: '/bin/zsh' }, (err, stdout, stderr) => {
-            if (err) console.error("Email notification failed:", err);
-            else console.log("Email notification sent:", stdout);
-        });
+        sendSourcingEmailNotification(user_email, user_message || '없음', count);
 
         res.json({ success: true, message: 'Request submitted successfully.', data: data[0] });
     } catch (error) {
