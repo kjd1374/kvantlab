@@ -41,6 +41,7 @@ export const KoreaTrendBridge = {
         productPeriod: 'DAILY',    // DAILY | WEEKLY
         brandCatId: 'A',        // selected category for brands
         brandPeriod: 'WEEKLY',   // WEEKLY | MONTHLY
+        activeTab: 'prod',       // prod | brand
     },
 
     filterState: {
@@ -370,13 +371,18 @@ export const KoreaTrendBridge = {
 
         return `
         <div class="nb-dashboard">
-            <!-- Header -->
-            <div class="nb-header">
-                <div class="nb-header-badge">${t('naver_best.header', '🇰🇷 네이버 쇼핑 베스트')}</div>
+            <!-- Header Tabs -->
+            <div class="nb-main-tabs">
+                <button class="nb-main-tab ${this._nb.activeTab === 'prod' ? 'nb-main-tab-active' : ''}" data-tab="prod">
+                    🛍️ ${t('naver_best.products_title', '베스트 상품 순위')}
+                </button>
+                <button class="nb-main-tab ${this._nb.activeTab === 'brand' ? 'nb-main-tab-active' : ''}" data-tab="brand">
+                    🏢 ${t('naver_best.brands_title', '베스트 브랜드 순위')}
+                </button>
             </div>
 
             <!-- ■ SECTION 1: Products -->
-            <div class="nb-section">
+            <div class="nb-section" style="display: ${this._nb.activeTab === 'prod' ? 'block' : 'none'};">
                 <div class="nb-section-header">
                     <span class="nb-section-title">${t('naver_best.products_title', '🛍️ 베스트 상품 순위')}</span>
                     <div class="nb-period-group">${pPeriodBtns}</div>
@@ -385,10 +391,8 @@ export const KoreaTrendBridge = {
                 <div class="nb-product-grid">${productCards}</div>
             </div>
 
-            <div class="nb-divider"></div>
-
             <!-- ■ SECTION 2: Brands -->
-            <div class="nb-section">
+            <div class="nb-section" style="display: ${this._nb.activeTab === 'brand' ? 'block' : 'none'};">
                 <div class="nb-section-header">
                     <span class="nb-section-title">${t('naver_best.brands_title', '🏢 베스트 브랜드 순위')}</span>
                     <div class="nb-period-group">${bPeriodBtns}</div>
@@ -430,8 +434,17 @@ export const KoreaTrendBridge = {
             }
         });
 
-        // Naver Best: delegated handler for category + period buttons
+        // Naver Best: delegated handler for tabs, category, and period buttons
         document.addEventListener('click', (e) => {
+            const mainTab = e.target.closest('.nb-main-tab');
+            if (mainTab) {
+                e.preventDefault();
+                e.stopPropagation();
+                this._nb.activeTab = mainTab.dataset.tab;
+                if (reloadCallback) reloadCallback();
+                return;
+            }
+
             const catBtn = e.target.closest('.nb-cat-btn');
             if (catBtn) {
                 e.preventDefault();

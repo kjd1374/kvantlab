@@ -2934,21 +2934,37 @@ body[data-platform="k_trend"] .filter-bar {
   width: 100%;
 }
 
-/* Header */
-.nb-header {
+/* Header Tabs */
+.nb-main-tabs {
   display: flex;
-  align-items: center;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
-.nb-header-badge {
-  background: linear-gradient(135deg, #03C75A, #00A455);
+.nb-main-tab {
+  padding: 10px 20px;
   border-radius: 12px;
-  padding: 10px 18px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  background: var(--card-bg, #ffffff);
+  color: var(--text-color, #333333);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nb-main-tab:hover {
+  background: var(--card-bg2, #f5f5f5);
+}
+
+.nb-main-tab-active {
+  background: linear-gradient(135deg, #03C75A, #00A455);
+  border: 1px solid transparent;
   color: #fff;
-  font-weight: 700;
-  font-size: 15px;
+}
+
+.nb-main-tab-active:hover {
+  background: linear-gradient(135deg, #02b351, #00934c);
 }
 
 /* Sections */
