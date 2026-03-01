@@ -134,9 +134,8 @@ async function setPlatform(platform) {
   // Re-attach platform listeners if they were in the controls or bar
   if (window.attachPlatformListeners) window.attachPlatformListeners();
 
-  // Reset Category & Search
   // Reset Category & Search & Tab State
-  state.activeCategory = null; // null로 명확히 초기화 (빈 문자열이면 !state.activeCategory가 false 될 수 있음)
+  state.activeCategory = null;
   state.searchQuery = '';
   const searchInput = document.getElementById('searchInput');
   if (searchInput) searchInput.value = '';
@@ -150,15 +149,22 @@ async function setPlatform(platform) {
     state.activeTab = 'all';
   }
 
+  // Clean up stale content from previous platform (e.g., k_trend grids)
+  document.querySelectorAll('.custom-content-area').forEach(el => { el.innerHTML = ''; el.style.display = 'none'; });
 
   // Render Tabs for this platform
   renderTabs();
+
+  // Activate the correct tab-content pane (like switchTab does)
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  const targetTab = document.getElementById(`tab-${state.activeTab}`);
+  if (targetTab) targetTab.classList.add('active');
 
   // Reload Data
   await Promise.all([
     loadCategories(),
     loadKPIs(),
-    loadTab(state.activeBridge.tabs[0].id)
+    loadTab(state.activeTab)
   ]);
 
   updateURL();
