@@ -109,11 +109,29 @@ export async function fetchNaverBestBrands({ categoryId = 'A', periodType = 'WEE
     if (!latestDateStr) return { data: [], count: 0 };
     const latestDatePrefix = latestDateStr.substring(0, 10);
 
-    let qs = `select=*&period_type=eq.${periodType}&created_at=gte.${latestDatePrefix}T00:00:00&order=rank.asc&limit=${limit}`;
+    // Fetch more records to account for duplicates, then deduplicate in memory
+    let qs = `select=*&period_type=eq.${periodType}&created_at=gte.${latestDatePrefix}T00:00:00&order=rank.asc&limit=${limit * 5}`;
     if (categoryId && categoryId !== 'A') {
         qs += `&category_id=eq.${encodeURIComponent(categoryId)}`;
     }
-    return await query('trend_brands', qs);
+
+    const res = await query('trend_brands', qs);
+
+    if (res.data) {
+        const seen = new Set();
+        const deduplicated = [];
+        for (const item of res.data) {
+            if (!seen.has(item.brand_name)) {
+                seen.add(item.brand_name);
+                deduplicated.push(item);
+                if (deduplicated.length >= limit) break;
+            }
+        }
+        res.data = deduplicated;
+        res.count = deduplicated.length;
+    }
+
+    return res;
 }
 
 /**
