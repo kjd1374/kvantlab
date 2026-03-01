@@ -43,6 +43,9 @@ const FALLBACK_STRINGS = {
     'auth.other_platform': { 'en': 'Enter platform directly', 'ko': '플랫폼 직접 입력' },
     'auth.other_category': { 'en': 'Enter category directly', 'ko': '카테고리 직접 입력' },
     'common.login_signup': { 'en': 'Login / Register', 'ko': '로그인 / 회원가입' },
+    'mypage.btn_renew': { 'ko': '🔄 구독 갱신 (Renew)', 'en': '🔄 Renew Subscription' },
+    'mypage.btn_extend': { 'ko': '⏳ 구독 연장 (Extend)', 'en': '⏳ Extend Subscription' },
+    'mypage.btn_cancel': { 'ko': '🚫 구독 해지 (Cancel)', 'en': '🚫 Cancel Subscription' },
 
     // Korea Trends – Tab names
     'tabs.global_trends': { ko: '🌏 글로벌 트렌드', en: '🌏 Global Trends' },

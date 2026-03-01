@@ -477,9 +477,18 @@
 
         <div class="billing-actions" style="margin-top: 24px; text-align:center;">
           <div id="paypal-button-container" style="max-width: 400px; margin: 0 auto;"></div>
-          <button id="cancelSubscriptionBtn" class="btn-secondary"
-            style="display:none; width: 100%; max-width: 400px; margin: 0 auto; padding: 12px; background: #fff5f5; color: #e03131; border: 1px solid #ffc9c9; border-radius: 8px; cursor: pointer; font-weight: 600;"
-            data-i18n="mypage.cancel_subscription">구독 취소 (Cancel Subscription)</button>
+          <div class="subscription-btn-group"
+            style="display: flex; flex-direction: column; gap: 10px; max-width: 400px; margin: 12px auto 0;">
+            <button id="renewSubscriptionBtn" class="btn-primary sub-action-btn sub-renew"
+              style="display:none; width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; color: #fff; background: linear-gradient(135deg, var(--accent-blue), #6c5ce7); box-shadow: 0 4px 14px rgba(59,130,246,0.3); transition: all 0.2s;"
+              data-i18n="mypage.btn_renew">🔄 구독 갱신 (Renew)</button>
+            <button id="extendSubscriptionBtn" class="btn-primary sub-action-btn sub-extend"
+              style="display:none; width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; color: #fff; background: linear-gradient(135deg, #00b894, #00cec9); box-shadow: 0 4px 14px rgba(0,184,148,0.3); transition: all 0.2s;"
+              data-i18n="mypage.btn_extend">⏳ 구독 연장 (Extend)</button>
+            <button id="cancelSubscriptionBtn" class="btn-secondary sub-action-btn sub-cancel"
+              style="display:none; width: 100%; padding: 12px; background: #fff5f5; color: #e03131; border: 1px solid #ffc9c9; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s;"
+              data-i18n="mypage.btn_cancel">🚫 구독 해지 (Cancel)</button>
+          </div>
         </div>
       </div>
 

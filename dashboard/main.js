@@ -3019,11 +3019,17 @@ window.openMyPageModal = async function () {
   const subscribedAt = document.getElementById('myPageSubscribedAt');
   const expiresAt = document.getElementById('myPageExpiresAt');
   const cancelBtn = document.getElementById('cancelSubscriptionBtn');
+  const renewBtn = document.getElementById('renewSubscriptionBtn');
+  const extendBtn = document.getElementById('extendSubscriptionBtn');
 
   const tier = (profile.subscription_tier || 'free').toLowerCase();
   const expiryDate = profile.subscription_expires_at ? new Date(profile.subscription_expires_at) : null;
   const isExpired = expiryDate ? expiryDate < new Date() : false;
   const effectiveTier = (tier === 'pro' && isExpired) ? 'free' : tier;
+
+  // Calculate days remaining until expiry
+  const now = new Date();
+  const daysRemaining = expiryDate ? Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24)) : null;
 
   if (planBadge) {
     planBadge.textContent = effectiveTier === 'pro' ? 'Pro' : 'Free';
@@ -3035,25 +3041,43 @@ window.openMyPageModal = async function () {
 
   if (subscribedAt) subscribedAt.textContent = fmtDate(profile.created_at);
 
+  // === Subscription Button Visibility Logic ===
+  // Hide all subscription buttons first
+  if (renewBtn) renewBtn.style.display = 'none';
+  if (extendBtn) extendBtn.style.display = 'none';
+  if (cancelBtn) cancelBtn.style.display = 'none';
+
   if (planDesc) {
     if (profile.role === 'admin') {
       planDesc.textContent = window.t('mypage.status_admin');
-    } else if (effectiveTier === 'pro') {
-      if (profile.subscription_id) {
-        planDesc.textContent = window.t('mypage.status_pro_active');
-        if (cancelBtn) cancelBtn.style.display = 'block';
-      } else {
-        const dateStr = fmtDate(expiryDate);
-        planDesc.textContent = window.t('mypage.status_pro_cancelled').replace('{date}', dateStr);
-        if (cancelBtn) cancelBtn.style.display = 'none';
-      }
     } else if (tier === 'pro' && isExpired) {
+      // Expired PRO → show Renew button
       const dateStr = fmtDate(expiryDate);
       planDesc.textContent = window.t('mypage.status_expired') ? `${window.t('mypage.status_expired')} (${dateStr})` : `구독 만료됨 (${dateStr})`;
-      if (cancelBtn) cancelBtn.style.display = 'none';
+      if (renewBtn) renewBtn.style.display = 'block';
+    } else if (effectiveTier === 'pro') {
+      if (profile.subscription_id) {
+        // Active auto-renewing PRO
+        planDesc.textContent = window.t('mypage.status_pro_active');
+        if (cancelBtn) cancelBtn.style.display = 'block';
+        // If expiring within 7 days, show Extend too
+        if (daysRemaining !== null && daysRemaining <= 7) {
+          if (extendBtn) extendBtn.style.display = 'block';
+        }
+      } else {
+        // PRO but cancelled (no auto-renew) – still active until expiry
+        const dateStr = fmtDate(expiryDate);
+        planDesc.textContent = window.t('mypage.status_pro_cancelled').replace('{date}', dateStr);
+        // If expiring within 7 days, show Extend option
+        if (daysRemaining !== null && daysRemaining <= 7) {
+          if (extendBtn) extendBtn.style.display = 'block';
+        }
+      }
     } else {
+      // Free tier
       planDesc.textContent = window.t('mypage.status_free');
-      if (cancelBtn) cancelBtn.style.display = 'none';
+      // Show Renew (upgrade) for free users
+      if (renewBtn) renewBtn.style.display = 'block';
     }
   }
 
@@ -3071,6 +3095,11 @@ window.openMyPageModal = async function () {
       } else {
         expiresAt.textContent = `${dateStr} (${window.t('mypage.status_no_renew') || '갱신 안함'})`;
         expiresAt.style.color = 'var(--text-secondary)';
+      }
+      // Show "D-day" badge if expiring soon
+      if (!isExpired && daysRemaining !== null && daysRemaining <= 7) {
+        expiresAt.textContent += ` ⚠️ D-${daysRemaining}`;
+        expiresAt.style.color = '#e67e22';
       }
     } else {
       expiresAt.textContent = '무제한';
@@ -3240,10 +3269,6 @@ function switchMyPageTab(tabName) {
           window.__paypalRendered = true;
         }
 
-        // Hide cancel button if we are showing subscribe button
-        const cancelBtn = document.getElementById('cancelSubscriptionBtn');
-        if (cancelBtn) cancelBtn.style.display = 'none';
-
       } else if (tier === 'pro') {
         const container = document.getElementById('paypal-button-container');
         if (container) container.innerHTML = ''; // hide if already pro
@@ -3302,7 +3327,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cancelBtn.addEventListener('click', async () => {
       const siteLang = i18n.currentLang || 'ko';
       const msg = siteLang === 'ko'
-        ? '정말로 구독을 취소하시겠습니까?\n이번 결제 주기(만료일)까지만 Pro 혜택이 유지되며 이후에는 더 이상 자동 연장 결제되지 않습니다.'
+        ? '정말로 구독을 해지하시겠습니까?\n이번 결제 주기(만료일)까지만 Pro 혜택이 유지되며 이후에는 더 이상 자동 연장 결제되지 않습니다.'
         : 'Are you sure you want to cancel your subscription?\nPro benefits will remain until the end of the current billing cycle, and you will not be charged again.';
 
       if (!confirm(msg)) {
@@ -3325,18 +3350,64 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await res.json();
 
         if (data.success) {
-          alert('구독 취소가 완료되었습니다. / Cancelled successfully.');
+          alert(siteLang === 'ko' ? '구독 해지가 완료되었습니다. 만료일까지 Pro 혜택이 유지됩니다.' : 'Subscription cancelled. Pro benefits remain until expiry date.');
           window.location.reload();
         } else {
-          alert(data.error || '취소 실패. 관리자에게 문의하세요. / Cancellation failed.');
+          alert(data.error || '해지 실패. 관리자에게 문의하세요. / Cancellation failed.');
         }
       } catch (err) {
         alert('오류가 발생했습니다. / An error occurred.');
         console.error(err);
       } finally {
         cancelBtn.disabled = false;
-        cancelBtn.textContent = '구독 취소 (Cancel Subscription)';
+        cancelBtn.textContent = window.t('mypage.btn_cancel') || '🚫 구독 해지 (Cancel)';
         cancelBtn.style.opacity = '1';
+      }
+    });
+  }
+
+  // Renew Subscription Handler (for expired or free users → trigger PayPal flow)
+  const renewBtn = document.getElementById('renewSubscriptionBtn');
+  if (renewBtn) {
+    renewBtn.addEventListener('click', () => {
+      // Switch to billing tab and scroll to PayPal button
+      switchMyPageTab('billing');
+      const ppContainer = document.getElementById('paypal-button-container');
+      if (ppContainer) {
+        ppContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Highlight effect
+        ppContainer.style.outline = '2px solid var(--accent-blue)';
+        ppContainer.style.borderRadius = '12px';
+        ppContainer.style.padding = '8px';
+        setTimeout(() => {
+          ppContainer.style.outline = 'none';
+          ppContainer.style.padding = '0';
+        }, 3000);
+      }
+    });
+  }
+
+  // Extend Subscription Handler (for users expiring soon → trigger PayPal flow)
+  const extendBtn = document.getElementById('extendSubscriptionBtn');
+  if (extendBtn) {
+    extendBtn.addEventListener('click', () => {
+      const siteLang = i18n.currentLang || 'ko';
+      const msg = siteLang === 'ko'
+        ? '구독을 연장하시겠습니까? PayPal을 통해 새 구독 결제가 진행됩니다.'
+        : 'Would you like to extend your subscription? A new PayPal subscription will be created.';
+      if (!confirm(msg)) return;
+
+      // Scroll to PayPal button area
+      const ppContainer = document.getElementById('paypal-button-container');
+      if (ppContainer) {
+        ppContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        ppContainer.style.outline = '2px solid #00b894';
+        ppContainer.style.borderRadius = '12px';
+        ppContainer.style.padding = '8px';
+        setTimeout(() => {
+          ppContainer.style.outline = 'none';
+          ppContainer.style.padding = '0';
+        }, 3000);
       }
     });
   }

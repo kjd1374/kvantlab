@@ -2146,6 +2146,25 @@ body[data-platform="k_trend"] .filter-bar {
   color: var(--text-primary);
 }
 
+/* Subscription Action Buttons */
+.sub-action-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.sub-renew:hover {
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4) !important;
+}
+
+.sub-extend:hover {
+  box-shadow: 0 6px 20px rgba(0, 184, 148, 0.4) !important;
+}
+
+.sub-cancel:hover {
+  background: #ffe0e0 !important;
+  border-color: #e03131 !important;
+}
+
 .rank-val {
   color: var(--accent-blue);
 }
