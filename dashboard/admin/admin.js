@@ -565,7 +565,25 @@ async function initAdmin() {
 
         document.getElementById('sourcingId').value = req.id;
         document.getElementById('sourcingUserEmail').innerText = req.user_email;
-        document.getElementById('sourcingUserMessage').innerText = req.user_message || '없음';
+        // Parse message: extract image URLs that were embedded as text (🖼️ 첨부 이미지: ...)
+        const rawMsg = req.user_message || '없음';
+        const imgSectionMatch = rawMsg.match(/🖼️ 첨부 이미지:\n([\s\S]*?)(\n\n|$)/);
+        let textPart = rawMsg;
+        let imgUrls = [];
+        if (imgSectionMatch) {
+            imgUrls = imgSectionMatch[1].trim().split('\n').filter(u => u.startsWith('http'));
+            textPart = rawMsg.replace(imgSectionMatch[0], '').trim();
+        }
+        const msgEl = document.getElementById('sourcingUserMessage');
+        const imgHtml = imgUrls.length > 0
+            ? `<div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid #eee;">
+                 <div style="width:100%; font-size:12px; font-weight:600; color:#666; margin-bottom:4px;">📷 첨부 이미지 (${imgUrls.length}장)</div>
+                 ${imgUrls.map(u => `<a href="${u}" target="_blank" title="클릭하여 원본 보기">
+                   <img src="${u}" style="width:80px; height:80px; object-fit:cover; border-radius:8px; border:1px solid #ddd; cursor:pointer;">
+                 </a>`).join('')}
+               </div>`
+            : '';
+        msgEl.innerHTML = `<div style="white-space:pre-wrap;">${textPart.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>${imgHtml}`;
         document.getElementById('sourcingStatus').value = req.status || 'pending';
         // Cost breakdown logic
         const shippingFee = req.shipping_fee || 0;
