@@ -2979,10 +2979,13 @@ window.openMyPageModal = async function () {
   const cancelBtn = document.getElementById('cancelSubscriptionBtn');
 
   const tier = (profile.subscription_tier || 'free').toLowerCase();
+  const expiryDate = profile.subscription_expires_at ? new Date(profile.subscription_expires_at) : null;
+  const isExpired = expiryDate ? expiryDate < new Date() : false;
+  const effectiveTier = (tier === 'pro' && isExpired) ? 'free' : tier;
 
   if (planBadge) {
-    planBadge.textContent = tier === 'pro' ? 'Pro' : 'Free';
-    planBadge.className = `plan-badge ${tier === 'pro' ? 'pro' : ''}`;
+    planBadge.textContent = effectiveTier === 'pro' ? 'Pro' : 'Free';
+    planBadge.className = `plan-badge ${effectiveTier === 'pro' ? 'pro' : ''}`;
   }
 
   // Helper for Date Formatting
@@ -2993,15 +2996,19 @@ window.openMyPageModal = async function () {
   if (planDesc) {
     if (profile.role === 'admin') {
       planDesc.textContent = window.t('mypage.status_admin');
-    } else if (tier === 'pro') {
+    } else if (effectiveTier === 'pro') {
       if (profile.subscription_id) {
         planDesc.textContent = window.t('mypage.status_pro_active');
         if (cancelBtn) cancelBtn.style.display = 'block';
       } else {
-        const dateStr = fmtDate(profile.expires_at);
+        const dateStr = fmtDate(expiryDate);
         planDesc.textContent = window.t('mypage.status_pro_cancelled').replace('{date}', dateStr);
         if (cancelBtn) cancelBtn.style.display = 'none';
       }
+    } else if (tier === 'pro' && isExpired) {
+      const dateStr = fmtDate(expiryDate);
+      planDesc.textContent = window.t('mypage.status_expired') ? `${window.t('mypage.status_expired')} (${dateStr})` : `구독 만료됨 (${dateStr})`;
+      if (cancelBtn) cancelBtn.style.display = 'none';
     } else {
       planDesc.textContent = window.t('mypage.status_free');
       if (cancelBtn) cancelBtn.style.display = 'none';
@@ -3011,23 +3018,20 @@ window.openMyPageModal = async function () {
   if (expiresAt) {
     if (profile.role === 'admin') {
       expiresAt.textContent = window.t('mypage.status_admin');
-    } else if (profile.expires_at) {
-      const d = new Date(profile.expires_at);
-      const isExpired = d < new Date();
-      const dateStr = fmtDate(d);
-
+    } else if (expiryDate) {
+      const dateStr = fmtDate(expiryDate);
       if (isExpired) {
-        expiresAt.textContent = `${window.t('mypage.status_expired')} (${dateStr})`;
-        expiresAt.style.color = 'var(--text-danger)';
+        expiresAt.textContent = `${window.t('mypage.status_expired') || '만료됨'} (${dateStr})`;
+        expiresAt.style.color = 'var(--accent-red, #e03131)';
       } else if (profile.subscription_id) {
-        expiresAt.textContent = `${dateStr} (${window.t('mypage.status_auto_renew')})`;
+        expiresAt.textContent = `${dateStr} (${window.t('mypage.status_auto_renew') || '자동 갱신'})`;
         expiresAt.style.color = 'var(--accent-blue)';
       } else {
-        expiresAt.textContent = `${dateStr} (${window.t('mypage.status_no_renew')})`;
+        expiresAt.textContent = `${dateStr} (${window.t('mypage.status_no_renew') || '갱신 안함'})`;
         expiresAt.style.color = 'var(--text-secondary)';
       }
     } else {
-      expiresAt.textContent = window.t('common.no_time_limit') || '-';
+      expiresAt.textContent = '무제한';
     }
   }
 
