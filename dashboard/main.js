@@ -82,6 +82,31 @@ const state = {
 };
 
 // ─── Platform Management ────────────────────
+let isNavigatingHistory = false;
+
+function updateURL(isReplace = false) {
+  if (isNavigatingHistory) return;
+  const url = new URL(window.location.href);
+  url.searchParams.set('platform', state.currentPlatform);
+  if (state.activeTab) url.searchParams.set('tab', state.activeTab);
+  if (state.activeCategory) url.searchParams.set('category', state.activeCategory);
+
+  const stateObj = {
+    platform: state.currentPlatform,
+    tab: state.activeTab,
+    category: state.activeCategory
+  };
+
+  if (isReplace) {
+    history.replaceState(stateObj, '', url.toString());
+  } else {
+    // Only push if URL actually changed
+    if (window.location.href !== url.toString()) {
+      history.pushState(stateObj, '', url.toString());
+    }
+  }
+}
+
 async function setPlatform(platform) {
   if (state.currentPlatform === platform) return;
   state.currentPlatform = platform;
@@ -135,6 +160,8 @@ async function setPlatform(platform) {
     loadKPIs(),
     loadTab(state.activeBridge.tabs[0].id)
   ]);
+
+  updateURL();
 }
 
 // ─── Init ───────────────────────────────────
@@ -142,6 +169,82 @@ document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
   try {
+    // Parse initial URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialPlatform = urlParams.get('platform');
+    const initialTab = urlParams.get('tab');
+    const initialCategory = urlParams.get('category');
+
+    if (initialPlatform && bridges[initialPlatform]) {
+      state.currentPlatform = initialPlatform;
+      state.activeBridge = bridges[initialPlatform];
+      document.body.dataset.platform = initialPlatform;
+    } else {
+      // Default to oliveyoung if no valid platform in URL
+      state.currentPlatform = 'oliveyoung';
+      state.activeBridge = OliveYoungBridge;
+    }
+
+    if (initialTab) {
+      // Ensure tab is valid for the bridge
+      if (state.activeBridge.tabs && state.activeBridge.tabs.some(t => t.id === initialTab)) {
+        state.activeTab = initialTab;
+      }
+    }
+
+    if (initialCategory) {
+      state.activeCategory = initialCategory;
+    }
+
+    // Set initial URL state (replace)
+    updateURL(true);
+
+    // Listen to browser Back/Forward navigation
+    window.addEventListener('popstate', async (e) => {
+      const sp = new URLSearchParams(window.location.search);
+      const plat = sp.get('platform') || 'oliveyoung';
+      const tb = sp.get('tab') || 'all';
+      const cat = sp.get('category');
+
+      isNavigatingHistory = true; // Prevent pushing state while restoring
+
+      // If platform changed
+      if (state.currentPlatform !== plat) {
+        state.activeCategory = cat || null; // Restore category early so setPlatform uses it
+        state.activeTab = tb;
+        await setPlatform(plat);
+      } else {
+        let needsReload = false;
+
+        // If Category changed
+        if (state.activeCategory !== cat && cat) {
+          state.activeCategory = cat;
+          document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+          const chip = document.querySelector(`.chip[data-code="${cat}"]`);
+          if (chip) chip.classList.add('active');
+          needsReload = true;
+        }
+
+        // If Tab changed
+        if (state.activeTab !== tb) {
+          state.activeTab = tb;
+          const container = document.querySelector('.tab-bar');
+          if (container) {
+            container.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            const actT = container.querySelector(`.tab[data-tab="${tb}"]`);
+            if (actT) actT.classList.add('active');
+          }
+          needsReload = true;
+        }
+
+        if (needsReload) {
+          await loadTab(state.activeTab);
+        }
+      }
+
+      isNavigatingHistory = false;
+    });
+
     await i18n.init();
     renderTabs();
     setupEventListeners();
@@ -304,8 +407,8 @@ function switchTab(tab) {
     }
   }
 
+  updateURL();
   loadTab(tab);
-
 }
 
 // ─── Tab Rendering ──────────────────────────
@@ -416,6 +519,7 @@ async function loadCategories() {
         if (!isValidTab) {
           switchTab(state.activeBridge.tabs[0].id);
         } else {
+          updateURL();
           loadTab(state.activeTab);
         }
 
