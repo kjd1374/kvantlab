@@ -3523,7 +3523,7 @@ window.submitQuoteRequest = async function () {
     const imageUrls = [];
     if (__quoteImageFiles.length > 0) {
       const { createClient: mkClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
-      const _sb = mkClient(window.__SUPABASE_URL__, window.__SUPABASE_ANON_KEY__);
+      const _sb = mkClient('https://hgxblbbjlnsfkffwvfao.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhneGJsYmJqbG5zZmtmZnd2ZmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwNjU2ODYsImV4cCI6MjA3OTY0MTY4Nn0.iFmcZvBOR5u47N6H1LwFoNJJe5o1fq61y1IkNeFlPyI');
       for (const file of __quoteImageFiles) {
         const ext = file.name.split('.').pop();
         const path = `quotes/${session.user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
