@@ -7,6 +7,8 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import { fileURLToPath } from 'url';
 import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
+dotenv.config();
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -30,6 +32,14 @@ async function sendSourcingEmailNotification(userEmail, messageBody, itemCount) 
         return;
     }
 
+    // Debug log SMTP credentials (mask password)
+    console.log('[Email] SMTP config:', {
+        host: smtpServer,
+        port: smtpPort,
+        user: smtpUser,
+        password: smtpPassword ? '****' : undefined
+    });
+
     const transporter = nodemailer.createTransport({
         host: smtpServer,
         port: smtpPort,
@@ -49,6 +59,59 @@ async function sendSourcingEmailNotification(userEmail, messageBody, itemCount) 
         console.log('[Email] \u2705 Sourcing notification email sent to', toEmail);
     } catch (e) {
         console.error('[Email] \u274c Failed to send email:', e.message);
+    }
+}
+
+// ─── User Notification Email Helper ───────────────────────────────────────────
+async function sendUserNotificationEmail(userEmail, title, messageBody) {
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPassword = process.env.SMTP_PASSWORD;
+    const smtpServer = process.env.SMTP_SERVER || 'smtp.gmail.com';
+    const smtpPort = parseInt(process.env.SMTP_PORT || '587');
+
+    if (!smtpUser || !smtpPassword) {
+        console.warn('[Email] SMTP credentials not found. Skipping user notification email.');
+        return;
+    }
+
+    if (!userEmail) {
+        console.warn('[Email] User email is empty. Skipping email.');
+        return;
+    }
+
+    const transporter = nodemailer.createTransport({
+        host: smtpServer,
+        port: smtpPort,
+        secure: smtpPort === 465,
+        auth: { user: smtpUser, pass: smtpPassword }
+    });
+
+    const mailOptions = {
+        from: `"K-Vant" <${smtpUser}>`,
+        to: userEmail,
+        subject: `[K-Vant] ${title}`,
+        html: `
+            <div style="font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;max-width:600px;margin:0 auto;padding:30px 20px;">
+                <div style="text-align:center;margin-bottom:30px;">
+                    <h1 style="color:#0071e3;font-size:24px;margin:0;">K-Vant</h1>
+                </div>
+                <div style="background:#f5f5f7;border-radius:12px;padding:24px;margin-bottom:20px;">
+                    <h2 style="color:#1d1d1f;font-size:18px;margin:0 0 12px 0;">${title}</h2>
+                    <p style="color:#424245;font-size:14px;line-height:1.6;margin:0;">${messageBody}</p>
+                </div>
+                <div style="text-align:center;margin-top:24px;">
+                    <a href="https://www.kvantlab.com" style="display:inline-block;background:#0071e3;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;">마이페이지에서 확인하기</a>
+                </div>
+                <p style="color:#86868b;font-size:11px;text-align:center;margin-top:30px;">본 메일은 K-Vant 서비스에서 자동 발송되었습니다.</p>
+            </div>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log('[Email] ✅ User notification email sent to', userEmail);
+    } catch (e) {
+        console.error('[Email] ❌ Failed to send user email:', e.message);
     }
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -321,7 +384,7 @@ app.put('/api/admin/sourcing/:id', async (req, res) => {
         // First get the user_id of this request
         const { data: reqData, error: reqErr } = await supabase
             .from('sourcing_requests')
-            .select('user_id, status')
+            .select('user_id, user_email, status')
             .eq('id', id)
             .single();
 
@@ -371,6 +434,11 @@ app.put('/api/admin/sourcing/:id', async (req, res) => {
             }).then(({ error }) => {
                 if (error) console.error("Notification insert error:", error);
             });
+
+            // Send email notification to the user (fire and forget)
+            if (reqData.user_email) {
+                sendUserNotificationEmail(reqData.user_email, title, msg);
+            }
         }
 
         res.json({ success: true, message: 'Request updated successfully.' });
@@ -445,7 +513,7 @@ app.put('/api/admin/search-requests/:id', async (req, res) => {
     try {
         const { data: reqData } = await supabase
             .from('product_search_requests')
-            .select('user_id')
+            .select('user_id, user_email')
             .eq('id', id)
             .single();
 
@@ -465,6 +533,11 @@ app.put('/api/admin/search-requests/:id', async (req, res) => {
                 user_id: reqData.user_id, type: 'search_request',
                 title, message: msg, link: 'sourcing', is_read: false
             }).then(() => { });
+
+            // Send email notification to the user
+            if (reqData.user_email) {
+                sendUserNotificationEmail(reqData.user_email, title, msg);
+            }
         }
         res.json({ success: true });
     } catch (error) {
