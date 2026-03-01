@@ -241,19 +241,38 @@ app.post('/api/auth/verify-otp', async (req, res) => {
         await supabase.from('email_otp').delete().eq('email', email.toLowerCase());
 
         // Check if user already exists in Supabase Auth
-        const { data: { users } } = await supabase.auth.admin.listUsers();
-        let user = users.find(u => u.email === email.toLowerCase());
+        let user = null;
+
+        // Try to find existing user by email (more reliable than listUsers which has pagination)
+        const { data: existingUsers } = await supabase.auth.admin.listUsers();
+        user = existingUsers?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase()) || null;
 
         if (!user) {
             // Create a new user with a temporary password (will be updated during signup)
             const tempPassword = `TEMP_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-            const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
-                email: email.toLowerCase(),
-                password: tempPassword,
-                email_confirm: true
-            });
-            if (createError) throw createError;
-            user = newUser.user;
+            try {
+                const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+                    email: email.toLowerCase(),
+                    password: tempPassword,
+                    email_confirm: true
+                });
+                if (createError) {
+                    // If user already exists (race condition), try to find again
+                    if (createError.message?.includes('already') || createError.message?.includes('exists') || createError.message?.includes('duplicate')) {
+                        console.log('[OTP] User already exists, fetching...');
+                        const { data: retryUsers } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+                        user = retryUsers?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+                        if (!user) throw new Error('User exists but cannot be found');
+                    } else {
+                        throw createError;
+                    }
+                } else {
+                    user = newUser.user;
+                }
+            } catch (createErr) {
+                console.error('[OTP] Create user error:', createErr);
+                throw new Error('사용자 생성 오류: ' + (createErr.message || createErr));
+            }
         }
 
         res.json({
