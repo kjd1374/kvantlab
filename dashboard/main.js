@@ -3427,9 +3427,9 @@ function renderPayPalButtons() {
     alert('결제 설정(Plan ID)이 누락되었습니다. 관리자에게 문의해주세요.');
     return;
   }
-  ppContainer.innerHTML = ''; // Clear previous content
 
-  paypal.Buttons({
+  // Check eligibility for subscriptions
+  const buttons = paypal.Buttons({
     style: {
       shape: 'rect',
       color: 'gold',
@@ -3437,11 +3437,11 @@ function renderPayPalButtons() {
       label: 'subscribe'
     },
     createSubscription: function (data, actions) {
-      console.log('Creating subscription with Plan ID:', planId);
+      console.log('[PayPal Debug] Creating subscription with Plan ID:', planId);
       return actions.subscription.create({ plan_id: planId });
     },
     onApprove: async function (data, actions) {
-      console.log('PayPal subscription approved:', data.subscriptionID);
+      console.log('[PayPal Debug] PayPal subscription approved:', data.subscriptionID);
       const session = getSession();
       if (!session) {
         alert('로그인이 필요합니다.');
@@ -3466,21 +3466,30 @@ function renderPayPalButtons() {
           alert(result.error || '구독 활성화 실패');
         }
       } catch (err) {
-        console.error('Subscription activation error:', err);
+        console.error('[PayPal Debug] Subscription activation error:', err);
         alert('오류가 발생했습니다. / An error occurred.');
       }
     },
     onError: function (err) {
-      console.error('PayPal error:', err);
+      console.error('[PayPal Debug] onError triggered:', err);
       const errMsg = err?.message || JSON.stringify(err) || 'Unknown PayPal Error';
-      alert('PayPal 결제 중 오류가 발생했습니다!\nPlan ID: ' + planId + '\n에러 내용: ' + errMsg + '\n다시 시도해주세요.');
+      alert('PayPal 결제 중 오류가 발생했습니다!\nPlan ID: ' + planId + '\n에러 내용: ' + errMsg + '\n\n참고: 시크릿 모드/사파리인 경우 작동하지 않을 수 있습니다. 일반 브라우저에서 다시 시도해주세요.');
     },
     onCancel: function () {
-      console.log('PayPal subscription cancelled by user');
+      console.log('[PayPal Debug] PayPal subscription cancelled by user');
     }
-  }).render('#paypal-button-container');
+  });
 
-  paypalButtonsRendered = true;
+  if (buttons.isEligible()) {
+    console.log('[PayPal Debug] Buttons are eligible, rendering now...');
+    buttons.render('#paypal-button-container').catch(err => {
+      console.error('[PayPal Debug] Render failed:', err);
+    });
+    paypalButtonsRendered = true;
+  } else {
+    console.error('[PayPal Debug] Buttons are NOT eligible for this account/configuration.');
+    ppContainer.innerHTML = '<div style="color:#e03131; font-size:13px; text-align:center; padding:10px;">결제 버튼을 불러올 수 없습니다. (Ineligible)</div>';
+  }
 }
 // Renew Subscription Handler (for expired or free users → toggle PayPal flow)
 const renewBtn = document.getElementById('renewSubscriptionBtn');
