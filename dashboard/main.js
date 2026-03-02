@@ -3398,7 +3398,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 });
 
-// ── PayPal Button Rendering Helper (Live/Sandbox Sync) ──
+// ── PayPal Button Rendering Helper (Live Sync) ──
 let paypalButtonsRendered = false;
 function renderPayPalButtons() {
   const ppContainer = document.getElementById('paypal-button-container');
