@@ -3466,7 +3466,14 @@ function renderPayPalButtons() {
     },
     createSubscription: function (data, actions) {
       console.log('[PayPal Debug] Creating subscription with Plan ID:', planId);
-      return actions.subscription.create({ plan_id: planId });
+      return actions.subscription.create({
+        plan_id: planId,
+        application_context: {
+          brand_name: 'Kvantlab',
+          shipping_preference: 'NO_SHIPPING',
+          user_action: 'SUBSCRIBE_NOW'
+        }
+      });
     },
     onApprove: async function (data, actions) {
       console.log('[PayPal Debug] PayPal subscription approved:', data.subscriptionID);
