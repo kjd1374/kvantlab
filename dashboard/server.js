@@ -305,7 +305,18 @@ app.post('/api/auth/complete-signup', async (req, res) => {
         });
         if (pwError) throw pwError;
 
-        // Upsert profile data — 2-week Pro trial for new signups
+        // Check if this email had a previous trial (trial abuse prevention)
+        const { data: deletedRecord } = await supabase
+            .from('deleted_accounts')
+            .select('had_trial')
+            .eq('email', email.toLowerCase())
+            .eq('had_trial', true)
+            .limit(1)
+            .maybeSingle();
+
+        const hadPreviousTrial = !!deletedRecord;
+
+        // Upsert profile data — 2-week Pro trial for new signups (skip if had previous trial)
         const trialExpiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
         const { error: profileError } = await supabase
             .from('profiles')
@@ -315,8 +326,8 @@ app.post('/api/auth/complete-signup', async (req, res) => {
                 company: company || '',
                 primary_platform: primary_platform || '',
                 primary_category: primary_category || '',
-                subscription_tier: 'pro',
-                subscription_expires_at: trialExpiresAt,
+                subscription_tier: hadPreviousTrial ? 'free' : 'pro',
+                subscription_expires_at: hadPreviousTrial ? null : trialExpiresAt,
                 daily_usage: 0,
                 role: 'user'
             }, { onConflict: 'id' });
@@ -326,8 +337,7 @@ app.post('/api/auth/complete-signup', async (req, res) => {
         }
 
         // Insert welcome notifications (fire and forget)
-        const trialEndDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString('ko-KR');
-        supabase.from('user_notifications').insert([
+        const notifications = [
             {
                 user_id: userId,
                 type: 'system',
@@ -335,16 +345,31 @@ app.post('/api/auth/complete-signup', async (req, res) => {
                 message: `${name || '회원'}님, 가입을 축하합니다! K-Vant Intelligence에서 트렌드 분석과 소싱 도구를 활용해보세요.`,
                 link: null,
                 is_read: false
-            },
-            {
+            }
+        ];
+
+        if (!hadPreviousTrial) {
+            const trialEndDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString('ko-KR');
+            notifications.push({
                 user_id: userId,
                 type: 'system',
                 title: '🎁 2주간 Pro 플랜 무료 체험!',
                 message: `가입 축하 혜택으로 ${trialEndDate}까지 Pro 플랜이 무료 적용됩니다. 모든 프리미엄 기능을 자유롭게 이용해보세요!`,
                 link: 'billing',
                 is_read: false
-            }
-        ]).then(({ error }) => {
+            });
+        } else {
+            notifications.push({
+                user_id: userId,
+                type: 'system',
+                title: '📋 무료 플랜으로 가입되었습니다',
+                message: '이전에 Pro 체험을 이용하셨기 때문에 무료 플랜으로 시작합니다. 구독 갱신으로 Pro 플랜을 이용하실 수 있습니다.',
+                link: 'billing',
+                is_read: false
+            });
+        }
+
+        supabase.from('user_notifications').insert(notifications).then(({ error }) => {
             if (error) console.error('[Signup] Welcome notification error:', error.message);
         });
 
@@ -449,6 +474,21 @@ app.post('/api/admin/users/reset-password', async (req, res) => {
 app.delete('/api/admin/users/:id', async (req, res) => {
     const { id } = req.params;
     try {
+        // Fetch user email and profile before deletion (for deleted_accounts record)
+        const { data: { user: authUser } } = await supabase.auth.admin.getUserById(id);
+        const { data: profile } = await supabase.from('profiles').select('subscription_tier, subscription_expires_at, created_at').eq('id', id).single();
+
+        // Record in deleted_accounts for trial abuse prevention
+        if (authUser?.email) {
+            const hadTrial = profile?.subscription_tier === 'pro';
+            await supabase.from('deleted_accounts').insert({
+                email: authUser.email.toLowerCase(),
+                had_trial: hadTrial,
+                subscription_tier: profile?.subscription_tier || 'free',
+                original_created_at: profile?.created_at || null
+            });
+        }
+
         // Clean up related data first
         await supabase.from('sourcing_requests').delete().eq('user_id', id);
         await supabase.from('search_requests').delete().eq('user_id', id);
@@ -472,13 +512,26 @@ app.post('/api/user/delete', async (req, res) => {
     if (!userId) return res.status(400).json({ success: false, error: 'Missing userId' });
 
     try {
-        // Cancel PayPal subscription if active
+        // Fetch user email and profile before deletion
+        const { data: { user: authUser } } = await supabase.auth.admin.getUserById(userId);
         const { data: profile } = await supabase
             .from('profiles')
-            .select('subscription_id')
+            .select('subscription_id, subscription_tier, subscription_expires_at, created_at')
             .eq('id', userId)
             .single();
 
+        // Record in deleted_accounts for trial abuse prevention
+        if (authUser?.email) {
+            const hadTrial = profile?.subscription_tier === 'pro';
+            await supabase.from('deleted_accounts').insert({
+                email: authUser.email.toLowerCase(),
+                had_trial: hadTrial,
+                subscription_tier: profile?.subscription_tier || 'free',
+                original_created_at: profile?.created_at || null
+            });
+        }
+
+        // Cancel PayPal subscription if active
         if (profile?.subscription_id) {
             try {
                 const clientId = process.env.PAYPAL_CLIENT_ID;
