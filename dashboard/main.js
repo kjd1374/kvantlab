@@ -3496,6 +3496,7 @@ document.addEventListener('DOMContentLoaded', () => {
         label: 'subscribe'
       },
       createSubscription: function (data, actions) {
+        console.log('Creating subscription with Plan ID:', planId);
         return actions.subscription.create({ plan_id: planId });
       },
       onApprove: async function (data, actions) {
@@ -3530,7 +3531,8 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       onError: function (err) {
         console.error('PayPal error:', err);
-        alert('PayPal 결제 중 오류가 발생했습니다. 다시 시도해주세요.');
+        const errMsg = err?.message || JSON.stringify(err) || 'Unknown PayPal Error';
+        alert('PayPal 결제 중 오류가 발생했습니다: ' + errMsg + '\n다시 시도해주세요.');
       },
       onCancel: function () {
         console.log('PayPal subscription cancelled by user');
