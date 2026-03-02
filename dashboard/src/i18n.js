@@ -46,6 +46,15 @@ const FALLBACK_STRINGS = {
     'mypage.btn_renew': { 'ko': '🔄 구독 갱신 (Renew)', 'en': '🔄 Renew Subscription' },
     'mypage.btn_extend': { 'ko': '⏳ 구독 연장 (Extend)', 'en': '⏳ Extend Subscription' },
     'mypage.btn_cancel': { 'ko': '🚫 구독 해지 (Cancel)', 'en': '🚫 Cancel Subscription' },
+    'mypage.status_free': { 'ko': '현재 무료 플랜을 이용 중입니다. (일일 상세 조회 10회 제한)', 'en': 'You are on the Free plan. (Limited to 10 daily detail views)' },
+    'mypage.status_trial': { 'ko': '🎉 2주간 Pro 체험 기간입니다! ({date}까지)', 'en': '🎉 2-week Pro trial active! (Until {date})' },
+    'mypage.status_pro_active': { 'ko': 'Pro 플랜 이용 중 (자동 갱신)', 'en': 'Pro plan active (Auto-renewal)' },
+    'mypage.status_pro_cancelled': { 'ko': '{date}까지 Pro 이용 가능', 'en': 'Pro access until {date}' },
+    'mypage.status_expired': { 'ko': '구독 만료됨', 'en': 'Subscription expired' },
+    'mypage.status_admin': { 'ko': '관리자 (무제한)', 'en': 'Admin (Unlimited)' },
+    'mypage.status_auto_renew': { 'ko': '자동 갱신', 'en': 'Auto-renewal' },
+    'mypage.status_no_renew': { 'ko': '갱신 안함', 'en': 'No auto-renewal' },
+    'mypage.status_trial_until': { 'ko': '체험 종료일', 'en': 'Trial ends' },
 
     // Korea Trends – Tab names
     'tabs.global_trends': { ko: '🌏 글로벌 트렌드', en: '🌏 Global Trends' },

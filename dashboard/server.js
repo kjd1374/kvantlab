@@ -325,6 +325,29 @@ app.post('/api/auth/complete-signup', async (req, res) => {
             console.warn('[Signup] Profile update warning:', profileError.message);
         }
 
+        // Insert welcome notifications (fire and forget)
+        const trialEndDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString('ko-KR');
+        supabase.from('user_notifications').insert([
+            {
+                user_id: userId,
+                type: 'system',
+                title: '🎉 K-Vant에 오신 것을 환영합니다!',
+                message: `${name || '회원'}님, 가입을 축하합니다! K-Vant Intelligence에서 트렌드 분석과 소싱 도구를 활용해보세요.`,
+                link: null,
+                is_read: false
+            },
+            {
+                user_id: userId,
+                type: 'system',
+                title: '🎁 2주간 Pro 플랜 무료 체험!',
+                message: `가입 축하 혜택으로 ${trialEndDate}까지 Pro 플랜이 무료 적용됩니다. 모든 프리미엄 기능을 자유롭게 이용해보세요!`,
+                link: 'billing',
+                is_read: false
+            }
+        ]).then(({ error }) => {
+            if (error) console.error('[Signup] Welcome notification error:', error.message);
+        });
+
         // Sign the user in to get a valid session token
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
             email: email,

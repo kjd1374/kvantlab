@@ -3117,14 +3117,23 @@ window.openMyPageModal = async function () {
   if (extendBtn) extendBtn.style.display = 'none';
   if (cancelBtn) cancelBtn.style.display = 'none';
 
+  // Detect trial user: Pro tier, no subscription_id, account created within 14 days
+  const createdDate = profile.created_at ? new Date(profile.created_at) : null;
+  const daysSinceCreation = createdDate ? Math.ceil((now - createdDate) / (1000 * 60 * 60 * 24)) : null;
+  const isTrial = effectiveTier === 'pro' && !profile.subscription_id && daysSinceCreation !== null && daysSinceCreation <= 14;
+
   if (planDesc) {
     if (profile.role === 'admin') {
       planDesc.textContent = window.t('mypage.status_admin');
     } else if (tier === 'pro' && isExpired) {
       // Expired PRO → show Renew button
       const dateStr = fmtDate(expiryDate);
-      planDesc.textContent = window.t('mypage.status_expired') ? `${window.t('mypage.status_expired')} (${dateStr})` : `구독 만료됨 (${dateStr})`;
+      planDesc.textContent = `${window.t('mypage.status_expired')} (${dateStr})`;
       if (renewBtn) renewBtn.style.display = 'block';
+    } else if (isTrial) {
+      // Trial user (Pro trial, no subscription)
+      const dateStr = fmtDate(expiryDate);
+      planDesc.textContent = window.t('mypage.status_trial').replace('{date}', dateStr);
     } else if (effectiveTier === 'pro') {
       if (profile.subscription_id) {
         // Active auto-renewing PRO
@@ -3157,13 +3166,16 @@ window.openMyPageModal = async function () {
     } else if (expiryDate) {
       const dateStr = fmtDate(expiryDate);
       if (isExpired) {
-        expiresAt.textContent = `${window.t('mypage.status_expired') || '만료됨'} (${dateStr})`;
+        expiresAt.textContent = `${window.t('mypage.status_expired')} (${dateStr})`;
         expiresAt.style.color = 'var(--accent-red, #e03131)';
+      } else if (isTrial) {
+        expiresAt.textContent = `${dateStr}`;
+        expiresAt.style.color = 'var(--accent-blue)';
       } else if (profile.subscription_id) {
-        expiresAt.textContent = `${dateStr} (${window.t('mypage.status_auto_renew') || '자동 갱신'})`;
+        expiresAt.textContent = `${dateStr} (${window.t('mypage.status_auto_renew')})`;
         expiresAt.style.color = 'var(--accent-blue)';
       } else {
-        expiresAt.textContent = `${dateStr} (${window.t('mypage.status_no_renew') || '갱신 안함'})`;
+        expiresAt.textContent = `${dateStr} (${window.t('mypage.status_no_renew')})`;
         expiresAt.style.color = 'var(--text-secondary)';
       }
       // Show "D-day" badge if expiring soon
