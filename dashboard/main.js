@@ -3532,7 +3532,7 @@ document.addEventListener('DOMContentLoaded', () => {
       onError: function (err) {
         console.error('PayPal error:', err);
         const errMsg = err?.message || JSON.stringify(err) || 'Unknown PayPal Error';
-        alert('PayPal 결제 중 오류가 발생했습니다: ' + errMsg + '\n다시 시도해주세요.');
+        alert('PayPal 결제 중 오류가 발생했습니다!\nPlan ID: ' + planId + '\n에러 내용: ' + errMsg + '\n다시 시도해주세요.');
       },
       onCancel: function () {
         console.log('PayPal subscription cancelled by user');
