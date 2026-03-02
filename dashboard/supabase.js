@@ -600,7 +600,7 @@ export async function updateUserPassword(password) {
 }
 
 export async function updateUserProfile(userId, profileData) {
-    const token = localStorage.getItem('sb-token');
+    const token = sessionStorage.getItem('sb-token');
     const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
         method: 'PATCH',
         headers: { ...headers, Authorization: `Bearer ${token}`, 'Prefer': 'return=representation' },
@@ -608,7 +608,7 @@ export async function updateUserProfile(userId, profileData) {
     });
     const data = await res.json();
     if (res.ok && data && data.length > 0) {
-        localStorage.setItem('sb-profile', JSON.stringify(data[0]));
+        sessionStorage.setItem('sb-profile', JSON.stringify(data[0]));
     }
     return { data, error: !res.ok ? data : null };
 }
@@ -624,13 +624,13 @@ export async function signIn(email, password) {
         return { error: data.msg || data.message || data.error_description || '이메일 또는 비밀번호가 올바르지 않습니다.' };
     }
     if (data.access_token) {
-        localStorage.setItem('sb-token', data.access_token);
-        localStorage.setItem('sb-user', JSON.stringify(data.user));
+        sessionStorage.setItem('sb-token', data.access_token);
+        sessionStorage.setItem('sb-user', JSON.stringify(data.user));
 
         // Fetch and store profile (membership tier)
         try {
             const profile = await fetchUserProfile(data.user.id);
-            if (profile) localStorage.setItem('sb-profile', JSON.stringify(profile));
+            if (profile) sessionStorage.setItem('sb-profile', JSON.stringify(profile));
         } catch (e) {
             console.error('Failed to fetch profile on signin:', e);
         }
@@ -647,7 +647,7 @@ export async function fetchUserProfile(userId) {
 }
 
 export function getProfile() {
-    return JSON.parse(localStorage.getItem('sb-profile') || 'null');
+    return JSON.parse(sessionStorage.getItem('sb-profile') || 'null');
 }
 
 /**
@@ -674,14 +674,15 @@ export function incrementDetailViewCount() {
 }
 
 export function signOut() {
-    localStorage.removeItem('sb-token');
-    localStorage.removeItem('sb-user');
+    sessionStorage.removeItem('sb-token');
+    sessionStorage.removeItem('sb-user');
+    sessionStorage.removeItem('sb-profile');
     window.location.reload();
 }
 
 export function getSession() {
-    const token = localStorage.getItem('sb-token');
-    const user = JSON.parse(localStorage.getItem('sb-user') || 'null');
+    const token = sessionStorage.getItem('sb-token');
+    const user = JSON.parse(sessionStorage.getItem('sb-user') || 'null');
     return token ? { access_token: token, user } : null;
 }
 
