@@ -395,24 +395,94 @@ function setupEventListeners() {
 
   // Tutorial Modal Logic
   const tutorialOverlay = document.getElementById('tutorialModalOverlay');
-  const closeTutorialBtn = document.getElementById('closeTutorialBtn');
+  const skipTutorialBtn = document.getElementById('skipTutorialBtn');
+  const tutorialPrevBtn = document.getElementById('tutorialPrevBtn');
+  const tutorialNextBtn = document.getElementById('tutorialNextBtn');
+  const tutorialPrimaryBtn = document.getElementById('tutorialPrimaryBtn');
   const dontShowCheckbox = document.getElementById('dontShowTutorial');
+  const tutorialCarousel = document.getElementById('tutorialCarousel');
+  const tutorialDots = document.querySelectorAll('#tutorialDots .dot');
 
-  if (tutorialOverlay && closeTutorialBtn) {
-    // Show tutorial after a short delay if not hidden
-    setTimeout(() => {
-      const isHidden = localStorage.getItem('hide_tutorial_v1') === 'true';
-      if (!isHidden) {
-        tutorialOverlay.classList.add('open');
+  if (tutorialOverlay && tutorialCarousel) {
+    let currentSlide = 0;
+    const totalSlides = 3;
+
+    function updateTutorialUI() {
+      // Move carousel
+      tutorialCarousel.style.transform = `translateX(-${currentSlide * (100 / totalSlides)}%)`;
+
+      // Update dots
+      if (tutorialDots.length > 0) {
+        tutorialDots.forEach((dot, idx) => {
+          dot.style.background = idx === currentSlide ? '#4f46e5' : '#cbd5e1';
+        });
       }
-    }, 1000);
 
-    closeTutorialBtn.addEventListener('click', () => {
+      // Update buttons
+      if (tutorialPrevBtn) {
+        tutorialPrevBtn.style.display = currentSlide === 0 ? 'none' : 'flex';
+      }
+
+      if (tutorialNextBtn && tutorialPrimaryBtn) {
+        if (currentSlide === totalSlides - 1) {
+          tutorialNextBtn.style.display = 'none';
+          tutorialPrimaryBtn.textContent = window.t ? window.t('tutorial.start_btn') : 'K-Vant 시작하기';
+        } else {
+          tutorialNextBtn.style.display = 'flex';
+          tutorialPrimaryBtn.textContent = window.t ? window.t('tutorial.next_btn') : '다음 (Next)';
+        }
+      }
+    }
+
+    function closeTutorial() {
       if (dontShowCheckbox && dontShowCheckbox.checked) {
         localStorage.setItem('hide_tutorial_v1', 'true');
       }
       tutorialOverlay.classList.remove('open');
-    });
+    }
+
+    if (tutorialNextBtn) {
+      tutorialNextBtn.addEventListener('click', () => {
+        if (currentSlide < totalSlides - 1) {
+          currentSlide++;
+          updateTutorialUI();
+        }
+      });
+    }
+
+    if (tutorialPrevBtn) {
+      tutorialPrevBtn.addEventListener('click', () => {
+        if (currentSlide > 0) {
+          currentSlide--;
+          updateTutorialUI();
+        }
+      });
+    }
+
+    if (tutorialPrimaryBtn) {
+      tutorialPrimaryBtn.addEventListener('click', () => {
+        if (currentSlide < totalSlides - 1) {
+          currentSlide++;
+          updateTutorialUI();
+        } else {
+          closeTutorial();
+        }
+      });
+    }
+
+    if (skipTutorialBtn) {
+      skipTutorialBtn.addEventListener('click', closeTutorial);
+    }
+
+    // Show tutorial after a short delay if not hidden
+    setTimeout(() => {
+      const isHidden = localStorage.getItem('hide_tutorial_v1') === 'true';
+      if (!isHidden) {
+        currentSlide = 0;
+        updateTutorialUI();
+        tutorialOverlay.classList.add('open');
+      }
+    }, 1000);
   }
 }
 

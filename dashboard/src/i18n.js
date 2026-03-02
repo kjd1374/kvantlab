@@ -72,6 +72,7 @@ const FALLBACK_STRINGS = {
     'tutorial.step3_title': { 'ko': 'Pro 버전을 통한 무제한 분석', 'en': 'Unlimited Analysis with Pro' },
     'tutorial.step3_desc': { 'ko': 'Free 버전을 통해 경험해보신 후, Pro 플랜으로 업그레이드하여 AI 브랜드 리뷰 마이닝 및 제한 없는 상세 상품 데이터 조회를 시작하세요. Pro 회원에게는 소싱 수수료 감면 혜택도 주어집니다.', 'en': 'Experience the Free version, then upgrade to Pro for AI brand review mining and unlimited detailed product data access. Pro members also get exclusive discounts on sourcing fees.' },
     'tutorial.start_btn': { 'ko': 'K-Vant 시작하기', 'en': 'Start K-Vant' },
+    'tutorial.next_btn': { 'ko': '다음 (Next)', 'en': 'Next' },
     'tutorial.dont_show': { 'ko': '다시 보지 않기', 'en': 'Don\'t show again' },
 
     // Korea Trends – Tab names
