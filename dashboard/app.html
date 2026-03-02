@@ -597,7 +597,7 @@
   <!-- Onboarding Tutorial Modal (Carousel) -->
   <div class="modal-overlay" id="tutorialModalOverlay">
     <div class="modal-content"
-      style="max-width: 800px; padding: 0; overflow: hidden; background: #fff; position: relative; border-radius: 16px;">
+      style="max-width: 800px; padding: 0; overflow: hidden; background: #fff; position: relative; border-radius: 16px; display: flex; flex-direction: column;">
 
       <!-- Close / Skip Button -->
       <button id="skipTutorialBtn"
@@ -605,10 +605,10 @@
 
       <!-- Carousel Container -->
       <div id="tutorialCarousel"
-        style="display: flex; transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); width: 300%;">
+        style="display: flex; flex-wrap: nowrap; transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); width: 300%; flex: 1;">
 
         <!-- Slide 1 -->
-        <div class="tutorial-slide" style="width: 33.333%;">
+        <div class="tutorial-slide" style="flex: 0 0 33.3333%; width: 33.3333%;">
           <div
             style="height: 400px; background: #f8fafc; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #e2e8f0; position: relative;">
             <div
@@ -626,12 +626,13 @@
               data-i18n="tutorial.step1_title">실시간 급상승 브랜드 포착</h3>
             <p style="font-size: 15px; color: #475569; line-height: 1.6; max-width: 600px; margin: 0 auto;"
               data-i18n="tutorial.step1_desc">한국 1위 H&B 스토어(올리브영)와 패션 플랫폼(무신사)에서 지금 현지인들이 가장 많이 찾는 브랜드를 실시간으로 확인하세요.
-              <strong>BETA로 제공되는 코리아 트렌드/스테디 셀러</strong> 탭은 최고의 소싱 소스입니다.</p>
+              <strong>BETA로 제공되는 코리아 트렌드/스테디 셀러</strong> 탭은 최고의 소싱 소스입니다.
+            </p>
           </div>
         </div>
 
         <!-- Slide 2 -->
-        <div class="tutorial-slide" style="width: 33.333%;">
+        <div class="tutorial-slide" style="flex: 0 0 33.3333%; width: 33.3333%;">
           <div
             style="height: 400px; background: #f8fafc; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #e2e8f0; position: relative;">
             <div
@@ -654,7 +655,7 @@
         </div>
 
         <!-- Slide 3 -->
-        <div class="tutorial-slide" style="width: 33.333%;">
+        <div class="tutorial-slide" style="flex: 0 0 33.3333%; width: 33.3333%;">
           <div
             style="height: 400px; background: #f8fafc; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #e2e8f0; position: relative;">
             <div
