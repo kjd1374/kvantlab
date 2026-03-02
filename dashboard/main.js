@@ -3406,6 +3406,12 @@ function renderPayPalButtons() {
 
   if (!ppContainer) return;
 
+  // Reset flag if container was emptied (e.g. navigating away and back)
+  if (paypalButtonsRendered && ppContainer.children.length === 0) {
+    console.log('[PayPal Debug] Container was emptied, resetting rendered flag.');
+    paypalButtonsRendered = false;
+  }
+
   // If already rendered AND the container still has children, don't re-render
   if (paypalButtonsRendered && ppContainer.children.length > 0) {
     console.log('[PayPal Debug] Already rendered and container not empty, skipping.');
@@ -3427,6 +3433,9 @@ function renderPayPalButtons() {
     alert('결제 설정(Plan ID)이 누락되었습니다. 관리자에게 문의해주세요.');
     return;
   }
+
+  // Clear container before rendering fresh buttons
+  ppContainer.innerHTML = '';
 
   // Check eligibility for subscriptions
   const buttons = paypal.Buttons({
@@ -3472,6 +3481,7 @@ function renderPayPalButtons() {
     },
     onError: function (err) {
       console.error('[PayPal Debug] onError triggered:', err);
+      console.error('[PayPal Debug] Error details:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
       const errMsg = err?.message || JSON.stringify(err) || 'Unknown PayPal Error';
       alert('PayPal 결제 중 오류가 발생했습니다!\nPlan ID: ' + planId + '\n에러 내용: ' + errMsg + '\n\n참고: 시크릿 모드/사파리인 경우 작동하지 않을 수 있습니다. 일반 브라우저에서 다시 시도해주세요.');
     },

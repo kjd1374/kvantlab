@@ -28,6 +28,14 @@ export default defineConfig({
             '/api/sourcing': {
                 target: 'http://127.0.0.1:6002',
                 changeOrigin: true
+            },
+            '/api/subscription': {
+                target: 'http://127.0.0.1:6002',
+                changeOrigin: true
+            },
+            '/api/paypal': {
+                target: 'http://127.0.0.1:6002',
+                changeOrigin: true
             }
         }
     },
