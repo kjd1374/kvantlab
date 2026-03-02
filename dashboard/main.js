@@ -3418,19 +3418,38 @@ function renderPayPalButtons() {
     return;
   }
 
-  if (typeof paypal === 'undefined') {
-    console.warn('[PayPal Debug] PayPal SDK not yet available, waiting...');
-    setTimeout(renderPayPalButtons, 500);
-    return;
-  }
-
   const planId = (import.meta.env.VITE_PAYPAL_PLAN_ID || '').trim();
   const clientId = (import.meta.env.VITE_PAYPAL_CLIENT_ID || '').trim();
   console.log('[PayPal Debug] Starting render with PlanID:', planId, 'ClientID:', clientId);
 
-  if (!planId) {
-    console.error('[PayPal Debug] PayPal Plan ID is missing');
-    alert('결제 설정(Plan ID)이 누락되었습니다. 관리자에게 문의해주세요.');
+  if (!planId || !clientId) {
+    console.error('[PayPal Debug] PayPal Plan ID or Client ID is missing');
+    alert('결제 설정이 누락되었습니다. 관리자에게 문의해주세요.');
+    return;
+  }
+
+  // Dynamically load PayPal SDK if not already loaded
+  if (typeof paypal === 'undefined') {
+    const existingScript = document.getElementById('paypal-sdk-script');
+    if (!existingScript) {
+      console.log('[PayPal Debug] Injecting PayPal SDK script dynamically...');
+      const script = document.createElement('script');
+      script.id = 'paypal-sdk-script';
+      script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&vault=true&intent=subscription&currency=USD`;
+      script.setAttribute('data-sdk-integration-source', 'button-factory');
+      script.onload = () => {
+        console.log('[PayPal Debug] PayPal SDK loaded directly, re-calling render...');
+        renderPayPalButtons();
+      };
+      script.onerror = () => {
+        console.error('[PayPal Debug] Failed to load PayPal SDK');
+        alert('결제 모듈을 불러오는데 실패했습니다.');
+      };
+      document.head.appendChild(script);
+    } else {
+      console.warn('[PayPal Debug] PayPal SDK script exists but paypal is undefined. Waiting...');
+      setTimeout(renderPayPalButtons, 500);
+    }
     return;
   }
 
