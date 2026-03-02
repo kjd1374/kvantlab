@@ -1,17 +1,14 @@
-const { createClient } = require('@supabase/supabase-js');
-const path = require('path');
-const nodemailer = require('nodemailer');
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
+import path from 'path';
+import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
+import { query } from './supabase_node.js';
+import { fileURLToPath } from 'url';
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config(); // Loads .env for SMTP credentials
 
-if (!supabaseUrl || !supabaseKey) {
-    console.error('Error: SUPABASE_URL and SUPABASE_KEY are required.');
-    process.exit(1);
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+const EXPECTED_SOURCES = ['oliveyoung', 'musinsa', 'ably', 'shinsegae'];
 
 async function sendAlertEmail(subject, message) {
     const smtpUser = process.env.SMTP_USER;
@@ -52,32 +49,30 @@ async function checkProgress() {
     console.log(`Checking progress for date: ${today}`);
 
     try {
-        const { data, error } = await supabase
-            .from('daily_rankings_v2')
-            .select('source, category_code, created_at')
-            .eq('date', today)
-            .eq('source', 'oliveyoung');
-
-        if (error) throw error;
+        const { data } = await query('daily_rankings_v2', `select=source,category_code&date=eq.${today}`);
 
         const stats = {};
-        let total = 0;
-
-        data.forEach(row => {
+        (data || []).forEach(row => {
+            const src = row.source || 'unknown';
             const cat = row.category_code || 'unknown';
-            if (!stats[cat]) stats[cat] = 0;
-            stats[cat]++;
-            total++;
+            if (!stats[src]) stats[src] = { total: 0, categories: {} };
+            if (!stats[src].categories[cat]) stats[src].categories[cat] = 0;
+
+            stats[src].total++;
+            stats[src].categories[cat]++;
         });
 
-        console.log(`Total Olive Young rows today: ${total}`);
-        if (total === 0) {
-            console.error('CRITICAL: 0 rows found for today! Alerting Admin.');
-            await sendAlertEmail('Crawling Failed - 0 records today', `The crawler failed to fetch any data from Olive Young for ${today}. Please check the server logs immediately as the UI might appear empty to users.`);
-        } else {
-            console.log('Breakdown by Category Code:');
-            for (const [cat, count] of Object.entries(stats)) {
-                console.log(`- ${cat}: ${count}`);
+        for (const source of EXPECTED_SOURCES) {
+            const sourceStats = stats[source];
+            if (!sourceStats || sourceStats.total === 0) {
+                console.error(`CRITICAL: 0 rows found for ${source} today! Alerting Admin.`);
+                await sendAlertEmail(`Crawling Failed - ${source}`, `The crawler failed to fetch any data from ${source} for ${today}. Please check the server logs immediately as the UI might appear empty to users.`);
+            } else {
+                console.log(`\nTotal ${source} rows today: ${sourceStats.total}`);
+                console.log('Breakdown by Category Code:');
+                for (const [cat, count] of Object.entries(sourceStats.categories)) {
+                    console.log(`- ${cat}: ${count}`);
+                }
             }
         }
 
