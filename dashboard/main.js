@@ -3418,8 +3418,8 @@ function renderPayPalButtons() {
     return;
   }
 
-  const planId = import.meta.env.VITE_PAYPAL_PLAN_ID;
-  const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+  const planId = (import.meta.env.VITE_PAYPAL_PLAN_ID || '').trim();
+  const clientId = (import.meta.env.VITE_PAYPAL_CLIENT_ID || '').trim();
   console.log('[PayPal Debug] Starting render with PlanID:', planId, 'ClientID:', clientId);
 
   if (!planId) {
