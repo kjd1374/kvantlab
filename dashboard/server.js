@@ -1,4 +1,5 @@
 import express from 'express';
+import fetch from 'node-fetch';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import { exec } from 'child_process';
@@ -534,30 +535,29 @@ app.post('/api/user/delete', async (req, res) => {
         // Cancel PayPal subscription if active
         if (profile?.subscription_id) {
             try {
-                const clientId = process.env.PAYPAL_CLIENT_ID;
-                const secret = process.env.PAYPAL_SECRET;
+                const accessToken = await getPayPalAccessToken();
                 const environmentUrl = process.env.PAYPAL_MODE === 'live'
                     ? 'https://api-m.paypal.com'
                     : 'https://api-m.sandbox.paypal.com';
-                const auth = Buffer.from(`${clientId}:${secret}`).toString('base64');
-                const tokenResponse = await fetch(`${environmentUrl}/v1/oauth2/token`, {
+
+                const response = await fetch(`${environmentUrl}/v1/billing/subscriptions/${profile.subscription_id}/cancel`, {
                     method: 'POST',
-                    body: 'grant_type=client_credentials',
                     headers: {
-                        'Authorization': `Basic ${auth}`,
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    }
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify({ reason: 'User account deletion' })
                 });
-                const tokenData = await tokenResponse.json();
-                if (tokenResponse.ok) {
-                    await fetch(`${environmentUrl}/v1/billing/subscriptions/${profile.subscription_id}/cancel`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${tokenData.access_token}`
-                        },
-                        body: JSON.stringify({ reason: 'User account deletion' })
-                    });
+
+                if (!response.ok && response.status !== 204) {
+                    const errorData = await response.json();
+                    console.warn('PayPal cancel during delete (non-fatal):', errorData.message || response.statusText);
+                } else {
+                    // Update profile: clear subscription_id but KEEP pro tier until it expires
+                    await supabase
+                        .from('profiles')
+                        .update({ subscription_id: null })
+                        .eq('id', userId);
                 }
             } catch (ppErr) {
                 console.warn('PayPal cancel during delete (non-fatal):', ppErr.message);
@@ -579,6 +579,122 @@ app.post('/api/user/delete', async (req, res) => {
         res.json({ success: true, message: 'Account deleted successfully.' });
     } catch (error) {
         console.error('Self-delete user error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// --- PayPal Subscription APIs ---
+
+async function getPayPalAccessToken() {
+    const clientId = process.env.PAYPAL_CLIENT_ID;
+    const secret = process.env.PAYPAL_SECRET;
+    const environmentUrl = process.env.PAYPAL_MODE === 'live'
+        ? 'https://api-m.paypal.com'
+        : 'https://api-m.sandbox.paypal.com';
+    const auth = Buffer.from(`${clientId}:${secret}`).toString('base64');
+    const response = await fetch(`${environmentUrl}/v1/oauth2/token`, {
+        method: 'POST',
+        body: 'grant_type=client_credentials',
+        headers: {
+            'Authorization': `Basic ${auth}`,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+    });
+    const data = await response.json();
+    return data.access_token;
+}
+
+app.post('/api/subscription/activate', async (req, res) => {
+    const { userId, subscriptionId } = req.body;
+    if (!userId || !subscriptionId) {
+        return res.status(400).json({ success: false, error: 'Missing userId or subscriptionId' });
+    }
+
+    try {
+        const accessToken = await getPayPalAccessToken();
+        const environmentUrl = process.env.PAYPAL_MODE === 'live'
+            ? 'https://api-m.paypal.com'
+            : 'https://api-m.sandbox.paypal.com';
+
+        // Get subscription details from PayPal
+        const response = await fetch(`${environmentUrl}/v1/billing/subscriptions/${subscriptionId}`, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`PayPal API error: ${errorData.message || response.statusText}`);
+        }
+
+        const subscription = await response.json();
+
+        // Update user profile in Supabase
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+                subscription_tier: 'pro',
+                subscription_id: subscriptionId,
+                subscription_expires_at: subscription.billing_info.next_billing_time
+            })
+            .eq('id', userId);
+
+        if (profileError) throw profileError;
+
+        res.json({ success: true, message: 'Subscription activated successfully' });
+    } catch (error) {
+        console.error('Subscription activation error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/paypal/cancel', async (req, res) => {
+    const { userId } = req.body;
+    try {
+        const { data: profile, error: fetchError } = await supabase
+            .from('profiles')
+            .select('subscription_id')
+            .eq('id', userId)
+            .single();
+
+        if (fetchError || !profile?.subscription_id) {
+            throw new Error('No active subscription found for this user');
+        }
+
+        const accessToken = await getPayPalAccessToken();
+        const environmentUrl = process.env.PAYPAL_MODE === 'live'
+            ? 'https://api-m.paypal.com'
+            : 'https://api-m.sandbox.paypal.com';
+
+        const response = await fetch(`${environmentUrl}/v1/billing/subscriptions/${profile.subscription_id}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({ reason: 'User requested cancellation' })
+        });
+
+        if (!response.ok && response.status !== 204) {
+            const errorData = await response.json();
+            throw new Error(`PayPal API error: ${errorData.message || response.statusText}`);
+        }
+
+        // Update profile: clear subscription_id but KEEP pro tier until it expires
+        const { error: updateError } = await supabase
+            .from('profiles')
+            .update({
+                subscription_id: null
+            })
+            .eq('id', userId);
+
+        if (updateError) throw updateError;
+
+        res.json({ success: true, message: 'Subscription cancelled successfully' });
+    } catch (error) {
+        console.error('Subscription cancel error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
