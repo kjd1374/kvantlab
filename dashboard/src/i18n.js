@@ -55,6 +55,24 @@ const FALLBACK_STRINGS = {
     'mypage.status_auto_renew': { 'ko': '자동 갱신', 'en': 'Auto-renewal' },
     'mypage.status_no_renew': { 'ko': '갱신 안함', 'en': 'No auto-renewal' },
     'mypage.status_trial_until': { 'ko': '체험 종료일', 'en': 'Trial ends' },
+    'mypage.tos_agree_bold': { 'ko': '[필수] 결제 및 환불 규정 동의', 'en': '[Required] Agree to Terms & No-Refund Policy' },
+    'mypage.tos_agree_desc': {
+        'ko': '본 서비스는 디지털 콘텐츠(데이터 리포트) 제공 서비스로서, 결제 완료 및 서비스 권한 부여 이후에는 전자상거래법에 의거하여 환불이 불가함을 확인하고 동의합니다.',
+        'en': 'This is a digital content service. By proceeding with the payment, you agree to our Terms of Service and acknowledge that all sales are final and non-refundable.'
+    },
+    'mypage.tos_alert': { 'ko': '결제 및 환불 규정에 동의하셔야 결제가 가능합니다.', 'en': 'Please agree to the Terms of Service to proceed with payment.' },
+
+    // Tutorial Modal
+    'tutorial.title': { 'ko': '🚀 K-Vant 100% 활용 가이드', 'en': '🚀 K-Vant 100% Usage Guide' },
+    'tutorial.subtitle': { 'ko': '한국 트렌드 데이터를 활용해 글로벌 매출을 극대화하는 3단계 비법', 'en': '3-step secret to maximizing global sales with Korean trend data' },
+    'tutorial.step1_title': { 'ko': '실시간 급상승 브랜드 포착', 'en': 'Catch Real-time Trending Brands' },
+    'tutorial.step1_desc': { 'ko': '한국 1위 H&B 스토어(올리브영)와 패션 플랫폼(무신사)에서 지금 현지인들이 가장 많이 찾는 브랜드를 실시간으로 확인하세요. BETA로 제공되는 코리아 트렌드/스테디 셀러 탭은 최고의 소싱 소스입니다.', 'en': 'Check in real-time what brands locals are searching for the most on Korea\'s No.1 H&B store (Olive Young) and fashion platform (Musinsa). The BETA Korea Trends / Steady Sellers tabs are your best sourcing sources.' },
+    'tutorial.step2_title': { 'ko': '원클릭 B2B 도매 소싱 요청', 'en': 'One-Click B2B Wholesale Sourcing' },
+    'tutorial.step2_desc': { 'ko': '마음에 드는 상품의 장바구니 버튼을 눌러 소싱 리스트에 담으세요. 이후 우측 하단의 [견적 요청] 버튼을 누르면 K-Vant 전문 소서가 최저가 도매가로 상품을 한국에서 공급해 드립니다.', 'en': 'Add products you like to your sourcing list using the cart button. Then click the [Request Quote] button to get the lowest wholesale supply directly from Korea.' },
+    'tutorial.step3_title': { 'ko': 'Pro 버전을 통한 무제한 분석', 'en': 'Unlimited Analysis with Pro' },
+    'tutorial.step3_desc': { 'ko': 'Free 버전을 통해 경험해보신 후, Pro 플랜으로 업그레이드하여 AI 브랜드 리뷰 마이닝 및 제한 없는 상세 상품 데이터 조회를 시작하세요. Pro 회원에게는 소싱 수수료 감면 혜택도 주어집니다.', 'en': 'Experience the Free version, then upgrade to Pro for AI brand review mining and unlimited detailed product data access. Pro members also get exclusive discounts on sourcing fees.' },
+    'tutorial.start_btn': { 'ko': 'K-Vant 시작하기', 'en': 'Start K-Vant' },
+    'tutorial.dont_show': { 'ko': '다시 보지 않기', 'en': 'Don\'t show again' },
 
     // Korea Trends – Tab names
     'tabs.global_trends': { ko: '🌏 글로벌 트렌드', en: '🌏 Global Trends' },

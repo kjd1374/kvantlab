@@ -392,6 +392,28 @@ function setupEventListeners() {
       renderNotifications();
     });
   });
+
+  // Tutorial Modal Logic
+  const tutorialOverlay = document.getElementById('tutorialModalOverlay');
+  const closeTutorialBtn = document.getElementById('closeTutorialBtn');
+  const dontShowCheckbox = document.getElementById('dontShowTutorial');
+
+  if (tutorialOverlay && closeTutorialBtn) {
+    // Show tutorial after a short delay if not hidden
+    setTimeout(() => {
+      const isHidden = localStorage.getItem('hide_tutorial_v1') === 'true';
+      if (!isHidden) {
+        tutorialOverlay.classList.add('open');
+      }
+    }, 1000);
+
+    closeTutorialBtn.addEventListener('click', () => {
+      if (dontShowCheckbox && dontShowCheckbox.checked) {
+        localStorage.setItem('hide_tutorial_v1', 'true');
+      }
+      tutorialOverlay.classList.remove('open');
+    });
+  }
 }
 
 // ─── Tab Switching ──────────────────────────
@@ -3392,6 +3414,19 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelBtn.disabled = false;
         cancelBtn.textContent = window.t('mypage.btn_cancel') || '🚫 구독 해지 (Cancel)';
         cancelBtn.style.opacity = '1';
+      }
+    });
+  }
+
+  // ToS Checkbox Logic
+  const tosCheckbox = document.getElementById('tosCheckbox');
+  const paypalBlocker = document.getElementById('paypalBlocker');
+  if (tosCheckbox && paypalBlocker) {
+    tosCheckbox.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        paypalBlocker.style.display = 'none';
+      } else {
+        paypalBlocker.style.display = 'block';
       }
     });
   }
