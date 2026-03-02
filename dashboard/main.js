@@ -3512,7 +3512,6 @@ if (extendBtn) {
     }
   });
 }
-});
 
 // ─── Sourcing Quote Request ────────────────
 window.openQuoteModal = function (directItems = null) {
