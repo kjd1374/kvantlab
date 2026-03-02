@@ -3402,17 +3402,28 @@ document.addEventListener('DOMContentLoaded', () => {
 let paypalButtonsRendered = false;
 function renderPayPalButtons() {
   const ppContainer = document.getElementById('paypal-button-container');
-  if (!ppContainer || paypalButtonsRendered) return;
+  console.log('[PayPal Debug] renderPayPalButtons called. Container:', ppContainer ? 'Found' : 'NOT Found');
+
+  if (!ppContainer) return;
+
+  // If already rendered AND the container still has children, don't re-render
+  if (paypalButtonsRendered && ppContainer.children.length > 0) {
+    console.log('[PayPal Debug] Already rendered and container not empty, skipping.');
+    return;
+  }
 
   if (typeof paypal === 'undefined') {
-    console.warn('PayPal SDK not yet available, waiting...');
+    console.warn('[PayPal Debug] PayPal SDK not yet available, waiting...');
     setTimeout(renderPayPalButtons, 500);
     return;
   }
 
   const planId = import.meta.env.VITE_PAYPAL_PLAN_ID;
+  const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+  console.log('[PayPal Debug] Starting render with PlanID:', planId, 'ClientID:', clientId);
+
   if (!planId) {
-    console.error('PayPal Plan ID is not set in environment variables');
+    console.error('[PayPal Debug] PayPal Plan ID is missing');
     alert('결제 설정(Plan ID)이 누락되었습니다. 관리자에게 문의해주세요.');
     return;
   }
