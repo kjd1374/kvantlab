@@ -3396,121 +3396,122 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ── PayPal Button Rendering Helper ──
-  let paypalButtonsRendered = false;
-  function renderPayPalButtons() {
+});
+
+// ── PayPal Button Rendering Helper ──
+let paypalButtonsRendered = false;
+function renderPayPalButtons() {
+  const ppContainer = document.getElementById('paypal-button-container');
+  if (!ppContainer || paypalButtonsRendered) return;
+
+  if (typeof paypal === 'undefined') {
+    console.warn('PayPal SDK not yet available, waiting...');
+    setTimeout(renderPayPalButtons, 500);
+    return;
+  }
+
+  const planId = import.meta.env.VITE_PAYPAL_PLAN_ID;
+  if (!planId) {
+    console.error('PayPal Plan ID is not set in environment variables');
+    alert('결제 설정(Plan ID)이 누락되었습니다. 관리자에게 문의해주세요.');
+    return;
+  }
+  ppContainer.innerHTML = ''; // Clear previous content
+
+  paypal.Buttons({
+    style: {
+      shape: 'rect',
+      color: 'gold',
+      layout: 'vertical',
+      label: 'subscribe'
+    },
+    createSubscription: function (data, actions) {
+      console.log('Creating subscription with Plan ID:', planId);
+      return actions.subscription.create({ plan_id: planId });
+    },
+    onApprove: async function (data, actions) {
+      console.log('PayPal subscription approved:', data.subscriptionID);
+      const session = getSession();
+      if (!session) {
+        alert('로그인이 필요합니다.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/subscription/activate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: session.user.id,
+            subscriptionId: data.subscriptionID
+          })
+        });
+        const result = await res.json();
+        if (result.success) {
+          alert(i18n.currentLang === 'ko'
+            ? '🎉 Pro 구독이 활성화되었습니다!'
+            : '🎉 Pro subscription activated!');
+          window.location.reload();
+        } else {
+          alert(result.error || '구독 활성화 실패');
+        }
+      } catch (err) {
+        console.error('Subscription activation error:', err);
+        alert('오류가 발생했습니다. / An error occurred.');
+      }
+    },
+    onError: function (err) {
+      console.error('PayPal error:', err);
+      const errMsg = err?.message || JSON.stringify(err) || 'Unknown PayPal Error';
+      alert('PayPal 결제 중 오류가 발생했습니다!\nPlan ID: ' + planId + '\n에러 내용: ' + errMsg + '\n다시 시도해주세요.');
+    },
+    onCancel: function () {
+      console.log('PayPal subscription cancelled by user');
+    }
+  }).render('#paypal-button-container');
+
+  paypalButtonsRendered = true;
+}
+// Renew Subscription Handler (for expired or free users → toggle PayPal flow)
+const renewBtn = document.getElementById('renewSubscriptionBtn');
+if (renewBtn) {
+  renewBtn.addEventListener('click', () => {
     const ppContainer = document.getElementById('paypal-button-container');
-    if (!ppContainer || paypalButtonsRendered) return;
+    if (!ppContainer) return;
 
-    if (typeof paypal === 'undefined') {
-      console.warn('PayPal SDK not yet available, waiting...');
-      setTimeout(renderPayPalButtons, 500);
-      return;
+    const isVisible = ppContainer.style.display !== 'none';
+    if (isVisible) {
+      ppContainer.style.display = 'none';
+      renewBtn.textContent = window.t('mypage.btn_renew') || '🔄 구독 갱신 (Renew)';
+    } else {
+      ppContainer.style.display = 'block';
+      ppContainer.style.marginBottom = '16px';
+      renderPayPalButtons(); // Render PayPal buttons
+      ppContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      renewBtn.textContent = i18n.currentLang === 'ko' ? '✕ 결제창 닫기' : '✕ Close Payment';
     }
+  });
+}
 
-    const planId = import.meta.env.VITE_PAYPAL_PLAN_ID;
-    if (!planId) {
-      console.error('PayPal Plan ID is not set in environment variables');
-      alert('결제 설정(Plan ID)이 누락되었습니다. 관리자에게 문의해주세요.');
-      return;
+// Extend Subscription Handler (for users expiring soon → toggle PayPal flow)
+const extendBtn = document.getElementById('extendSubscriptionBtn');
+if (extendBtn) {
+  extendBtn.addEventListener('click', () => {
+    const ppContainer = document.getElementById('paypal-button-container');
+    if (!ppContainer) return;
+
+    const isVisible = ppContainer.style.display !== 'none';
+    if (isVisible) {
+      ppContainer.style.display = 'none';
+      extendBtn.textContent = window.t('mypage.btn_extend') || '⏳ 구독 연장 (Extend)';
+    } else {
+      ppContainer.style.display = 'block';
+      ppContainer.style.marginBottom = '16px';
+      renderPayPalButtons(); // Render PayPal buttons
+      ppContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      extendBtn.textContent = i18n.currentLang === 'ko' ? '✕ 결제창 닫기' : '✕ Close Payment';
     }
-    ppContainer.innerHTML = ''; // Clear previous content
-
-    paypal.Buttons({
-      style: {
-        shape: 'rect',
-        color: 'gold',
-        layout: 'vertical',
-        label: 'subscribe'
-      },
-      createSubscription: function (data, actions) {
-        console.log('Creating subscription with Plan ID:', planId);
-        return actions.subscription.create({ plan_id: planId });
-      },
-      onApprove: async function (data, actions) {
-        console.log('PayPal subscription approved:', data.subscriptionID);
-        const session = getSession();
-        if (!session) {
-          alert('로그인이 필요합니다.');
-          return;
-        }
-        try {
-          const res = await fetch('/api/subscription/activate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: session.user.id,
-              subscriptionId: data.subscriptionID
-            })
-          });
-          const result = await res.json();
-          if (result.success) {
-            alert(i18n.currentLang === 'ko'
-              ? '🎉 Pro 구독이 활성화되었습니다!'
-              : '🎉 Pro subscription activated!');
-            window.location.reload();
-          } else {
-            alert(result.error || '구독 활성화 실패');
-          }
-        } catch (err) {
-          console.error('Subscription activation error:', err);
-          alert('오류가 발생했습니다. / An error occurred.');
-        }
-      },
-      onError: function (err) {
-        console.error('PayPal error:', err);
-        const errMsg = err?.message || JSON.stringify(err) || 'Unknown PayPal Error';
-        alert('PayPal 결제 중 오류가 발생했습니다!\nPlan ID: ' + planId + '\n에러 내용: ' + errMsg + '\n다시 시도해주세요.');
-      },
-      onCancel: function () {
-        console.log('PayPal subscription cancelled by user');
-      }
-    }).render('#paypal-button-container');
-
-    paypalButtonsRendered = true;
-  }
-
-  // Renew Subscription Handler (for expired or free users → toggle PayPal flow)
-  const renewBtn = document.getElementById('renewSubscriptionBtn');
-  if (renewBtn) {
-    renewBtn.addEventListener('click', () => {
-      const ppContainer = document.getElementById('paypal-button-container');
-      if (!ppContainer) return;
-
-      const isVisible = ppContainer.style.display !== 'none';
-      if (isVisible) {
-        ppContainer.style.display = 'none';
-        renewBtn.textContent = window.t('mypage.btn_renew') || '🔄 구독 갱신 (Renew)';
-      } else {
-        ppContainer.style.display = 'block';
-        ppContainer.style.marginBottom = '16px';
-        renderPayPalButtons(); // Render PayPal buttons
-        ppContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        renewBtn.textContent = i18n.currentLang === 'ko' ? '✕ 결제창 닫기' : '✕ Close Payment';
-      }
-    });
-  }
-
-  // Extend Subscription Handler (for users expiring soon → toggle PayPal flow)
-  const extendBtn = document.getElementById('extendSubscriptionBtn');
-  if (extendBtn) {
-    extendBtn.addEventListener('click', () => {
-      const ppContainer = document.getElementById('paypal-button-container');
-      if (!ppContainer) return;
-
-      const isVisible = ppContainer.style.display !== 'none';
-      if (isVisible) {
-        ppContainer.style.display = 'none';
-        extendBtn.textContent = window.t('mypage.btn_extend') || '⏳ 구독 연장 (Extend)';
-      } else {
-        ppContainer.style.display = 'block';
-        ppContainer.style.marginBottom = '16px';
-        renderPayPalButtons(); // Render PayPal buttons
-        ppContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        extendBtn.textContent = i18n.currentLang === 'ko' ? '✕ 결제창 닫기' : '✕ Close Payment';
-      }
-    });
-  }
+  });
+}
 });
 
 // ─── Sourcing Quote Request ────────────────
