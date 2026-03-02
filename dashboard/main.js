@@ -3411,7 +3411,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const planId = import.meta.env.VITE_PAYPAL_PLAN_ID;
     if (!planId) {
       console.error('PayPal Plan ID is not set in environment variables');
-      alert('결제 설동(Plan ID)이 누락되었습니다. 관리자에게 문의해주세요.');
+      alert('결제 설정(Plan ID)이 누락되었습니다. 관리자에게 문의해주세요.');
       return;
     }
     ppContainer.innerHTML = ''; // Clear previous content
