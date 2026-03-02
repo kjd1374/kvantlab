@@ -3309,88 +3309,10 @@ function switchMyPageTab(tabName) {
     const isExpired = expiryDate ? expiryDate < new Date() : false;
     const effectiveTier = (tier === 'pro' && isExpired) ? 'free' : tier;
 
-    // Map K-Vant language to PayPal locale
-    const siteLang = localStorage.getItem('app_lang') || 'ko';
-    let ppLocale = 'en_US';
-    if (siteLang === 'ko') ppLocale = 'ko_KR';
-    else if (siteLang === 'ja') ppLocale = 'ja_JP';
-    else if (siteLang === 'th') ppLocale = 'th_TH';
-    else if (siteLang === 'id') ppLocale = 'id_ID';
-
-    // If language changed, force reload of PayPal SDK
-    if (window.__paypalLocale && window.__paypalLocale !== ppLocale) {
-      const oldScript = document.getElementById('paypal-sdk-script');
-      if (oldScript) oldScript.remove();
-      delete window.paypal;
-      window.__paypalRendered = false;
-    }
-    window.__paypalLocale = ppLocale;
-
     // Determine if PayPal button should show (for non-active-pro users)
-    const shouldShowPayPal = effectiveTier !== 'pro';
-
-    const renderPayPal = () => {
-      if (shouldShowPayPal && !window.__paypalRendered && window.paypal) {
-        const container = document.getElementById('paypal-button-container');
-        if (container) {
-          container.innerHTML = ''; // Clear just in case
-          window.paypal.Buttons({
-            createSubscription: (data, actions) => {
-              return actions.subscription.create({
-                plan_id: 'P-3RH73504PP547441MNGP7TPY'
-              });
-            },
-            onApprove: async (data, actions) => {
-              const session = getSession();
-              if (!session) {
-                alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
-                return;
-              }
-              try {
-                // Secure backend verification for subscription
-                const response = await fetch('/api/paypal/capture', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    subscriptionID: data.subscriptionID,
-                    userId: session.user.id
-                  })
-                });
-                const result = await response.json();
-                if (result.success) {
-                  alert('결제가 성공적으로 완료되었습니다. Pro 멤버십으로 업그레이드 되었습니다.');
-                  // Refresh page or modal state
-                  window.location.reload();
-                } else {
-                  alert('결제 검증에 실패했습니다. 관리자에게 문의해주세요.');
-                }
-              } catch (error) {
-                console.error('PayPal capture error:', error);
-                alert('결제 처리 중 오류가 발생했습니다.');
-              }
-            },
-            onError: (err) => {
-              console.error('PayPal Error:', err);
-              // Optionally notify user
-            }
-          }).render('#paypal-button-container');
-          window.__paypalRendered = true;
-        }
-
-      } else if (!shouldShowPayPal) {
-        const container = document.getElementById('paypal-button-container');
-        if (container) container.innerHTML = ''; // hide if already active pro
-      }
-    };
-
-    if (!window.paypal) {
-      const script = document.createElement('script');
-      script.src = `https://www.paypal.com/sdk/js?client-id=AUBMODXT3_l9gMM39RZjBu7sUoqRSH5VmrZCge5exB1lPLtITzAXOCJQQVNAUYWXPJFpCexnirAhFttV&currency=USD&locale=${ppLocale}&vault=true&intent=subscription`;
-      script.id = 'paypal-sdk-script';
-      script.onload = () => renderPayPal();
-      document.head.appendChild(script);
-    } else {
-      renderPayPal();
+    if (effectiveTier !== 'pro') {
+      // Small delay to ensure container is ready in DOM
+      setTimeout(() => renderPayPalButtons(), 100);
     }
   }
 }
@@ -3479,9 +3401,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderPayPalButtons() {
     const ppContainer = document.getElementById('paypal-button-container');
     if (!ppContainer || paypalButtonsRendered) return;
+
     if (typeof paypal === 'undefined') {
-      console.error('PayPal SDK not loaded');
-      alert('PayPal SDK를 불러오지 못했습니다. 페이지를 새로고침 해주세요.');
+      console.warn('PayPal SDK not yet available, waiting...');
+      setTimeout(renderPayPalButtons, 500);
       return;
     }
 
