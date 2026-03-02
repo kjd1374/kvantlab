@@ -576,11 +576,11 @@ export async function verifyOtp(email, token) {
 
         // Store user info for later use during signup
         if (data.user) {
-            localStorage.setItem('sb-user', JSON.stringify(data.user));
+            sessionStorage.setItem('sb-user', JSON.stringify(data.user));
             // Fetch and store profile if exists
             try {
                 const profile = await fetchUserProfile(data.user.id);
-                if (profile) localStorage.setItem('sb-profile', JSON.stringify(profile));
+                if (profile) sessionStorage.setItem('sb-profile', JSON.stringify(profile));
             } catch (e) { }
         }
         return data;
@@ -590,7 +590,7 @@ export async function verifyOtp(email, token) {
 }
 
 export async function updateUserPassword(password) {
-    const token = localStorage.getItem('sb-token');
+    const token = sessionStorage.getItem('sb-token');
     const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
         method: 'PUT',
         headers: { ...headers, Authorization: `Bearer ${token}` },

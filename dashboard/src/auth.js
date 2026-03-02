@@ -84,7 +84,7 @@ async function renderAuthButton(container, session) {
     try {
       const profileData = await fetchUserProfile(session.user.id);
       if (profileData) {
-        localStorage.setItem('sb-profile', JSON.stringify(profileData));
+        sessionStorage.setItem('sb-profile', JSON.stringify(profileData));
         if (profileData.role === 'admin') {
           isAdmin = true;
         }
@@ -431,7 +431,7 @@ function setupAuthModals() {
         }
 
         // Get user info from OTP verification step
-        const sessionStr = localStorage.getItem('sb-user');
+        const sessionStr = sessionStorage.getItem('sb-user');
         if (!sessionStr) throw new Error(window.t('auth.err_session') || '세션 정보를 찾을 수 없습니다. 다시 시도해주세요.');
         const userObj = JSON.parse(sessionStr);
 
@@ -457,13 +457,13 @@ function setupAuthModals() {
 
         // Store session token for authenticated requests
         if (signupData.session) {
-          localStorage.setItem('sb-token', signupData.session.access_token);
-          localStorage.setItem('sb-user', JSON.stringify(signupData.session.user));
+          sessionStorage.setItem('sb-token', signupData.session.access_token);
+          sessionStorage.setItem('sb-user', JSON.stringify(signupData.session.user));
           // Fetch and store profile
           try {
             const { fetchUserProfile } = await import('../supabase.js');
             const profile = await fetchUserProfile(signupData.session.user.id);
-            if (profile) localStorage.setItem('sb-profile', JSON.stringify(profile));
+            if (profile) sessionStorage.setItem('sb-profile', JSON.stringify(profile));
           } catch (e) { }
         }
 
