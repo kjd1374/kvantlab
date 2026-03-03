@@ -712,8 +712,8 @@ export function getSession() {
  * ANNOUNCEMENT FUNCTIONS
  */
 
-export async function fetchPublishedAnnouncements(limit = 3) {
-    return await query('board_announcements', `is_published=eq.true&order=created_at.desc&limit=${limit}`);
+export async function fetchPublishedAnnouncements(limit = 4, offset = 0) {
+    return await query('board_announcements', `is_published=eq.true&order=created_at.desc&limit=${limit}&offset=${offset}`);
 }
 
 export async function fetchAnnouncements() {

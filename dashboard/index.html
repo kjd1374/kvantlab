@@ -297,6 +297,40 @@
             font-size: 0.9rem;
         }
 
+        .announcement-pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .announcement-pagination .page-num {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .announcement-pagination .page-num:hover {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .announcement-pagination .page-num.active {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: #000;
+        }
+
         footer {
             text-align: center;
             padding: 40px;
@@ -373,6 +407,7 @@
         <div class="announcement-list" id="announcementList">
             <!-- Announcements dynamically loaded here -->
         </div>
+        <div class="announcement-pagination" id="announcementPagination"></div>
     </section>
 
     <footer>
@@ -477,14 +512,21 @@
                 }
             });
 
-            // Fetch Announcements
-            async function loadAnnouncements() {
+            // Fetch Announcements with Pagination
+            const ANNOUNCEMENTS_PER_PAGE = 4;
+            let currentAnnouncementPage = 0;
+
+            async function loadAnnouncements(page = 0) {
+                currentAnnouncementPage = page;
                 const listEl = document.getElementById('announcementList');
+                const paginationEl = document.getElementById('announcementPagination');
                 try {
-                    const { data, error } = await fetchPublishedAnnouncements(3);
+                    const offset = page * ANNOUNCEMENTS_PER_PAGE;
+                    const { data, error, count } = await fetchPublishedAnnouncements(ANNOUNCEMENTS_PER_PAGE, offset);
                     if (error || !data || data.length === 0) {
                         const emptyMsg = window.t ? window.t('landing.empty_announcements') : '등록된 공지사항이 없습니다.';
                         listEl.innerHTML = `<div style="text-align:center; padding: 20px; color: #888;">${emptyMsg}</div>`;
+                        if (paginationEl) paginationEl.innerHTML = '';
                         return;
                     }
 
@@ -499,7 +541,6 @@
                         const langCode = window.i18n ? (window.i18n.currentLang === 'en' ? 'en-US' : window.i18n.currentLang) : 'ko-KR';
                         const dateText = new Date(item.created_at).toLocaleDateString(langCode);
 
-                        // Prepare safe data strings
                         const safeTitle = displayTitle.replace(/'/g, "\\'").replace(/"/g, "&quot;");
                         const safeContent = displayContent.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, "\\n");
 
@@ -513,11 +554,27 @@
                             </div>
                         `;
                     }).join('');
+
+                    // Render pagination
+                    const totalCount = count || data.length;
+                    const totalPages = Math.ceil(totalCount / ANNOUNCEMENTS_PER_PAGE);
+                    if (paginationEl && totalPages > 1) {
+                        paginationEl.innerHTML = Array.from({ length: totalPages }, (_, i) =>
+                            `<button class="page-num ${i === page ? 'active' : ''}" onclick="window.__loadAnnouncementPage(${i})">${i + 1}</button>`
+                        ).join('');
+                    } else if (paginationEl) {
+                        paginationEl.innerHTML = '';
+                    }
                 } catch (e) {
                     listEl.innerHTML = '<div style="text-align:center; padding: 20px; color: #888;">공지사항을 불러오지 못했습니다.</div>';
                 }
             }
-            loadAnnouncements();
+
+            window.__loadAnnouncementPage = function (page) {
+                loadAnnouncements(page);
+            };
+
+            loadAnnouncements(0);
 
             // Notice Modal Logic
             window.openNoticeModal = function (title, date, content) {
