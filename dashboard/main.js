@@ -3073,6 +3073,7 @@ function maskText(text) {
 // Expose to window for bridges
 window.__isProMember = isProMember;
 window.__maskText = maskText;
+window.getProfile = getProfile;
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function initNotificationSystem() {
@@ -3246,6 +3247,7 @@ window.openMyPageModal = async function () {
       // Trial user (Pro trial, no subscription)
       const dateStr = fmtDate(expiryDate);
       planDesc.textContent = window.t('mypage.status_trial').replace('{date}', dateStr);
+      if (renewBtn) renewBtn.style.display = 'block';
     } else if (effectiveTier === 'pro') {
       if (profile.subscription_id) {
         // Active auto-renewing PRO

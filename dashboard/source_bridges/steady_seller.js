@@ -88,7 +88,7 @@ export const SteadySellerBridge = {
             return acc;
         }, {});
 
-        const profile = typeof window.getProfile === 'function' ? window.getProfile() : (JSON.parse(localStorage.getItem('sb-profile') || 'null'));
+        const profile = typeof window.getProfile === 'function' ? window.getProfile() : (JSON.parse(sessionStorage.getItem('sb-profile') || 'null'));
         const isPro = typeof window.__isProMember === 'function' ? window.__isProMember(profile) : true;
 
         return `
