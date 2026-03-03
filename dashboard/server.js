@@ -1348,6 +1348,77 @@ ${text}
     }
 });
 
+// --- Product Review Scraper Endpoint ---
+// Fetches live review data from Olive Young product detail page via Playwright
+app.get('/api/product-reviews', async (req, res) => {
+    const { goodsNo } = req.query;
+    if (!goodsNo) {
+        return res.status(400).json({ success: false, error: 'goodsNo parameter required' });
+    }
+
+    try {
+        // First check if we already have fresh review data in DB
+        const { data: existing } = await supabase
+            .from('products_master')
+            .select('review_count, review_rating')
+            .eq('product_id', goodsNo)
+            .eq('source', 'oliveyoung')
+            .single();
+
+        if (existing && existing.review_count > 0 && existing.review_rating > 0 && existing.review_rating <= 5) {
+            return res.json({
+                success: true,
+                source: 'cache',
+                reviewCount: existing.review_count,
+                rating: existing.review_rating,
+                reviews: []
+            });
+        }
+
+        // Run the Python Playwright scraper
+        const scriptPath = path.join(__dirname, 'generic_crawler', 'update_oy_reviews.py');
+        const { stdout, stderr } = await execAsync(`python3 "${scriptPath}" "${goodsNo}"`, {
+            timeout: 90000,  // 90s timeout (Playwright + Cloudflare wait)
+            cwd: __dirname
+        });
+
+        if (stderr) console.warn('[Review Scraper] stderr:', stderr);
+
+        const result = JSON.parse(stdout.trim());
+
+        if (result.error) {
+            return res.status(500).json({ success: false, error: result.error });
+        }
+
+        // Update DB with fetched review data if valid
+        if (result.reviewCount > 0 || (result.rating > 0 && result.rating <= 5)) {
+            const updateData = {};
+            if (result.reviewCount > 0) updateData.review_count = result.reviewCount;
+            if (result.rating > 0 && result.rating <= 5) updateData.review_rating = result.rating;
+
+            if (Object.keys(updateData).length > 0) {
+                await supabase
+                    .from('products_master')
+                    .update(updateData)
+                    .eq('product_id', goodsNo)
+                    .eq('source', 'oliveyoung');
+            }
+        }
+
+        res.json({
+            success: true,
+            source: 'live',
+            reviewCount: result.reviewCount,
+            rating: result.rating,
+            reviews: result.reviews || []
+        });
+
+    } catch (error) {
+        console.error('[Review Scraper] Error:', error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
         console.log(`Data Pool Admin Backend running on http://localhost:${PORT}`);

@@ -205,7 +205,13 @@ async def crawl_oliveyoung_categories(page, categories_list):
                     let reviewCount = 0;
                     
                     if (pointEl) {
-                        rating = parseFloat(pointEl.innerText.trim()) || 0.0;
+                        // Text is "10점만점에 X.X점" - extract the actual rating after "에"
+                        const pointText = pointEl.innerText.trim();
+                        const ratingMatch = pointText.match(/에\s*([0-9.]+)\s*점/);
+                        if (ratingMatch) {
+                            // Convert from 10-point to 5-point scale
+                            rating = Math.round((parseFloat(ratingMatch[1]) / 2) * 10) / 10;
+                        }
                     }
                     
                     if (reviewEl) {
@@ -268,12 +274,137 @@ async def crawl_oliveyoung_categories(page, categories_list):
 
     return total_saved_items
 
+async def scrape_product_reviews(page, goods_no):
+    """Visit a product detail page and extract review count, rating, and review texts"""
+    detail_url = f"https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo={goods_no}"
+    
+    try:
+        await page.goto(detail_url, wait_until="domcontentloaded", timeout=30000)
+        await asyncio.sleep(3)
+        
+        # Check if page loaded (not Cloudflare challenge)
+        title = await page.title()
+        if "잠시만 기다려" in title:
+            await asyncio.sleep(5)
+        
+        parse_script = """
+        () => {
+            let reviewCount = 0;
+            let rating = 0.0;
+            let reviews = [];
+            
+            // Review count - try multiple selectors
+            const reviewTabEl = document.querySelector('#reviewInfo');
+            if (reviewTabEl) {
+                const m = reviewTabEl.innerText.match(/([0-9,]+)/);
+                if (m) reviewCount = parseInt(m[1].replace(/,/g, '')) || 0;
+            }
+            if (!reviewCount) {
+                const repEl = document.querySelector('.repReview b');
+                if (repEl) reviewCount = parseInt(repEl.innerText.replace(/[^0-9]/g, '')) || 0;
+            }
+            
+            // Rating
+            const ratingEl = document.querySelector('.prd_total_score .num strong') || document.querySelector('.num strong');
+            if (ratingEl) {
+                rating = parseFloat(ratingEl.innerText.trim()) || 0.0;
+            }
+            
+            // Review texts
+            document.querySelectorAll('.review_cont, .txt_inner, .txt_cont').forEach(r => {
+                let text = r.innerText.trim().replace(/\\s+/g, ' ');
+                if (text.length > 10) reviews.push(text);
+            });
+            
+            return { reviewCount, rating, reviews: reviews.slice(0, 10) };
+        }
+        """
+        data = await page.evaluate(parse_script)
+        return data
+        
+    except Exception as e:
+        print(f"    ⚠️ Review scrape failed for {goods_no}: {e}")
+        return None
+
+async def update_reviews_for_products(page, limit=50):
+    """Fetch products with missing reviews and update them"""
+    print(f"\n=== 리뷰 데이터 업데이트 시작 (최대 {limit}개) ===")
+    
+    # Get products with review_count=0 from the database
+    try:
+        res = requests.get(
+            f"{SUPABASE_URL}/rest/v1/products_master",
+            headers=HEADERS,
+            params={
+                "source": "eq.oliveyoung",
+                "review_count": "eq.0",
+                "select": "id,product_id",
+                "limit": str(limit),
+                "order": "updated_at.desc"
+            },
+            timeout=10
+        )
+        products = res.json() if res.status_code == 200 else []
+    except Exception as e:
+        print(f"  ❌ Failed to fetch products: {e}")
+        return 0
+    
+    if not products:
+        print("  ℹ️ 업데이트할 제품 없음")
+        return 0
+    
+    print(f"  📋 {len(products)}개 제품 리뷰 업데이트 예정")
+    updated = 0
+    
+    for p in products:
+        goods_no = p.get("product_id")
+        db_id = p.get("id")
+        if not goods_no:
+            continue
+        
+        data = await scrape_product_reviews(page, goods_no)
+        if not data:
+            continue
+        
+        review_count = data.get("reviewCount", 0)
+        rating = data.get("rating", 0.0)
+        reviews = data.get("reviews", [])
+        
+        if review_count > 0 or (rating > 0 and rating <= 5):
+            update_record = {}
+            if review_count > 0:
+                update_record["review_count"] = review_count
+            if rating > 0 and rating <= 5:
+                update_record["review_rating"] = rating
+            
+            try:
+                res = requests.patch(
+                    f"{SUPABASE_URL}/rest/v1/products_master?id=eq.{db_id}",
+                    headers=HEADERS,
+                    json=update_record,
+                    timeout=10
+                )
+                if res.status_code in [200, 204]:
+                    updated += 1
+                    print(f"    ✅ {goods_no}: 리뷰 {review_count}개, 별점 {rating}")
+                else:
+                    print(f"    ⚠️ DB update failed for {goods_no}: {res.status_code}")
+            except Exception as e:
+                print(f"    ❌ DB update error: {e}")
+        
+        # Anti-bot delay
+        await asyncio.sleep(random.uniform(2, 4))
+    
+    print(f"  📊 총 {updated}개 제품 리뷰 업데이트 완료")
+    return updated
+
 async def oliveyoung_crawl():
     start_time = datetime.now()
     print(f"[{start_time}] 올리브영 크롤링 시작...")
     log_crawl("running", {"message": "Started Olive Young crawl"})
     
     total_saved = 0
+    reviews_updated = 0
     
     async with async_playwright() as p:
         browser = await p.chromium.launch(
@@ -292,15 +423,23 @@ async def oliveyoung_crawl():
             total_saved = await crawl_oliveyoung_categories(page, TARGET_CATEGORIES)
         except Exception as e:
             print(f"  ❌ Error processing categories: {e}")
+        
+        # Phase 2: Update review data for products with missing reviews
+        try:
+            reviews_updated = await update_reviews_for_products(page, limit=50)
+        except Exception as e:
+            print(f"  ❌ Error updating reviews: {e}")
             
         await browser.close()
         
     duration = str(datetime.now() - start_time)
-    print(f"[{datetime.now()}] 크롤링 종료. 총 {total_saved}개 저장. 소요시간: {duration}")
+    print(f"[{datetime.now()}] 크롤링 종료. 총 {total_saved}개 저장, {reviews_updated}개 리뷰 업데이트. 소요시간: {duration}")
     log_crawl("completed", {
         "total_saved": total_saved, 
+        "reviews_updated": reviews_updated,
         "duration": duration
     })
 
 if __name__ == "__main__":
     asyncio.run(oliveyoung_crawl())
+

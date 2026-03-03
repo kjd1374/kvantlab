@@ -1813,16 +1813,12 @@ JSON to translate:
 ${JSON.stringify(product.ai_summary)}
 `;
   } else {
-    // 4. Analyze from raw reviews into target language
-    const reviews = product.reviews || [
-      `${product.name} 써보니까 진짜 좋아요.`,
-      `가격 대비 성능이 뛰어납니다.`,
-      `발림성이 부드럽고 촉촉해요.`,
-      `재구매 의사 있습니다.`,
-      `약간 아쉬운 점도 있지만 전반적으로 만족.`
-    ];
+    // 4. Analyze from raw reviews or product context into target language
+    const reviews = product.reviews;
 
-    prompt = `Analyze the following Korean product reviews for "${product.name}".
+    if (reviews && reviews.length > 0) {
+      // Real reviews available
+      prompt = `Analyze the following Korean product reviews for "${product.name}".
 Return ONLY valid JSON matching this exact schema. All string values (keywords, pros, cons) MUST BE WRITTEN IN ${targetLang}.
 {
   "sentiment_pos": (integer 0-100),
@@ -1831,13 +1827,30 @@ Return ONLY valid JSON matching this exact schema. All string values (keywords, 
   "cons": ["con1", "con2", "con3"]
 }
 
-CRITICAL INSTRUCTION FOR CONS (단점): 
-Never use vague or generic statements. 
-Extract highly specific product flaws mentioned by users. 
+CRITICAL INSTRUCTION FOR CONS:
+Never use vague or generic statements.
+Extract highly specific product flaws mentioned by users.
 If the reviews do not contain any specific negative feedback, simply output a statement in ${targetLang} saying no specific cons mentioned.
 
 Reviews:
 ${reviews.join('\n').substring(0, 2000)}`;
+    } else {
+      // No real reviews - analyze based on product info
+      const brand = product.brand || '';
+      const reviewCountInfo = product.review_count > 0 ? `This product has ${product.review_count} reviews with an average rating of ${product.review_rating}/5.` : '';
+      prompt = `You are analyzing a Korean beauty/fashion product: "${product.name}" by "${brand}".
+${reviewCountInfo}
+Based on publicly known information about this product and brand, provide a general analysis.
+Return ONLY valid JSON matching this exact schema. All string values MUST BE WRITTEN IN ${targetLang}.
+{
+  "sentiment_pos": (integer 0-100),
+  "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
+  "pros": ["pro1", "pro2", "pro3"],
+  "cons": ["con1", "con2", "con3"]
+}
+
+Provide realistic, specific analysis based on the product type and brand reputation. Do NOT make up fake reviews.`;
+    }
   }
 
   const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
@@ -2078,8 +2091,8 @@ window.__openProduct = async function (product) {
             ${product.review_count !== undefined ? `
             <div class="metric-glass-card">
               <div class="metric-label">${window.t('modal.reviews')}</div>
-              <div class="metric-value">${formatNumber(product.review_count)}</div>
-              ${product.review_rating ? `<div class="metric-sub">⭐ ${product.review_rating}</div>` : ''}
+              <div class="metric-value" id="modalReviewCount">${product.review_count > 0 ? formatNumber(product.review_count) : (product.review_rating > 5 ? '-' : formatNumber(product.review_count))}</div>
+              ${product.review_rating && product.review_rating <= 5 ? `<div class="metric-sub" id="modalReviewRating">⭐ ${product.review_rating}</div>` : `<div class="metric-sub" id="modalReviewRating">${product.review_count > 0 ? '⭐ ' + product.review_rating : ''}</div>`}
             </div>` : ''}
             
             ${product.current_rank !== undefined ? `
@@ -2228,8 +2241,42 @@ window.__openProduct = async function (product) {
     }
   };
 
-  // Auto-run AI Analysis in background only if data is not already loaded
-  if (!aiData) {
+  // Fetch live review data if missing or unreliable, then run AI analysis
+  const shouldFetchReviews = product.source === 'oliveyoung' &&
+    (product.review_count === 0 || product.review_count === undefined || product.review_rating > 5);
+
+  if (shouldFetchReviews && product.product_id) {
+    // Try to fetch reviews from server in background
+    (async () => {
+      try {
+        const serverPort = 6002;
+        const resp = await fetch(`http://localhost:${serverPort}/api/product-reviews?goodsNo=${encodeURIComponent(product.product_id)}`);
+        if (resp.ok) {
+          const reviewData = await resp.json();
+          if (reviewData.success) {
+            // Update product object with real data
+            if (reviewData.reviewCount > 0) product.review_count = reviewData.reviewCount;
+            if (reviewData.rating > 0 && reviewData.rating <= 5) product.review_rating = reviewData.rating;
+            if (reviewData.reviews && reviewData.reviews.length > 0) product.reviews = reviewData.reviews;
+
+            // Update DOM elements if they exist
+            const countEl = document.getElementById('modalReviewCount');
+            const ratingEl = document.getElementById('modalReviewRating');
+            if (countEl && product.review_count > 0) countEl.textContent = formatNumber(product.review_count);
+            if (ratingEl && product.review_rating > 0 && product.review_rating <= 5) ratingEl.innerHTML = `⭐ ${product.review_rating}`;
+          }
+        }
+      } catch (e) {
+        console.warn('[Review Fetch] Server unavailable:', e.message);
+      }
+
+      // Run AI analysis after review fetch (whether it succeeded or not)
+      if (!aiData) {
+        window.loadAiData(false);
+      }
+    })();
+  } else if (!aiData) {
+    // No review fetch needed, run AI analysis directly
     window.loadAiData(false);
   } else {
     // Re-render chart once after modal is open
