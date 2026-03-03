@@ -329,7 +329,8 @@
 
   <!-- Quote Request Modal -->
   <div class="modal-overlay" id="quoteModalOverlay">
-    <div class="modal" id="quoteModal" style="max-width: 500px; padding: 30px;">
+    <div class="modal" id="quoteModal"
+      style="max-width: 500px; padding: 30px; max-height: 90vh; overflow-y: auto; height: auto;">
       <button class="modal-close" onclick="closeQuoteModal()">&times;</button>
       <h2 style="margin-bottom: 20px;" data-i18n="sourcing.modal_title">📦 B2B 소싱 견적 요청</h2>
       <div style="margin-bottom: 20px;">
@@ -720,7 +721,7 @@
     </div>
   </div>
 
-  <script type="module" src="/main.js?v=28"></script>
+  <script type="module" src="/main.js?v=29"></script>
   <!-- Reliable body[data-platform] setter independent of ES module system -->
   <script>
     document.addEventListener('click', function (e) {

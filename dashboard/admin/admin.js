@@ -273,14 +273,14 @@ async function initAdmin() {
     const aPublishedInput = document.getElementById('aPublished');
     const aTitleEnInput = document.getElementById('aTitleEn');
     const aContentEnInput = document.getElementById('aContentEn');
-    const aTitleJaInput = document.getElementById('aTitleJa');
-    const aContentJaInput = document.getElementById('aContentJa');
-    const aTitleThInput = document.getElementById('aTitleTh');
-    const aContentThInput = document.getElementById('aContentTh');
-    const aTitleViInput = document.getElementById('aTitleVi');
-    const aContentViInput = document.getElementById('aContentVi');
-    const aTitleIdInput = document.getElementById('aTitleId');
-    const aContentIdInput = document.getElementById('aContentId');
+    const aTitleJaInput = document.getElementById('aTitleJa') || null;
+    const aContentJaInput = document.getElementById('aContentJa') || null;
+    const aTitleThInput = document.getElementById('aTitleTh') || null;
+    const aContentThInput = document.getElementById('aContentTh') || null;
+    const aTitleViInput = document.getElementById('aTitleVi') || null;
+    const aContentViInput = document.getElementById('aContentVi') || null;
+    const aTitleIdInput = document.getElementById('aTitleId') || null;
+    const aContentIdInput = document.getElementById('aContentId') || null;
 
     const aiTranslateBtn = document.getElementById('aiTranslateBtn');
     const aModalTitle = document.getElementById('announcementModalTitle');
@@ -346,16 +346,16 @@ async function initAdmin() {
         aIdInput.value = item.id;
         aTitleInput.value = item.title;
         aContentInput.value = item.content || '';
-        aTitleEnInput.value = item.title_en || '';
-        aContentEnInput.value = item.content_en || '';
-        aTitleJaInput.value = item.title_ja || '';
-        aContentJaInput.value = item.content_ja || '';
-        aTitleThInput.value = item.title_th || '';
-        aContentThInput.value = item.content_th || '';
-        aTitleViInput.value = item.title_vi || '';
-        aContentViInput.value = item.content_vi || '';
-        aTitleIdInput.value = item.title_id || '';
-        aContentIdInput.value = item.content_id || '';
+        if (aTitleEnInput) aTitleEnInput.value = item.title_en || '';
+        if (aContentEnInput) aContentEnInput.value = item.content_en || '';
+        if (aTitleJaInput) aTitleJaInput.value = item.title_ja || '';
+        if (aContentJaInput) aContentJaInput.value = item.content_ja || '';
+        if (aTitleThInput) aTitleThInput.value = item.title_th || '';
+        if (aContentThInput) aContentThInput.value = item.content_th || '';
+        if (aTitleViInput) aTitleViInput.value = item.title_vi || '';
+        if (aContentViInput) aContentViInput.value = item.content_vi || '';
+        if (aTitleIdInput) aTitleIdInput.value = item.title_id || '';
+        if (aContentIdInput) aContentIdInput.value = item.content_id || '';
         aTypeInput.value = item.type;
         aPublishedInput.checked = item.is_published;
 
@@ -379,16 +379,16 @@ async function initAdmin() {
         aIdInput.value = '';
         aTitleInput.value = '';
         aContentInput.value = '';
-        aTitleEnInput.value = '';
-        aContentEnInput.value = '';
-        aTitleJaInput.value = '';
-        aContentJaInput.value = '';
-        aTitleThInput.value = '';
-        aContentThInput.value = '';
-        aTitleViInput.value = '';
-        aContentViInput.value = '';
-        aTitleIdInput.value = '';
-        aContentIdInput.value = '';
+        if (aTitleEnInput) aTitleEnInput.value = '';
+        if (aContentEnInput) aContentEnInput.value = '';
+        if (aTitleJaInput) aTitleJaInput.value = '';
+        if (aContentJaInput) aContentJaInput.value = '';
+        if (aTitleThInput) aTitleThInput.value = '';
+        if (aContentThInput) aContentThInput.value = '';
+        if (aTitleViInput) aTitleViInput.value = '';
+        if (aContentViInput) aContentViInput.value = '';
+        if (aTitleIdInput) aTitleIdInput.value = '';
+        if (aContentIdInput) aContentIdInput.value = '';
         aTypeInput.value = 'notice';
         aPublishedInput.checked = true;
         announcementModal.style.display = 'flex';
@@ -406,16 +406,16 @@ async function initAdmin() {
         const isPublished = aPublishedInput.checked;
 
         const extraLangs = {
-            title_en: aTitleEnInput.value.trim(),
-            content_en: aContentEnInput.value.trim(),
-            title_ja: aTitleJaInput.value.trim(),
-            content_ja: aContentJaInput.value.trim(),
-            title_th: aTitleThInput.value.trim(),
-            content_th: aContentThInput.value.trim(),
-            title_vi: aTitleViInput.value.trim(),
-            content_vi: aContentViInput.value.trim(),
-            title_id: aTitleIdInput.value.trim(),
-            content_id: aContentIdInput.value.trim()
+            title_en: aTitleEnInput ? aTitleEnInput.value.trim() : '',
+            content_en: aContentEnInput ? aContentEnInput.value.trim() : '',
+            title_ja: aTitleJaInput ? aTitleJaInput.value.trim() : '',
+            content_ja: aContentJaInput ? aContentJaInput.value.trim() : '',
+            title_th: aTitleThInput ? aTitleThInput.value.trim() : '',
+            content_th: aContentThInput ? aContentThInput.value.trim() : '',
+            title_vi: aTitleViInput ? aTitleViInput.value.trim() : '',
+            content_vi: aContentViInput ? aContentViInput.value.trim() : '',
+            title_id: aTitleIdInput ? aTitleIdInput.value.trim() : '',
+            content_id: aContentIdInput ? aContentIdInput.value.trim() : ''
         };
 
         if (!title) return alert('제목을 입력해주세요.');

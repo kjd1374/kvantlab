@@ -1261,6 +1261,12 @@ async function loadWishlist() {
       `;
     }).join('');
 
+    // 비-한국어 언어 설정이면 관심 상품도 번역 실행
+    if (i18n.currentLang !== 'ko') {
+      translateProducts(activeProducts, i18n.currentLang);
+    }
+    i18n.documentUpdate();
+
     if (actionBar) {
       actionBar.style.display = 'block';
       const quoteItemCount = document.getElementById('quoteItemCount');
