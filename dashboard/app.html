@@ -497,8 +497,12 @@
             </span>
           </label>
         </div>
-        <div id="paypal-button-container"
-          style="display:none; max-width: 400px; margin: 0 auto; transition: opacity 0.3s;" class="disabled-paypal">
+        <div style="position: relative; max-width: 400px; margin: 0 auto;">
+          <div id="paypalBlocker"
+            style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:10; background:rgba(255,255,255,0.6); cursor:not-allowed; display:none;">
+          </div>
+          <div id="paypal-button-container" style="display:none; transition: opacity 0.3s;" class="disabled-paypal">
+          </div>
         </div>
         <div class="subscription-btn-group"
           style="display: flex; flex-direction: column; gap: 10px; max-width: 400px; margin: 12px auto 0;">
@@ -513,71 +517,70 @@
             data-i18n="mypage.btn_cancel">🚫 구독 해지 (Cancel)</button>
         </div>
       </div>
-    </div>
 
-    <!-- Sourcing History Tab -->
-    <div class="my-page-content" id="myPageSourcingTab" style="display: none;">
-      <h3 style="font-size: 16px; margin-bottom: 15px;" data-i18n="sourcing.history_title">📦 나의 소싱 견적 내역</h3>
-      <div id="sourcingHistoryList"
-        style="max-height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;">
-        <div class="loading-skeleton"></div>
-      </div>
-
-    </div>
-
-    <!-- Customer Center Tab -->
-    <div class="my-page-content" id="myPageSupportTab" style="display: none;">
-      <div class="support-header" style="display: flex; gap: 10px; margin-bottom: 20px;">
-        <button class="chip active" onclick="window.toggleSupportView('faq')" data-i18n="support.faq"
-          id="btnSupportFaq">FAQ (자주 묻는 질문)</button>
-        <button class="chip" onclick="window.toggleSupportView('inquiry')" data-i18n="support.inquiry"
-          id="btnSupportInquiry">1:1 문의</button>
-      </div>
-
-      <!-- FAQ View -->
-      <div id="supportFaqView">
-        <div id="faqList"
-          style="display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto;">
+      <!-- Sourcing History Tab -->
+      <div class="my-page-content" id="myPageSourcingTab" style="display: none;">
+        <h3 style="font-size: 16px; margin-bottom: 15px;" data-i18n="sourcing.history_title">📦 나의 소싱 견적 내역</h3>
+        <div id="sourcingHistoryList"
+          style="max-height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;">
           <div class="loading-skeleton"></div>
         </div>
+
       </div>
 
-      <!-- Inquiry View -->
-      <div id="supportInquiryView" style="display: none;">
-        <div class="inquiry-form"
-          style="background: var(--card-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 25px;">
-          <h4 style="margin-top: 0; margin-bottom: 12px; font-size: 14px;" data-i18n="support.new_inquiry_title">새 문의
-            작성</h4>
-          <div class="form-group">
-            <select id="inquiryType" class="form-input">
-              <option value="general" selected>1:1 문의사항</option>
-              <option value="sourcing">소싱/견적 관련</option>
-              <option value="billing">결제/구독 관련</option>
-              <option value="technical">기술적 오류 제보</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <input type="text" id="inquiryTitle" class="form-input" placeholder="제목을 입력해주세요"
-              data-i18n="support.title_placeholder">
-          </div>
-          <div class="form-group">
-            <textarea id="inquiryContent" class="form-input" rows="4" placeholder="문의 내용이나 건의사항을 상세히 작성해주세요."
-              data-i18n="support.message_placeholder"></textarea>
-          </div>
-          <button id="btnSubmitInquiry" class="btn-primary"
-            style="width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;"
-            data-i18n="support.submit">등록하기</button>
+      <!-- Customer Center Tab -->
+      <div class="my-page-content" id="myPageSupportTab" style="display: none;">
+        <div class="support-header" style="display: flex; gap: 10px; margin-bottom: 20px;">
+          <button class="chip active" onclick="window.toggleSupportView('faq')" data-i18n="support.faq"
+            id="btnSupportFaq">FAQ (자주 묻는 질문)</button>
+          <button class="chip" onclick="window.toggleSupportView('inquiry')" data-i18n="support.inquiry"
+            id="btnSupportInquiry">1:1 문의</button>
         </div>
 
-        <h4 style="margin-bottom: 10px; font-size: 14px; border-top: 1px solid #eee; padding-top: 20px;">나의 문의 내역</h4>
-        <div id="inquiryList"
-          style="display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto;">
-          <div class="loading-skeleton"></div>
+        <!-- FAQ View -->
+        <div id="supportFaqView">
+          <div id="faqList"
+            style="display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto;">
+            <div class="loading-skeleton"></div>
+          </div>
+        </div>
+
+        <!-- Inquiry View -->
+        <div id="supportInquiryView" style="display: none;">
+          <div class="inquiry-form"
+            style="background: var(--card-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 25px;">
+            <h4 style="margin-top: 0; margin-bottom: 12px; font-size: 14px;" data-i18n="support.new_inquiry_title">새 문의
+              작성</h4>
+            <div class="form-group">
+              <select id="inquiryType" class="form-input">
+                <option value="general" selected>1:1 문의사항</option>
+                <option value="sourcing">소싱/견적 관련</option>
+                <option value="billing">결제/구독 관련</option>
+                <option value="technical">기술적 오류 제보</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <input type="text" id="inquiryTitle" class="form-input" placeholder="제목을 입력해주세요"
+                data-i18n="support.title_placeholder">
+            </div>
+            <div class="form-group">
+              <textarea id="inquiryContent" class="form-input" rows="4" placeholder="문의 내용이나 건의사항을 상세히 작성해주세요."
+                data-i18n="support.message_placeholder"></textarea>
+            </div>
+            <button id="btnSubmitInquiry" class="btn-primary"
+              style="width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;"
+              data-i18n="support.submit">등록하기</button>
+          </div>
+
+          <h4 style="margin-bottom: 10px; font-size: 14px; border-top: 1px solid #eee; padding-top: 20px;">나의 문의 내역</h4>
+          <div id="inquiryList"
+            style="display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto;">
+            <div class="loading-skeleton"></div>
+          </div>
         </div>
       </div>
+
     </div>
-
-  </div>
   </div>
 
   <footer class="footer">

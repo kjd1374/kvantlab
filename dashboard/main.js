@@ -803,6 +803,8 @@ async function loadBridgeTab(tabId) {
     if (data.length === 0) {
       if (grid.tagName === 'TBODY') {
         grid.innerHTML = `<tr><td colspan="8" class="empty-cell">${window.t('common.no_results')}</td></tr>`;
+        const thead = grid.closest('table').querySelector('thead');
+        if (thead) thead.style.display = 'none';
       } else {
         grid.innerHTML = emptyState(window.t('common.no_results'));
       }
@@ -814,6 +816,9 @@ async function loadBridgeTab(tabId) {
     const savedIds = new Set(savedItems.data?.map(i => i.product_id) || []);
 
     if (grid.tagName === 'TBODY') {
+      const thead = grid.closest('table').querySelector('thead');
+      if (thead) thead.style.display = '';
+
       grid.innerHTML = data.map((p, idx) => {
         p.is_saved = savedIds.has(p.product_id || p.id);
         return renderTableRow(p, idx);
@@ -3518,7 +3523,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target.checked) {
         paypalBlocker.style.display = 'none';
       } else {
-        paypalBlocker.style.display = 'block';
+        // Only show blocker if paypal container is also visible
+        const pp = document.getElementById('paypal-button-container');
+        if (pp && pp.style.display !== 'none') {
+          paypalBlocker.style.display = 'block';
+        }
       }
     });
   }
@@ -3659,15 +3668,25 @@ const renewBtn = document.getElementById('renewSubscriptionBtn');
 if (renewBtn) {
   renewBtn.addEventListener('click', () => {
     const ppContainer = document.getElementById('paypal-button-container');
+    const tosContainer = document.getElementById('tos-container');
     if (!ppContainer) return;
 
     const isVisible = ppContainer.style.display !== 'none';
     if (isVisible) {
       ppContainer.style.display = 'none';
+      if (tosContainer) tosContainer.style.display = 'none';
       renewBtn.textContent = window.t('mypage.btn_renew') || '🔄 구독 갱신 (Renew)';
     } else {
+      if (tosContainer) tosContainer.style.display = 'block';
       ppContainer.style.display = 'block';
       ppContainer.style.marginBottom = '16px';
+
+      const tosCheck = document.getElementById('tosCheckbox');
+      const blocker = document.getElementById('paypalBlocker');
+      if (blocker && tosCheck) {
+        blocker.style.display = tosCheck.checked ? 'none' : 'block';
+      }
+
       renderPayPalButtons(); // Render PayPal buttons
       ppContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
       renewBtn.textContent = i18n.currentLang === 'ko' ? '✕ 결제창 닫기' : '✕ Close Payment';
@@ -3680,15 +3699,25 @@ const extendBtn = document.getElementById('extendSubscriptionBtn');
 if (extendBtn) {
   extendBtn.addEventListener('click', () => {
     const ppContainer = document.getElementById('paypal-button-container');
+    const tosContainer = document.getElementById('tos-container');
     if (!ppContainer) return;
 
     const isVisible = ppContainer.style.display !== 'none';
     if (isVisible) {
       ppContainer.style.display = 'none';
+      if (tosContainer) tosContainer.style.display = 'none';
       extendBtn.textContent = window.t('mypage.btn_extend') || '⏳ 구독 연장 (Extend)';
     } else {
+      if (tosContainer) tosContainer.style.display = 'block';
       ppContainer.style.display = 'block';
       ppContainer.style.marginBottom = '16px';
+
+      const tosCheck = document.getElementById('tosCheckbox');
+      const blocker = document.getElementById('paypalBlocker');
+      if (blocker && tosCheck) {
+        blocker.style.display = tosCheck.checked ? 'none' : 'block';
+      }
+
       renderPayPalButtons(); // Render PayPal buttons
       ppContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
       extendBtn.textContent = i18n.currentLang === 'ko' ? '✕ 결제창 닫기' : '✕ Close Payment';

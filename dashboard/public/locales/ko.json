@@ -140,7 +140,8 @@
     "fav_empty": "관심 상품이 없습니다",
     "fav_empty_desc": "상품의 하트 아이콘을 눌러 추가해 보세요",
     "global_trends": "글로벌 K-뷰티 트렌드",
-    "global_trends_desc": "해외 각국 주요 플랫폼의 K-뷰티 언급량 및 인기 제품"
+    "global_trends_desc": "해외 각국 주요 플랫폼의 K-뷰티 언급량 및 인기 제품",
+    "k_trend_empty": "선택한 조건에 해당하는 글로벌 트렌드 데이터가 없습니다."
   },
   "insights": {
     "category_share": "카테고리별 점유율",

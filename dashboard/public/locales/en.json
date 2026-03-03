@@ -136,7 +136,8 @@
     "fav_empty": "No items in Wishlist",
     "fav_empty_desc": "Click the heart icon on products to save them",
     "global_trends": "Global K-Beauty Trends",
-    "global_trends_desc": "Popular K-Beauty products and mentions across international platforms"
+    "global_trends_desc": "Popular K-Beauty products and mentions across international platforms",
+    "k_trend_empty": "No global trend data found for the selected conditions."
   },
   "insights": {
     "category_share": "Category Share",
