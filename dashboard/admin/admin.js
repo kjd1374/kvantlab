@@ -5,10 +5,19 @@ import {
     fetchAnnouncements,
     insertAnnouncement,
     updateAnnouncement,
-    deleteAnnouncement
+    deleteAnnouncement,
+    getProfile
 } from '../supabase.js';
 
 async function initAdmin() {
+    // 0. Authorization Check
+    const profile = getProfile();
+    if (!profile || profile.role !== 'admin') {
+        alert('관리자 권한이 없습니다.');
+        window.location.href = '/';
+        return;
+    }
+
     // Elements
     const navLinks = document.querySelectorAll('.nav-link');
     const tabContents = document.querySelectorAll('.tab-content');

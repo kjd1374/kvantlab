@@ -325,7 +325,14 @@ export async function fetchProducts({ page = 1, perPage = 20, search = '', sortB
     let params = `select=*,ai_summary&source=eq.${platform}&order=${sortBy}.${sortDir}&offset=${offset}&limit=${perPage}`;
 
     if (search) {
-        params += `&or=(name.ilike.*${encodeURIComponent(search)}*,brand.ilike.*${encodeURIComponent(search)}*)`;
+
+
+        const searchEncoded = encodeURIComponent(search);
+
+
+        params += `&or=(name.ilike.*${searchEncoded}*,brand.ilike.*${searchEncoded}*,name_en.ilike.*${searchEncoded}*,brand_en.ilike.*${searchEncoded}*)`;
+
+
     }
 
     if (category && category !== 'all') {
@@ -397,7 +404,8 @@ export async function fetchRankedProducts({ page = 1, perPage = 20, search = '',
                 let prodParams = `select=*&id=in.(${idFilter})`;
 
                 if (search) {
-                    prodParams += `&or=(name.ilike.*${encodeURIComponent(search)}*,brand.ilike.*${encodeURIComponent(search)}*)`;
+                    const searchEncoded = encodeURIComponent(search);
+                    prodParams += `&or=(name.ilike.*${searchEncoded}*,brand.ilike.*${searchEncoded}*,name_en.ilike.*${searchEncoded}*,brand_en.ilike.*${searchEncoded}*)`;
                 }
 
                 if (gender && gender !== 'all' && platform === 'musinsa') {
@@ -437,7 +445,14 @@ export async function fetchRankedProducts({ page = 1, perPage = 20, search = '',
     }
 
     if (search) {
-        params += `&or=(name.ilike.*${encodeURIComponent(search)}*,brand.ilike.*${encodeURIComponent(search)}*)`;
+
+
+        const searchEncoded = encodeURIComponent(search);
+
+
+        params += `&or=(name.ilike.*${searchEncoded}*,brand.ilike.*${searchEncoded}*,name_en.ilike.*${searchEncoded}*,brand_en.ilike.*${searchEncoded}*)`;
+
+
     }
 
     if (gender && gender !== 'all' && platform === 'musinsa') {
@@ -710,17 +725,7 @@ export async function insertAnnouncement(title, content, type, is_published, ext
     if (!session) return { error: 'Not authenticated' };
 
     const bodyData = {
-        title, content, type, is_published,
-        title_en: extra_langs.title_en || '',
-        content_en: extra_langs.content_en || '',
-        title_ja: extra_langs.title_ja || '',
-        content_ja: extra_langs.content_ja || '',
-        title_th: extra_langs.title_th || '',
-        content_th: extra_langs.content_th || '',
-        title_vi: extra_langs.title_vi || '',
-        content_vi: extra_langs.content_vi || '',
-        title_id: extra_langs.title_id || '',
-        content_id: extra_langs.content_id || ''
+        title, content, type, is_published
     };
 
     const response = await fetch(`${SUPABASE_URL}/rest/v1/board_announcements`, {
@@ -745,17 +750,7 @@ export async function updateAnnouncement(id, title, content, type, is_published,
     if (!session) return { error: 'Not authenticated' };
 
     const bodyData = {
-        title, content, type, is_published,
-        title_en: extra_langs.title_en || '',
-        content_en: extra_langs.content_en || '',
-        title_ja: extra_langs.title_ja || '',
-        content_ja: extra_langs.content_ja || '',
-        title_th: extra_langs.title_th || '',
-        content_th: extra_langs.content_th || '',
-        title_vi: extra_langs.title_vi || '',
-        content_vi: extra_langs.content_vi || '',
-        title_id: extra_langs.title_id || '',
-        content_id: extra_langs.content_id || ''
+        title, content, type, is_published
     };
 
     const response = await fetch(`${SUPABASE_URL}/rest/v1/board_announcements?id=eq.${id}`, {

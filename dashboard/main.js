@@ -1621,6 +1621,10 @@ function renderProductCard(p, mode = 'normal', isGlobalTrend = false, isWishlist
 
   return `
     <div class="product-card ${isTrend || isGlobalTrend ? 'trend-card' : ''} ${isLocked ? 'locked-card' : ''}" 
+      data-name-ko="${escapeHtml(p.name || p.name_ko || '')}"
+      data-name-en="${escapeHtml(p.name_en || '')}"
+      data-brand-ko="${escapeHtml(p.brand || p.brand_ko || '')}"
+      data-brand-en="${escapeHtml(p.brand_en || '')}"
       onclick="${isLocked ? '' : `window.__openProduct(${JSON.stringify(p).replace(/"/g, '&quot;')})`}">
       ${isLocked ? `<div class="locked-overlay"><span>PRO Only</span></div>` : ''}
       <div class="product-wishlist-pos">
@@ -3787,8 +3791,25 @@ window.openQuoteModal = function (directItems = null) {
 
       const qty = parseInt(input.value) || 0;
       if (qty > 0) {
-        const name = card ? (card.querySelector('.product-name')?.innerText || 'Unknown') : 'Unknown';
-        const brand = card ? (card.querySelector('.product-brand')?.innerText || '') : '';
+        const lang = i18n.currentLang;
+        let name = 'Unknown';
+        let brand = '';
+
+        if (card) {
+          const nameKo = card.getAttribute('data-name-ko');
+          const nameEn = card.getAttribute('data-name-en');
+          const brandKo = card.getAttribute('data-brand-ko');
+          const brandEn = card.getAttribute('data-brand-en');
+
+          if (lang === 'ko') {
+            name = nameKo || card.querySelector('.product-name')?.innerText || 'Unknown';
+            brand = brandKo || card.querySelector('.product-brand')?.innerText || '';
+          } else {
+            name = nameEn || nameKo || card.querySelector('.product-name')?.innerText || 'Unknown';
+            brand = brandEn || brandKo || card.querySelector('.product-brand')?.innerText || '';
+          }
+        }
+
         const pid = input.getAttribute('data-product-id');
         const img = card ? (card.querySelector('img')?.src || '') : '';
         items.push({ product_id: pid, name, brand, qty: qty, quantity: qty, image: img });
@@ -3999,7 +4020,7 @@ window.submitQuoteRequest = async function () {
     const imageUrls = [];
     if (__quoteImageFiles.length > 0) {
       const { createClient: mkClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
-      const _sb = mkClient('https://hgxblbbjlnsfkffwvfao.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhneGJsYmJqbG5zZmtmZnd2ZmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwNjU2ODYsImV4cCI6MjA3OTY0MTY4Nn0.iFmcZvBOR5u47N6H1LwFoNJJe5o1fq61y1IkNeFlPyI');
+      const _sb = mkClient('https://hgxblbbjlnsfkffwvfao.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhneGJsYmJqbG5zZmtmZnd2ZmFvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDA2NTY4NiwiZXhwIjoyMDc5NjQxNjg2fQ.SRxircIxDPE9Z8xElZzUFK_l9yOsjtKEoAnd7ILpKh8');
       for (const file of __quoteImageFiles) {
         const ext = file.name.split('.').pop();
         const path = `quotes/${session.user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
