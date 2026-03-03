@@ -1552,9 +1552,9 @@ function renderProductCard(p, mode = 'normal', isGlobalTrend = false, isWishlist
     priceHtml = `<div class="price-current" style="color:var(--accent-blue);font-size:16px;">💬 ${formatNumber(currentPrice)}건 언급</div>`;
   } else if (showDeal && discountPct > 0) {
     priceHtml = `<div class="deal-price-row">
-             <span class="deal-pct">${discountPct}%</span>
-             <span class="deal-sale-price">${formatPrice(currentPrice)}</span>
              ${originalPrice > 0 ? `<span class="deal-orig-price">${formatPrice(originalPrice)}</span>` : ''}
+             <span class="deal-sale-price">${formatPrice(currentPrice)}</span>
+             <span class="deal-pct">${discountPct}%</span>
            </div>`;
   } else {
     priceHtml = `<div class="price-current">${formatPrice(currentPrice)}</div>`;
