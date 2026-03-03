@@ -3806,13 +3806,17 @@ window.openQuoteModal = function (directItems = null) {
           const nameEn = card.getAttribute('data-name-en');
           const brandKo = card.getAttribute('data-brand-ko');
           const brandEn = card.getAttribute('data-brand-en');
+          // translateProducts() updates the visible .product-name text to the translated version
+          const visibleName = card.querySelector('.product-name')?.innerText || '';
+          const visibleBrand = card.querySelector('.product-brand')?.innerText || '';
 
           if (lang === 'ko') {
-            name = nameKo || card.querySelector('.product-name')?.innerText || 'Unknown';
-            brand = brandKo || card.querySelector('.product-brand')?.innerText || '';
+            name = nameKo || visibleName || 'Unknown';
+            brand = brandKo || visibleBrand || '';
           } else {
-            name = nameEn || nameKo || card.querySelector('.product-name')?.innerText || 'Unknown';
-            brand = brandEn || brandKo || card.querySelector('.product-brand')?.innerText || '';
+            // Prefer the visible (already translated) text, then data-name-en, then Korean fallback
+            name = (nameEn && nameEn.trim()) || visibleName || nameKo || 'Unknown';
+            brand = (brandEn && brandEn.trim()) || visibleBrand || brandKo || '';
           }
         }
 
