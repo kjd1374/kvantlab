@@ -272,7 +272,14 @@ export async function fetchDailySpecials(platform = 'oliveyoung') {
             const p = productsMap[s.product_id];
             const specialPrice = s.special_price;
             // Try to find a meaningful original price (higher than special price)
-            const origPrice = p.price && p.price > specialPrice ? p.price : null;
+            let origPrice = p.price && p.price > specialPrice ? p.price : null;
+
+            // If original price is not in master table, calculate it from special_price and discount_rate
+            if (!origPrice && specialPrice && s.discount_rate) {
+                const calcOrig = specialPrice / (1 - (s.discount_rate / 100));
+                origPrice = Math.round(calcOrig / 100) * 100;
+            }
+
             const discountPct = origPrice
                 ? Math.round((1 - specialPrice / origPrice) * 100)
                 : (s.discount_rate || null);
