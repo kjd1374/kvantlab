@@ -3146,6 +3146,70 @@ async function initNotificationSystem() {
   setInterval(fetchAndRenderNotifications, 60000);
 }
 
+function translateNotification(title, message, lang) {
+  if (!lang || lang === 'ko') return { title, message };
+
+  const translations = {
+    en: {
+      '📦 견적 출발 안내': '📦 Quote Preparation Started',
+      '💰 견적 도착 안내': '💰 Quote Ready',
+      '✅ 발주/배송 환료': '✅ Order/Delivery Completed',
+      '❌ 요청 취소 안내': '❌ Request Canceled',
+      '요청하신 소싱 제품의 견적 산출이 시작되었습니다.': 'We have started calculating the quote for the requested sourcing products.',
+      '요청하신 소싱 건에 대한 총 예상 견적': 'A total estimated quote has been calculated for your sourcing request.',
+      '요청하신 소싱 건의 발주 및 배송 처리가 완료되었습니다.': 'The order and delivery process for your sourcing request has been completed.',
+      '요청하신 소싱 건이 취소되었습니다. 관리자 메시지를 확인해주세요.': 'Your sourcing request has been canceled. Please check the admin message.',
+      '새로운 알림이 없습니다.': 'No new notifications.'
+    },
+    ja: {
+      '📦 견적 출발 안내': '📦 見積開始の案内',
+      '💰 견적 도착 안내': '💰 見積完了の案内',
+      '✅ 발주/배송 환료': '✅ 発注/配送完了',
+      '❌ 요청 취소 안내': '❌ リクエストキャンセル案内',
+      '요청하신 소싱 제품의 견적 산출이 시작되었습니다.': 'リクエストされたソーシング製品の見積算出が開始されました。',
+      '요청하신 소싱 건에 대한 총 예상 견적': 'ソーシング案件の総予想見積もりが算出されました。',
+      '요청하신 소싱 건의 발주 및 배송 처리가 완료되었습니다.': 'ソーシング案件の発注および配送処理が完了しました。',
+      '요청하신 소싱 건이 취소되었습니다. 관리자 메시지를 확인해주세요.': 'ソーシング案件がキャンセルされました。管理者メッセージを確認してください。',
+      '새로운 알림이 없습니다.': '新しい通知はありません。'
+    },
+    th: {
+      '📦 견적 출발 안내': '📦 แจ้งเริ่มดำเนินการประเมินราคา',
+      '💰 견적 도착 안내': '💰 แจ้งการประเมินราคาเสร็จสิ้น',
+      '✅ 발주/배송 환료': '✅ สั่งซื้อ/จัดส่งเสร็จสมบูรณ์',
+      '❌ 요청 취소 안내': '❌ แจ้งยกเลิกคำขอ',
+      '새로운 알림이 없습니다.': 'ไม่มีการแจ้งเตือนใหม่'
+    },
+    vi: {
+      '📦 견적 출발 안내': '📦 Thông báo bắt đầu báo giá',
+      '💰 견적 도착 안내': '💰 Thông báo báo giá đã sẵn sàng',
+      '✅ 발주/배송 환료': '✅ Đơn hàng/Giao hàng hoàn tất',
+      '❌ 요청 취소 안내': '❌ Thông báo hủy yêu cầu',
+      '새로운 알림이 없습니다.': 'Không có thông báo mới'
+    }
+  };
+
+  const dict = translations[lang] || translations['en'];
+  let tTitle = dict[title] || title;
+  let tMessage = message;
+
+  // Handle dynamic price messages
+  if (message.includes('총 예상 견적')) {
+    const priceMatch = message.match(/\(([^)]+)\)/);
+    const priceStr = priceMatch ? priceMatch[1] : '';
+    if (lang === 'en') {
+      tMessage = `A total estimated quote of ${priceStr} has been calculated for your sourcing request.`;
+    } else if (lang === 'ja') {
+      tMessage = `ソーシング案件の総予想見積もり(${priceStr})が算出されました。`;
+    } else if (dict['요청하신 소싱 건에 대한 총 예상 견적']) {
+      tMessage = dict['요청하신 소싱 건에 대한 총 예상 견적'] + (priceStr ? ` (${priceStr})` : '');
+    }
+  } else {
+    tMessage = dict[message] || message;
+  }
+
+  return { title: tTitle, message: tMessage };
+}
+
 async function fetchAndRenderNotifications() {
   const session = getSession();
   if (!session) return;
@@ -3163,16 +3227,24 @@ async function fetchAndRenderNotifications() {
         badge.style.display = 'block';
         badge.innerText = data.notifications.length > 99 ? '99+' : data.notifications.length;
 
-        listBody.innerHTML = data.notifications.map(n => `
-          <div class="notif-item" onclick="handleNotiClick('${n.id}', '${n.link}')">
-            <div class="notif-title">${escapeHtml(n.title)}</div>
-            <div class="notif-message">${escapeHtml(n.message)}</div>
-            <div class="notif-time">${new Date(n.created_at).toLocaleString('ko-KR')}</div>
-          </div>
-        `).join('');
+        const lang = (window.i18n && window.i18n.currentLang) || 'ko';
+
+        listBody.innerHTML = data.notifications.map(n => {
+          const { title: tTitle, message: tMsg } = translateNotification(n.title, n.message, lang);
+          const langCode = lang === 'en' ? 'en-US' : (lang === 'ko' ? 'ko-KR' : lang);
+
+          return `
+            <div class="notif-item" onclick="handleNotiClick('${n.id}', '${n.link}')">
+              <div class="notif-title">${escapeHtml(tTitle)}</div>
+              <div class="notif-message">${escapeHtml(tMsg)}</div>
+              <div class="notif-time">${new Date(n.created_at).toLocaleString(langCode)}</div>
+            </div>
+          `;
+        }).join('');
       } else {
         badge.style.display = 'none';
-        listBody.innerHTML = `<div style="color:var(--text-muted); font-size:12px; text-align:center; padding:20px 0;">새로운 알림이 없습니다.</div>`;
+        const emptyMsg = (window.t && window.t('notifications.empty')) || '새로운 알림이 없습니다.';
+        listBody.innerHTML = `<div style="color:var(--text-muted); font-size:12px; text-align:center; padding:20px 0;">${emptyMsg}</div>`;
       }
     }
   } catch (e) {

@@ -725,7 +725,8 @@ export async function insertAnnouncement(title, content, type, is_published, ext
     if (!session) return { error: 'Not authenticated' };
 
     const bodyData = {
-        title, content, type, is_published
+        title, content, type, is_published,
+        ...extra_langs
     };
 
     const response = await fetch(`${SUPABASE_URL}/rest/v1/board_announcements`, {
@@ -750,7 +751,8 @@ export async function updateAnnouncement(id, title, content, type, is_published,
     if (!session) return { error: 'Not authenticated' };
 
     const bodyData = {
-        title, content, type, is_published
+        title, content, type, is_published,
+        ...extra_langs
     };
 
     const response = await fetch(`${SUPABASE_URL}/rest/v1/board_announcements?id=eq.${id}`, {
