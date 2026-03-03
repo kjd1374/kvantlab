@@ -574,25 +574,51 @@ async function initAdmin() {
 
         document.getElementById('sourcingId').value = req.id;
         document.getElementById('sourcingUserEmail').innerText = req.user_email;
-        // Parse message: extract image URLs that were embedded as text (🖼️ 첨부 이미지: ...)
+
+        // Read image URLs and SNS links from dedicated DB columns
+        const imgUrls = Array.isArray(req.image_urls) ? req.image_urls : [];
+        const snsLinks = Array.isArray(req.sns_links) ? req.sns_links : [];
         const rawMsg = req.user_message || '없음';
-        const imgSectionMatch = rawMsg.match(/🖼️ 첨부 이미지:\n([\s\S]*?)(\n\n|$)/);
+
+        // Legacy fallback: also try to extract from message text if DB fields are empty
+        let legacyImgs = [];
+        let legacyLinks = [];
         let textPart = rawMsg;
-        let imgUrls = [];
-        if (imgSectionMatch) {
-            imgUrls = imgSectionMatch[1].trim().split('\n').filter(u => u.startsWith('http'));
-            textPart = rawMsg.replace(imgSectionMatch[0], '').trim();
+        if (imgUrls.length === 0) {
+            const imgMatch = rawMsg.match(/🖼️ 첨부 이미지:\n([\s\S]*?)(\n\n|$)/);
+            if (imgMatch) {
+                legacyImgs = imgMatch[1].trim().split('\n').filter(u => u.startsWith('http'));
+                textPart = rawMsg.replace(imgMatch[0], '').trim();
+            }
         }
+        if (snsLinks.length === 0) {
+            const snsMatch = rawMsg.match(/📌 SNS\/상품 링크:\n([\s\S]*?)(\n\n|$)/);
+            if (snsMatch) {
+                legacyLinks = snsMatch[1].trim().split('\n').map(l => l.replace(/^\d+\.\s*/, '')).filter(u => u.startsWith('http'));
+                textPart = textPart.replace(snsMatch[0], '').trim();
+            }
+        }
+        if (imgUrls.length > 0 || snsLinks.length > 0) textPart = rawMsg; // DB fields exist, no need to strip
+
+        const allImgs = imgUrls.length > 0 ? imgUrls : legacyImgs;
+        const allLinks = snsLinks.length > 0 ? snsLinks : legacyLinks;
+
         const msgEl = document.getElementById('sourcingUserMessage');
-        const imgHtml = imgUrls.length > 0
+        const snsHtml = allLinks.length > 0
+            ? `<div style="margin-top:10px; padding-top:10px; border-top:1px solid #eee;">
+                 <div style="font-size:12px; font-weight:600; color:#666; margin-bottom:6px;">🔗 SNS/상품 링크 (${allLinks.length}개)</div>
+                 ${allLinks.map((l, i) => `<div style="margin-bottom:4px;"><a href="${l}" target="_blank" style="color:#0071e3; font-size:13px; word-break:break-all;">${i + 1}. ${l}</a></div>`).join('')}
+               </div>`
+            : '';
+        const imgHtml = allImgs.length > 0
             ? `<div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid #eee;">
-                 <div style="width:100%; font-size:12px; font-weight:600; color:#666; margin-bottom:4px;">📷 첨부 이미지 (${imgUrls.length}장)</div>
-                 ${imgUrls.map(u => `<a href="${u}" target="_blank" title="클릭하여 원본 보기">
+                 <div style="width:100%; font-size:12px; font-weight:600; color:#666; margin-bottom:4px;">📷 첨부 이미지 (${allImgs.length}장)</div>
+                 ${allImgs.map(u => `<a href="${u}" target="_blank" title="클릭하여 원본 보기">
                    <img src="${u}" style="width:80px; height:80px; object-fit:cover; border-radius:8px; border:1px solid #ddd; cursor:pointer;">
                  </a>`).join('')}
                </div>`
             : '';
-        msgEl.innerHTML = `<div style="white-space:pre-wrap;">${textPart.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>${imgHtml}`;
+        msgEl.innerHTML = `<div style="white-space:pre-wrap;">${textPart.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>${snsHtml}${imgHtml}`;
         document.getElementById('sourcingStatus').value = req.status || 'pending';
         // Cost breakdown logic
         const shippingFee = req.shipping_fee || 0;

@@ -785,13 +785,13 @@ app.get('/api/admin/logs', async (req, res) => {
 
 // 1. Submit Sourcing Request (User)
 app.post('/api/sourcing/request', async (req, res) => {
-    const { user_id, user_email, items, user_message } = req.body;
+    const { user_id, user_email, items, user_message, sns_links, image_urls } = req.body;
     try {
         // Insert into Supabase
         const { data, error } = await supabase
             .from('sourcing_requests')
             .insert([
-                { user_id, user_email, items, user_message }
+                { user_id, user_email, items, user_message, sns_links: sns_links || [], image_urls: image_urls || [] }
             ])
             .select();
 

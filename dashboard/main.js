@@ -4043,9 +4043,7 @@ window.submitQuoteRequest = async function () {
       }
     }
 
-    // Append SNS links and image URLs to message
-    if (snsLinks.length > 0) message += '\n\n📌 SNS/상품 링크:\n' + snsLinks.map((l, i) => `${i + 1}. ${l}`).join('\n');
-    if (imageUrls.length > 0) message += '\n\n🖼️ 첨부 이미지:\n' + imageUrls.join('\n');
+    // SNS links and image URLs are sent as separate fields (not appended to message)
 
     // Use global items
     const items = window.__currentQuoteItems || [];
@@ -4059,7 +4057,7 @@ window.submitQuoteRequest = async function () {
     const res = await fetch('/api/sourcing/request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: session.user.id, user_email: session.user.email, items, user_message: message })
+      body: JSON.stringify({ user_id: session.user.id, user_email: session.user.email, items, user_message: message, sns_links: snsLinks, image_urls: imageUrls })
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error || window.t('sourcing.alert_fail'));
