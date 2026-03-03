@@ -3155,8 +3155,8 @@ async function fetchAndRenderNotifications() {
     if (!res.ok) return;
     const data = await res.json();
     if (data.success && data.notifications) {
-      const badge = document.getElementById('notiBadge');
-      const listBody = document.getElementById('notiListBody');
+      const badge = document.getElementById('notifBadge');
+      const listBody = document.getElementById('notifList');
       if (!badge || !listBody) return;
 
       if (data.notifications.length > 0) {
@@ -3179,6 +3179,9 @@ async function fetchAndRenderNotifications() {
     console.error("Failed to fetch notifications:", e);
   }
 }
+
+// Alias for compatibility
+window.renderNotifications = fetchAndRenderNotifications;
 
 window.handleNotiClick = async function (id, link) {
   try {
@@ -4026,11 +4029,12 @@ window.submitQuoteRequest = async function () {
     const session = getSession();
     if (!session) throw new Error(window.t('sourcing.alert_login'));
 
-    // Upload images to Supabase Storage
+    // Image Uploading Disabled by User Request
     const imageUrls = [];
+    /*
     if (__quoteImageFiles.length > 0) {
       const { createClient: mkClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
-      const _sb = mkClient('https://hgxblbbjlnsfkffwvfao.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhneGJsYmJqbG5zZmtmZnd2ZmFvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDA2NTY4NiwiZXhwIjoyMDc5NjQxNjg2fQ.SRxircIxDPE9Z8xElZzUFK_l9yOsjtKEoAnd7ILpKh8');
+      const _sb = mkClient('...', '...'); 
       for (const file of __quoteImageFiles) {
         const ext = file.name.split('.').pop();
         const path = `quotes/${session.user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
@@ -4042,6 +4046,7 @@ window.submitQuoteRequest = async function () {
         }
       }
     }
+    */
 
     // SNS links and image URLs are sent as separate fields (not appended to message)
 

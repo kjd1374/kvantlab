@@ -999,11 +999,11 @@ export async function searchProductsSemantic(queryText, limit = 20) {
  */
 
 export async function fetchNotifications(limit = 20) {
-    return query('notifications', `select=*,products_master(name,brand,image_url)&order=created_at.desc&limit=${limit}`);
+    return query('user_notifications', `select=*,products_master(name,brand,image_url)&order=created_at.desc&limit=${limit}`);
 }
 
 export async function markNotificationAsRead(id) {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/notifications?id=eq.${id}`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/user_notifications?id=eq.${id}`, {
         method: 'PATCH',
         headers: headers,
         body: JSON.stringify({ is_read: true })
@@ -1012,7 +1012,7 @@ export async function markNotificationAsRead(id) {
 }
 
 export async function clearNotifications() {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/notifications`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/user_notifications`, {
         method: 'DELETE',
         headers: headers
     });
