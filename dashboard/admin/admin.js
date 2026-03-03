@@ -1,6 +1,8 @@
 /**
  * Data Pool Admin Controller
+ * Version: v33
  */
+console.log('admin.js v33 initialized');
 import {
     fetchAnnouncements,
     insertAnnouncement,
@@ -436,7 +438,12 @@ async function initAdmin() {
             announcementModal.style.display = 'none';
             loadAnnouncements();
         } catch (err) {
-            alert('저장 실패: ' + err.message);
+            console.error('Save error:', err);
+            if (err.message === 'Not authenticated' || err.message.includes('JWT')) {
+                alert('세션이 만료되었습니다. 보안을 위해 다시 로그인해주세요.\n(새 탭에서 로그인 후 현재 페이지에서 다시 저장 시도 가능합니다)');
+            } else {
+                alert('저장 실패: ' + err.message);
+            }
         } finally {
             saveAnnouncementBtn.disabled = false;
         }

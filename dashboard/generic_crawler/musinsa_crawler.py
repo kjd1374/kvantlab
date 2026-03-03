@@ -102,6 +102,17 @@ def musinsa_crawl():
                         link_url = f"https://www.musinsa.com/products/{product_id}"
                         rank = idx + 1
                         
+                        # Extract reviews from analytic payload if available
+                        review_count = 0
+                        review_rating = 0.0
+                        amp_payload = item.get("onClick", {}).get("eventLog", {}).get("amplitude", {}).get("payload", {})
+                        raw_rc = amp_payload.get("reviewCount")
+                        raw_score = amp_payload.get("reviewScore")
+                        if raw_rc and str(raw_rc).isdigit():
+                            review_count = int(raw_rc)
+                        if raw_score and str(raw_score).isdigit():
+                            review_rating = round(int(raw_score) / 20.0, 1)
+                        
                         if title and product_id:
                             brand_en = get_english_brand(brand) if brand else ""
                             product_record = {
@@ -114,6 +125,8 @@ def musinsa_crawl():
                                 "price": price,
                                 "image_url": image_url,
                                 "url": link_url,
+                                "review_count": review_count,
+                                "review_rating": review_rating,
                                 "tags": {"gender": "male" if gender == 'M' else "female"},
                                 "updated_at": datetime.now().isoformat()
                             }

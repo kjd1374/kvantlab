@@ -197,7 +197,7 @@ async def crawl_oliveyoung_categories(page, categories_list):
                     const imgEl = li.querySelector('img');
                     const imgUrl = imgEl ? (imgEl.src || imgEl.dataset.original) : '';
                     
-                    // 리뷰 & 평점
+                    // 리뷰 & 평점 (리스트 페이지용)
                     const pointEl = info.querySelector('.point');
                     const reviewEl = info.querySelector('.review');
                     
@@ -205,12 +205,15 @@ async def crawl_oliveyoung_categories(page, categories_list):
                     let reviewCount = 0;
                     
                     if (pointEl) {
-                        // Text is "10점만점에 X.X점" - extract the actual rating after "에"
                         const pointText = pointEl.innerText.trim();
+                        // 매칭: "10점만점에 4.9점" 등
                         const ratingMatch = pointText.match(/에\s*([0-9.]+)\s*점/);
                         if (ratingMatch) {
-                            // Convert from 10-point to 5-point scale
-                            rating = Math.round((parseFloat(ratingMatch[1]) / 2) * 10) / 10;
+                            const rawScore = parseFloat(ratingMatch[1]);
+                            // 5.5 is Olive Young's default template placeholder (10점만점에 5.5점). Ignore it.
+                            if (rawScore !== 5.5) {
+                                rating = Math.round((rawScore / 2) * 10) / 10;
+                            }
                         }
                     }
                     
@@ -293,24 +296,32 @@ async def scrape_product_reviews(page, goods_no):
             let rating = 0.0;
             let reviews = [];
             
-            // Review count - try multiple selectors
-            const reviewTabEl = document.querySelector('#reviewInfo');
-            if (reviewTabEl) {
-                const m = reviewTabEl.innerText.match(/([0-9,]+)/);
-                if (m) reviewCount = parseInt(m[1].replace(/,/g, '')) || 0;
-            }
-            if (!reviewCount) {
-                const repEl = document.querySelector('.repReview b');
-                if (repEl) reviewCount = parseInt(repEl.innerText.replace(/[^0-9]/g, '')) || 0;
+            // Modern review count extractor
+            const reviewBtn = document.querySelector('.ReviewArea_btn-review__gZoOZ') || document.querySelector('.ReviewArea_review-count__WeZ28') || document.querySelector('.ReviewArea_btn-review__gZoOZ span');
+            if (reviewBtn) {
+                reviewCount = parseInt(reviewBtn.innerText.replace(/[^0-9]/g, '')) || 0;
+            } else {
+                // Fallback to old format
+                const reviewTabEl = document.querySelector('#reviewInfo');
+                if (reviewTabEl) {
+                    const m = reviewTabEl.innerText.match(/([0-9,]+)/);
+                    if (m) reviewCount = parseInt(m[1].replace(/,/g, '')) || 0;
+                }
+                if (!reviewCount) {
+                    const repEl = document.querySelector('.repReview b');
+                    if (repEl) reviewCount = parseInt(repEl.innerText.replace(/[^0-9]/g, '')) || 0;
+                }
             }
             
-            // Rating
-            const ratingEl = document.querySelector('.prd_total_score .num strong') || document.querySelector('.num strong');
+            // Modern rating extractor
+            const ratingEl = document.querySelector('.ReviewArea_rating-star__al_PT') || document.querySelector('.prd_total_score .num strong') || document.querySelector('.num strong');
             if (ratingEl) {
-                rating = parseFloat(ratingEl.innerText.trim()) || 0.0;
+                // Remove the "평점" text which might be in the string, or just extract float
+                const ratingText = ratingEl.innerText.replace('평점', '').trim();
+                rating = parseFloat(ratingText) || 0.0;
             }
             
-            // Review texts
+            // Review texts (if needed)
             document.querySelectorAll('.review_cont, .txt_inner, .txt_cont').forEach(r => {
                 let text = r.innerText.trim().replace(/\\s+/g, ' ');
                 if (text.length > 10) reviews.push(text);

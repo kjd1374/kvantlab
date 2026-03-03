@@ -1,7 +1,9 @@
 /**
  * Supabase API Client
  * K-Trend Intelligence Dashboard
+ * Version: v33
  */
+console.log('supabase.js v33 initialized');
 
 const SUPABASE_URL = 'https://hgxblbbjlnsfkffwvfao.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhneGJsYmJqbG5zZmtmZnd2ZmFvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDA2NTY4NiwiZXhwIjoyMDc5NjQxNjg2fQ.SRxircIxDPE9Z8xElZzUFK_l9yOsjtKEoAnd7ILpKh8';
@@ -23,17 +25,29 @@ const authHeaders = (token) => ({
  * Generic query helper
  */
 export async function query(table, params = '') {
-    const url = `${SUPABASE_URL}/rest/v1/${table}?${params}`;
-    const res = await fetch(url, { headers });
-    const jsonData = await res.json();
+    try {
+        const url = `${SUPABASE_URL}/rest/v1/${table}?${params}`;
+        const session = getSession();
 
-    if (!res.ok) {
-        console.error('Supabase Query Error:', jsonData);
-        throw new Error(jsonData.message || '데이터를 불러오는 중 오류가 발생했습니다.');
+        let res;
+        if (session) {
+            res = await authorizedFetch(url);
+        } else {
+            res = await fetch(url, { headers });
+        }
+
+        const jsonData = await res.json();
+
+        if (!res.ok) {
+            console.error('Supabase Query Error:', jsonData);
+            return { error: jsonData.message || '데이터를 불러오는 중 오류가 발생했습니다.', data: [] };
+        }
+
+        const count = res.headers.get('content-range');
+        return { data: jsonData, count: count ? parseInt(count.split('/')[1]) : jsonData.length };
+    } catch (e) {
+        return { error: e.message || e, data: [] };
     }
-
-    const count = res.headers.get('content-range');
-    return { data: jsonData, count: count ? parseInt(count.split('/')[1]) : jsonData.length };
 }
 
 /**
@@ -647,6 +661,7 @@ export async function signIn(email, password) {
     }
     if (data.access_token) {
         sessionStorage.setItem('sb-token', data.access_token);
+        if (data.refresh_token) sessionStorage.setItem('sb-refresh-token', data.refresh_token);
         sessionStorage.setItem('sb-user', JSON.stringify(data.user));
 
         // Fetch and store profile (membership tier)
@@ -661,11 +676,16 @@ export async function signIn(email, password) {
 }
 
 export async function fetchUserProfile(userId) {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=*`, {
-        headers: headers
-    });
-    const data = await res.json();
-    return data?.[0] || null;
+    try {
+        const response = await authorizedFetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=*`);
+        const data = await response.json();
+        return data?.[0] || null;
+    } catch (e) {
+        // Fallback for non-auth requests or initial login
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=*`, { headers });
+        const data = await res.json();
+        return data?.[0] || null;
+    }
 }
 
 export function getProfile() {
@@ -704,8 +724,71 @@ export function signOut() {
 
 export function getSession() {
     const token = sessionStorage.getItem('sb-token');
+    const refresh_token = sessionStorage.getItem('sb-refresh-token');
     const user = JSON.parse(sessionStorage.getItem('sb-user') || 'null');
-    return token ? { access_token: token, user } : null;
+    return token ? { access_token: token, refresh_token, user } : null;
+}
+
+/**
+ * Refresh the current session using the refresh_token
+ */
+export async function refreshSession() {
+    const session = getSession();
+    if (!session || !session.refresh_token) return null;
+
+    try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({ refresh_token: session.refresh_token })
+        });
+        const data = await res.json();
+        if (res.ok && data.access_token) {
+            sessionStorage.setItem('sb-token', data.access_token);
+            if (data.refresh_token) sessionStorage.setItem('sb-refresh-token', data.refresh_token);
+            sessionStorage.setItem('sb-user', JSON.stringify(data.user));
+            return data;
+        }
+        return null;
+    } catch (e) {
+        console.error('Session refresh failed:', e);
+        return null;
+    }
+}
+/**
+ * Helper to perform authenticated requests with auto-refresh on 401/expired JWT
+ */
+export async function authorizedFetch(url, options = {}) {
+    let session = getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const execute = async (token) => {
+        return await fetch(url, {
+            ...options,
+            headers: {
+                ...options.headers,
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+    };
+
+    let res = await execute(session.access_token);
+
+    if (res.status === 401) {
+        const body = await res.clone().json().catch(() => ({}));
+        if (body.message === 'JWT expired' || body.code === 'PGRST301') {
+            console.log('JWT expired, attempting refresh...');
+            const newSession = await refreshSession();
+            if (newSession) {
+                console.log('Refresh successful, retrying...');
+                res = await execute(newSession.access_token);
+            }
+        }
+    }
+
+    return res;
 }
 
 /**
@@ -721,69 +804,59 @@ export async function fetchAnnouncements() {
 }
 
 export async function insertAnnouncement(title, content, type, is_published, extra_langs = {}) {
-    const session = getSession();
-    if (!session) return { error: 'Not authenticated' };
+    try {
+        const bodyData = {
+            title, content, type, is_published,
+            ...extra_langs
+        };
 
-    const bodyData = {
-        title, content, type, is_published,
-        ...extra_langs
-    };
+        const response = await authorizedFetch(`${SUPABASE_URL}/rest/v1/board_announcements`, {
+            method: 'POST',
+            body: JSON.stringify(bodyData)
+        });
 
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/board_announcements`, {
-        method: 'POST',
-        headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-        },
-        body: JSON.stringify(bodyData)
-    });
-    if (!response.ok) {
-        const err = await response.json();
-        return { error: err.message || 'Server error' };
+        const data = await response.json();
+        if (!response.ok) {
+            return { error: data.message || 'Server error' };
+        }
+        return { data };
+    } catch (e) {
+        return { error: e.message || e };
     }
-    return await response.json();
 }
 
 export async function updateAnnouncement(id, title, content, type, is_published, extra_langs = {}) {
-    const session = getSession();
-    if (!session) return { error: 'Not authenticated' };
+    try {
+        const bodyData = {
+            title, content, type, is_published,
+            ...extra_langs
+        };
 
-    const bodyData = {
-        title, content, type, is_published,
-        ...extra_langs
-    };
+        const response = await authorizedFetch(`${SUPABASE_URL}/rest/v1/board_announcements?id=eq.${id}`, {
+            method: 'PATCH',
+            headers: { 'Prefer': 'return=representation' },
+            body: JSON.stringify(bodyData)
+        });
 
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/board_announcements?id=eq.${id}`, {
-        method: 'PATCH',
-        headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-        },
-        body: JSON.stringify(bodyData)
-    });
-    if (!response.ok) {
-        const err = await response.json();
-        return { error: err.message || 'Server error' };
+        const data = await response.json();
+        if (!response.ok) {
+            return { error: data.message || 'Server error' };
+        }
+        return { data };
+    } catch (e) {
+        return { error: e.message || e };
     }
-    return await response.json();
 }
 
 export async function deleteAnnouncement(id) {
-    const session = getSession();
-    if (!session) return { error: 'Not authenticated' };
-
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/board_announcements?id=eq.${id}`, {
-        method: 'DELETE',
-        headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${session.access_token}`
-        }
-    });
-    return response.ok;
+    try {
+        const response = await authorizedFetch(`${SUPABASE_URL}/rest/v1/board_announcements?id=eq.${id}`, {
+            method: 'DELETE'
+        });
+        return response.ok;
+    } catch (e) {
+        return { error: e.message || e };
+    }
 }
 
 /**
@@ -791,23 +864,24 @@ export async function deleteAnnouncement(id) {
  */
 
 export async function fetchSavedProducts() {
-    const session = getSession();
-    if (!session) return { data: [], count: 0 };
+    try {
+        const session = getSession();
+        if (!session) return { data: [], count: 0 };
 
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_products?select=*,products_master(*)&user_id=eq.${session.user.id}`, {
-        headers: authHeaders(session.access_token)
-    });
-    const data = await res.json();
-    const finalData = Array.isArray(data) ? data.map(d => {
-        const p = d.products_master || {};
-        return {
-            ...p,
-            ...d,
-            platform: p.source || '기타',
-            is_saved: true
-        };
-    }) : [];
-    return { data: finalData, count: finalData.length };
+        const response = await authorizedFetch(`${SUPABASE_URL}/rest/v1/saved_products?select=*,products_master(*)&user_id=eq.${session.user.id}`);
+        const data = await response.json();
+        const finalData = Array.isArray(data) ? data.map(d => {
+            const p = d.products_master || {};
+            return {
+                ...p, ...d,
+                platform: p.source || '기타',
+                is_saved: true
+            };
+        }) : [];
+        return { data: finalData, count: finalData.length };
+    } catch (e) {
+        return { data: [], count: 0, error: e.message || e };
+    }
 }
 
 async function resolveMasterId(productId, productData = null, autoInsert = false) {
@@ -856,16 +930,16 @@ export async function saveProduct(productId, pData = null) {
 
     const masterId = await resolveMasterId(productId, pData, true);
 
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_products`, {
+    const response = await authorizedFetch(`${SUPABASE_URL}/rest/v1/saved_products`, {
         method: 'POST',
-        headers: { ...authHeaders(session.access_token), 'Prefer': 'return=representation' },
+        headers: { 'Prefer': 'return=representation' },
         body: JSON.stringify({
             user_id: session.user.id,
             product_id: masterId,
             memo: pData?.memo || ''
         })
     });
-    return await res.json();
+    return await response.json();
 }
 
 export async function removeProduct(productId) {
@@ -875,11 +949,10 @@ export async function removeProduct(productId) {
     const masterId = await resolveMasterId(productId, null, false);
     if (!masterId) return true; // Already removed or doesn't exist
 
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_products?product_id=eq.${masterId}&user_id=eq.${session.user.id}`, {
-        method: 'DELETE',
-        headers: authHeaders(session.access_token)
+    const response = await authorizedFetch(`${SUPABASE_URL}/rest/v1/saved_products?product_id=eq.${masterId}&user_id=eq.${session.user.id}`, {
+        method: 'DELETE'
     });
-    return res.ok;
+    return response.ok;
 }
 
 export async function checkIfSaved(productId) {
@@ -889,10 +962,8 @@ export async function checkIfSaved(productId) {
     const masterId = await resolveMasterId(productId, null, false);
     if (!masterId) return false;
 
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/saved_products?product_id=eq.${masterId}&user_id=eq.${session.user.id}&select=id`, {
-        headers: authHeaders(session.access_token)
-    });
-    const data = await res.json();
+    const response = await authorizedFetch(`${SUPABASE_URL}/rest/v1/saved_products?product_id=eq.${masterId}&user_id=eq.${session.user.id}&select=id`);
+    const data = await response.json();
     return data && data.length > 0;
 }
 
@@ -973,22 +1044,21 @@ export async function searchProductsSemantic(queryText, limit = 20) {
         const queryEmbedding = await generateEmbedding(queryText);
 
         // 2. Call the RPC match_products
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_products`, {
+        const response = await authorizedFetch(`${SUPABASE_URL}/rest/v1/rpc/match_products`, {
             method: 'POST',
-            headers: headers,
             body: JSON.stringify({
                 query_embedding: queryEmbedding,
-                match_threshold: 0.5, // Minimum similarity threshold
+                match_threshold: 0.5,
                 match_count: limit
             })
         });
 
-        if (!res.ok) {
-            const err = await res.json();
+        if (!response.ok) {
+            const err = await response.json();
             throw new Error(err.message || 'Semantic search failed');
         }
 
-        const data = await res.json();
+        const data = await response.json();
         return { data, count: data.length };
     } catch (err) {
         console.error('Semantic search error:', err);
@@ -1005,20 +1075,18 @@ export async function fetchNotifications(limit = 20) {
 }
 
 export async function markNotificationAsRead(id) {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/user_notifications?id=eq.${id}`, {
+    const response = await authorizedFetch(`${SUPABASE_URL}/rest/v1/user_notifications?id=eq.${id}`, {
         method: 'PATCH',
-        headers: headers,
         body: JSON.stringify({ is_read: true })
     });
-    return res.ok;
+    return response.ok;
 }
 
 export async function clearNotifications() {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/user_notifications`, {
-        method: 'DELETE',
-        headers: headers
+    const response = await authorizedFetch(`${SUPABASE_URL}/rest/v1/user_notifications`, {
+        method: 'DELETE'
     });
-    return res.ok;
+    return response.ok;
 }
 
 
@@ -1031,17 +1099,13 @@ export async function fetchFaqs() {
 }
 
 export async function submitInquiry(type, title, message) {
-    const session = await getSession();
+    const session = getSession();
     if (!session?.user) return { data: null, error: new Error('로그인이 필요합니다.') };
 
     try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/support_inquiries`, {
+        const response = await authorizedFetch(`${SUPABASE_URL}/rest/v1/support_inquiries`, {
             method: 'POST',
-            headers: {
-                ...headers,
-                'Authorization': `Bearer ${session.access_token}`,
-                'Prefer': 'return=representation'
-            },
+            headers: { 'Prefer': 'return=representation' },
             body: JSON.stringify({
                 user_id: session.user.id,
                 user_email: session.user.email,
@@ -1051,11 +1115,11 @@ export async function submitInquiry(type, title, message) {
             })
         });
 
-        if (!res.ok) {
-            const err = await res.json();
+        if (!response.ok) {
+            const err = await response.json();
             throw new Error(err.message || '문의 등록 실패');
         }
-        const data = await res.json();
+        const data = await response.json();
         return { data: data[0], error: null };
     } catch (err) {
         return { data: null, error: err };
@@ -1063,7 +1127,7 @@ export async function submitInquiry(type, title, message) {
 }
 
 export async function fetchUserInquiries() {
-    const session = await getSession();
+    const session = getSession();
     if (!session?.user) return { data: [], count: 0 };
     return await query('support_inquiries', `select=*&user_id=eq.${session.user.id}&order=created_at.desc`);
 }
@@ -1073,24 +1137,20 @@ export async function fetchAllInquiries() {
 }
 
 export async function updateInquiryReply(id, replyText, status) {
-    const session = await getSession();
+    const session = getSession();
     if (!session?.user) return { error: new Error('로그인이 필요합니다.') };
 
     try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/support_inquiries?id=eq.${id}`, {
+        const response = await authorizedFetch(`${SUPABASE_URL}/rest/v1/support_inquiries?id=eq.${id}`, {
             method: 'PATCH',
-            headers: {
-                ...headers,
-                'Authorization': `Bearer ${session.access_token}`
-            },
             body: JSON.stringify({
                 admin_reply: replyText,
                 status: status
             })
         });
 
-        if (!res.ok) {
-            const err = await res.json();
+        if (!response.ok) {
+            const err = await response.json();
             throw new Error(err.message || '답변 등록 실패');
         }
         return { error: null };
@@ -1104,39 +1164,32 @@ export async function fetchAllFaqs() {
 }
 
 export async function manageFaq(action, payload) {
-    const session = await getSession();
+    const session = getSession();
     if (!session?.user) return { error: new Error('로그인이 필요합니다.') };
 
-    const fetchHeaders = {
-        ...headers,
-        'Authorization': `Bearer ${session.access_token}`,
-        'Prefer': 'return=representation'
-    };
-
     try {
-        let res;
+        let response;
         if (action === 'POST') {
-            res = await fetch(`${SUPABASE_URL}/rest/v1/support_faqs`, {
+            response = await authorizedFetch(`${SUPABASE_URL}/rest/v1/support_faqs`, {
                 method: 'POST',
-                headers: fetchHeaders,
+                headers: { 'Prefer': 'return=representation' },
                 body: JSON.stringify(payload)
             });
         } else if (action === 'PATCH') {
-            res = await fetch(`${SUPABASE_URL}/rest/v1/support_faqs?id=eq.${payload.id}`, {
+            response = await authorizedFetch(`${SUPABASE_URL}/rest/v1/support_faqs?id=eq.${payload.id}`, {
                 method: 'PATCH',
-                headers: fetchHeaders,
+                headers: { 'Prefer': 'return=representation' },
                 body: JSON.stringify(payload)
             });
         } else if (action === 'DELETE') {
-            res = await fetch(`${SUPABASE_URL}/rest/v1/support_faqs?id=eq.${payload.id}`, {
-                method: 'DELETE',
-                headers: fetchHeaders
+            response = await authorizedFetch(`${SUPABASE_URL}/rest/v1/support_faqs?id=eq.${payload.id}`, {
+                method: 'DELETE'
             });
-            if (res.ok) return { data: null, error: null };
+            if (response.ok) return { data: null, error: null };
         }
 
-        if (!res.ok) throw new Error('FAQ 관리 실패');
-        const data = await res.json();
+        if (!response.ok) throw new Error('FAQ 관리 실패');
+        const data = await response.json();
         return { data: data[0], error: null };
     } catch (err) {
         return { data: null, error: err };

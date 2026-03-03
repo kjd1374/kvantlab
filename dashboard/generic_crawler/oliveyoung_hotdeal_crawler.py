@@ -57,9 +57,12 @@ def save_hotdeal(item):
         brand = item.get('brand_name', '')
         price_org = item.get('price_org', 0)
         price_cur = item.get('price_cur', 0)
+        special_price = price_cur # explicitly define special_price as price_cur
         discount_rate = item.get('discount_rate', 0)
         image_url = item['image']
         url = item['url']
+        review_count = item.get('review_count', 0)
+        review_rating = item.get('review_rating', 0.0)
 
         # Translate brand
         brand_en = get_english_brand(brand) if brand else ""
@@ -77,6 +80,11 @@ def save_hotdeal(item):
             "url": url,
             "updated_at": datetime.now().isoformat()
         }
+        
+        if review_count > 0:
+            product_record["review_count"] = review_count
+        if review_rating > 0:
+            product_record["review_rating"] = review_rating
 
         res = requests.post(
             f"{SUPABASE_URL}/rest/v1/products_master",
@@ -97,6 +105,11 @@ def save_hotdeal(item):
             "brand": brand,
             "image_url": image_url
         }
+        
+        if review_count > 0:
+            ranking_record["review_count"] = review_count
+        if review_rating > 0:
+            ranking_record["review_rating"] = review_rating
         
         # Check if exists in ranking_products_v2
         rank_check_url = f"{SUPABASE_URL}/rest/v1/ranking_products_v2?product_id=eq.{product_id}"
@@ -128,7 +141,7 @@ def save_hotdeal(item):
         special_record = {
             "product_id": str(product_id),
             "date": iso_date,
-            "special_price": price_cur,
+            "special_price": special_price,
             "discount_rate": discount_rate
         }
 
@@ -232,6 +245,29 @@ async def crawl_hotdeals(page):
                 
                 if (imgUrl.startsWith('//')) imgUrl = 'https:' + imgUrl;
                 
+                // Review & Ratings from hotdeal list if available
+                const pointEl = li.querySelector('.point');
+                const reviewEl = li.querySelector('.review');
+                
+                let rating = 0.0;
+                let reviewCount = 0;
+                
+                if (pointEl) {
+                    const pointText = pointEl.innerText.trim();
+                    const ratingMatch = pointText.match(/에\s*([0-9.]+)\s*점/);
+                    if (ratingMatch) {
+                        const rawScore = parseFloat(ratingMatch[1]);
+                        if (rawScore !== 5.5) {
+                            rating = Math.round((rawScore / 2) * 10) / 10;
+                        }
+                    }
+                }
+                
+                if (reviewEl) {
+                    const reviewText = reviewEl.innerText.replace(/[^0-9]/g, '');
+                    reviewCount = parseInt(reviewText) || 0;
+                }
+                
                 let link = linkEl.href;
                 if (!link || !link.startsWith('http')) {
                     link = 'https://www.oliveyoung.co.kr/store/goods/getGoodsDetail.do?goodsNo=' + goodsNo;
@@ -246,7 +282,9 @@ async def crawl_hotdeals(page):
                         price_cur: priceCur,
                         discount_rate: discount,
                         image: imgUrl,
-                        url: link
+                        url: link,
+                        review_count: reviewCount,
+                        review_rating: rating
                     });
                 }
             });

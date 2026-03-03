@@ -9,7 +9,9 @@ import os
 import json
 import time
 import re
+import asyncio
 import requests
+from datetime import datetime
 from translate_helper import get_english_brand
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright
@@ -176,10 +178,10 @@ async def crawl_ably_category(page, category):
         print(f"  ❌ 메인 페이지 로드 실패: {e}")
         return 0
 
-    await asyncio.sleep(5)
+    await asyncio.sleep(4)
     
     # 홈 페이지 HTML 디버깅
-    await debug_page_structure(page, "home_main")
+    # await debug_page_structure(page, "home_main")
 
     # 카테고리 탭 클릭 (하단 네비게이션)
     category_clicked = False
@@ -211,7 +213,7 @@ async def crawl_ably_category(page, category):
     except Exception as e:
         print(f"  ⚠️ 카테고리 버튼 클릭 에러: {e}")
 
-    await asyncio.sleep(2)
+    await asyncio.sleep(1)
 
     if not category_clicked:
          print("  ⚠️ 카테고리 진입 실패, 검색으로 대체 시도")
@@ -261,7 +263,7 @@ async def crawl_ably_category(page, category):
     except Exception as e:
          print(f"  ⚠️ 카테고리 선택 중 에러: {e}")
          return 0
-    await asyncio.sleep(3)
+    await asyncio.sleep(1)
     current_url = page.url
     print(f"  🚩 현재 URL: {current_url}")
     
@@ -357,6 +359,10 @@ async def crawl_ably_category(page, category):
                              
                         p_id = product_data.get('sno')
                         p_name = product_data.get('name')
+                        
+                        if p_id and p_name:
+                            print("DEBUG JSON:", json.dumps(product_data))
+                            import sys; sys.exit(0)
                         
                         if p_id and p_name:
                             # 가격 정보: sale_price가 있으면 우선, 없으면 price

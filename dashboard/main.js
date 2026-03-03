@@ -989,7 +989,7 @@ function renderTableRow(p, index) {
         <td>${formatNumber(p.review_count)}</td>
         <td>${p.review_rating && !isNaN(p.review_rating) ? p.review_rating : '-'}</td>
         <td>
-          ${p.product_url ? `<a class="link-btn" href="${p.product_url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">보기 →</a>` : '-'}
+          ${(p.product_url || p.url) ? `<a class="link-btn" href="${p.product_url || p.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">보기 →</a>` : '-'}
         </td>
       </tr>
     `;
@@ -1037,7 +1037,7 @@ async function loadSemanticResults() {
             <td>${price}</td>
             <td>${formatNumber(p.review_count)}</td>
             <td>${p.review_rating && !isNaN(p.review_rating) ? p.review_rating : '-'}</td>
-            <td><a href="${p.product_url}" target="_blank" onclick="event.stopPropagation()">🔗</a></td>
+            <td><a href="${p.product_url || p.url}" target="_blank" onclick="event.stopPropagation()">🔗</a></td>
           </tr>
         `;
       }).join('');

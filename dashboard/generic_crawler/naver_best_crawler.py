@@ -155,7 +155,7 @@ def fetch_products_by_category() -> int:
                     })
             
             if ranking_records:
-                upsert("daily_rankings_v2", ranking_records)
+                upsert("daily_rankings_v2", ranking_records, on_conflict="product_id,date,category_code")
                 
         print(f"  📦 [{cat['ko']}] {len(records)}개 상품")
         total += len(records)

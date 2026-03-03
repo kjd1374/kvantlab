@@ -15,13 +15,13 @@ parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
 from notifier import send_error_notification
 # Load environment variables
-load_dotenv()
+load_dotenv(os.path.join(parent_dir, ".env"))
 
 # Configuration
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://hgxblbbjlnsfkffwvfao.supabase.co")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
-MODEL_NAME = "gemini-3-flash-preview"
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+MODEL_NAME = "gemini-2.0-flash"
 
 if not SUPABASE_KEY:
     print("Error: SUPABASE_KEY is missing from environment.")
@@ -198,34 +198,11 @@ def get_video_captions(video_id: str):
     """
     return ""
 
-from google import genai
-from pydantic import BaseModel
-from typing import List
-
-class ProductMention(BaseModel):
-    product_name: str
-    brand_name: str
-    main_category: str
-    key_benefits: List[str]
-
-class ProductExtraction(BaseModel):
-    products: List[ProductMention]
-
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-# Initialize genai client once
-genai_client = None
-if GEMINI_API_KEY:
-    try:
-        genai_client = genai.Client(api_key=GEMINI_API_KEY)
-    except Exception as e:
-        print(f"Warning: Failed to initialize genai client: {e}")
+OLLAMA_URL = "http://localhost:11434/api/generate"
+MODEL_NAME = "deepseek-r1:8b"
 
 def prompt_local_llm(text: str, country: str) -> list:
-    """Send text to Gemini 3 Flash to extract product lists using Structured Outputs."""
-    if not genai_client:
-        print("Error: Gemini client not initialized. Check GEMINI_API_KEY in .env")
-        return []
+    """Send text to Local DeepSeek (Ollama) to extract product lists."""
     
     prompt = f"""
 Analyze the following media text about Korean cosmetics/shopping lists from {country}.
@@ -234,46 +211,71 @@ For each product, identify its brand, the primary category (e.g., Skincare, Make
 
 Text context:
 {text}
+
+Respond STRICTLY with a valid JSON array of objects. Do not include any markdown formatting, explanations, or thinking blocks.
+Format your output exactly like this example, and nothing else:
+[
+  {{
+    "product_name": "Snail Mucin 96 Essence",
+    "brand_name": "COSRX",
+    "main_category": "Skincare",
+    "key_benefits": ["Hydrating", "Repairing"]
+  }}
+]
 """
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Asking Gemini ({MODEL_NAME}) to extract products using Structured JSON...")
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] Asking Local LLM ({MODEL_NAME}) to extract products using JSON mode...")
     
     try:
         start_time = time.time()
         
-        response = genai_client.models.generate_content(
-            model=MODEL_NAME,
-            contents=prompt,
-            config=genai.types.GenerateContentConfig(
-                temperature=0.0,
-                response_schema=ProductExtraction,
-                response_mime_type="application/json",
-            )
-        )
+        payload = {
+            "model": MODEL_NAME,
+            "prompt": prompt,
+            "stream": False,
+            "format": "json",
+            "options": {
+                "temperature": 0.0
+            }
+        }
+        
+        response = requests.post(OLLAMA_URL, json=payload, timeout=300)
+        response.raise_for_status()
         
         print(f"[{datetime.now().strftime('%H:%M:%S')}] LLM replied in {time.time() - start_time:.1f}s")
         
-        response_text = response.text
+        response_text = response.json().get('response', '')
         
-        # Parse Pydantic response
+        # Deepseek-R1 sometimes leaks <think> tags even with format=json. Strip them if they exist.
+        if '<think>' in response_text:
+            response_text = re.sub(r'<think>.*?</think>', '', response_text, flags=re.DOTALL).strip()
+            
         try:
-             parsed_data = ProductExtraction.model_validate_json(response_text)
-             # Convert back to standard dict list for the DB upsert logic
+             parsed_data = json.loads(response_text)
+             # Handle cases where LLM returns a single object instead of an array
+             if isinstance(parsed_data, dict):
+                 if 'products' in parsed_data:
+                     parsed_data = parsed_data['products']
+                 else:
+                     parsed_data = [parsed_data]
+                 
              result_list = []
-             for prod in parsed_data.products:
+             for prod in parsed_data:
+                 if not isinstance(prod, dict):
+                     continue
                  result_list.append({
-                     "product_name": prod.product_name,
-                     "brand_name": prod.brand_name,
-                     "main_category": prod.main_category,
-                     "key_benefits": prod.key_benefits
+                     "product_name": prod.get('product_name', ''),
+                     "brand_name": prod.get('brand_name', ''),
+                     "main_category": prod.get('main_category', ''),
+                     "key_benefits": prod.get('key_benefits', [])
                  })
              return result_list
         except Exception as parse_e:
-             print(f"Failed to validate rigid JSON structure: {parse_e}")
+             print(f"Failed to validate JSON structure: {parse_e}")
              print(f"Raw Output: {response_text[:200]}")
              return []
              
     except Exception as e:
-        print(f"Error communicating with Gemini library: {e}")
+        print(f"Error communicating with local Ollama library: {e}")
         return []
 
 
