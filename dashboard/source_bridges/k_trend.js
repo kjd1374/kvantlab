@@ -115,8 +115,54 @@ export const KoreaTrendBridge = {
             return { ...item, imageUrl, oyProducts, brandKo };
         }));
 
+        // Deduplicate enriched data by brand and product name
+        const uniqueEnrichedMap = new Map();
+        enriched.forEach(item => {
+            let key;
+            // Best key is the matching Olive Young product ID (guarantees real identical items)
+            if (item.oyProducts && item.oyProducts.length > 0 && item.oyProducts[0].product_id) {
+                key = `oy_${item.oyProducts[0].product_id}`;
+            } else {
+                // Fallback to fuzzy name matching by stripping brand names
+                const brandStr = (item.brandKo || item.brand_name || '').toLowerCase().trim();
+                let prodStr = (item.product_name || '').toLowerCase().trim();
+                if (brandStr && prodStr.includes(brandStr)) {
+                    prodStr = prodStr.replace(new RegExp(brandStr, 'g'), '').trim();
+                }
+                // Also strip common words that cause duplicates
+                prodStr = prodStr.replace(/(round lab|cosrx|anua|laneige|moisturizing|toner|sunscreen|essence|pad)/g, '').trim();
+                // We use first 10 chars of remaining string to catch "Birch Juice" vs "Birch Juice Sunscreen"
+                prodStr = prodStr.substring(0, 10);
+
+                key = `${brandStr}_${prodStr}`;
+            }
+
+            if (!uniqueEnrichedMap.has(key)) {
+                uniqueEnrichedMap.set(key, item);
+            } else {
+                const existing = uniqueEnrichedMap.get(key);
+                // Merge mention counts
+                existing.mention_count = (existing.mention_count || 0) + (item.mention_count || 0);
+
+                // Keep the one with the longer product name as it's usually more descriptive
+                if ((item.product_name || '').length > (existing.product_name || '').length) {
+                    existing.product_name = item.product_name;
+                }
+            }
+        });
+        const finalData = Array.from(uniqueEnrichedMap.values());
+        let resultData = finalData;
+        if (state.searchQuery) {
+            const q = state.searchQuery.toLowerCase();
+            resultData = finalData.filter(item => {
+                const itemName = String(item.product_name || '').toLowerCase();
+                const itemBrand = String(item.brand_name || item.brandKo || '').toLowerCase();
+                return itemName.includes(q) || itemBrand.includes(q);
+            });
+        }
+
         // Return raw enriched data — rendering is done in renderTabContent override
-        return { data: enriched, count: enriched.length, _isDashboard: true };
+        return { data: resultData, count: resultData.length, _isDashboard: true };
     },
 
     renderTabContent(tabId, result, state) {

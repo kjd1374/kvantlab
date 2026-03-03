@@ -20,8 +20,11 @@
     "ai_search_active": "AI Smart Search Active",
     "ai_search_inactive": "Standard Search",
     "confirm_clear_notifs": "Are you sure you want to clear all notifications?",
-    "terms_url": "/terms_en.html",
-    "privacy_url": "/privacy_en.html"
+    "privacy_url": "/privacy.html",
+    "save_failed": "Save failed",
+    "error": "Error: ",
+    "desc_steady": "The best product collection curated by K-Vant",
+    "desc_platform": "{platform} Platform Data Analysis Results"
   },
   "landing": {
     "hero_title_1": "Everything about E-commerce Trends",
@@ -241,6 +244,7 @@
     "role": "Role",
     "save": "Save",
     "delete_account": "Delete Account",
+    "save_success": "Account information saved successfully.",
     "current_plan": "Current Plan",
     "subscribed_at": "Trial/Subscription Start",
     "expires_at": "Expiration/Renewal Date",

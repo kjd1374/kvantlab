@@ -20,8 +20,11 @@
     "ai_search_active": "AI 스마트 검색 활성화됨",
     "ai_search_inactive": "일반 검색",
     "confirm_clear_notifs": "모든 알림을 삭제하시겠습니까?",
-    "terms_url": "/terms.html",
-    "privacy_url": "/privacy.html"
+    "privacy_url": "/privacy.html",
+    "save_failed": "저장 실패",
+    "error": "오류: ",
+    "desc_steady": "K-Vant가 엄선한 최고의 상품 컬렉션",
+    "desc_platform": "{platform} 플랫폼 데이터 분석 결과"
   },
   "landing": {
     "hero_title_1": "이커머스 트렌드의 모든 것",
@@ -246,6 +249,7 @@
     "role": "권한 (Role)",
     "save": "저장하기",
     "delete_account": "회원 탈퇴",
+    "save_success": "계정 정보가 성공적으로 저장되었습니다.",
     "current_plan": "현재 구독 플랜",
     "subscribed_at": "가입/체험 시작일",
     "expires_at": "만료/갱신 예정일",

@@ -357,17 +357,36 @@ function setupEventListeners() {
 
   // Click outside to close dropdowns
   document.addEventListener('click', (e) => {
+    // Legacy notification dropdown check (if retained)
     const notiDropdown = document.getElementById('notiDropdown');
     const notiBtn = document.getElementById('notiBtn');
     if (notiDropdown && notiBtn && !notiDropdown.contains(e.target) && !notiBtn.contains(e.target)) {
       notiDropdown.style.display = 'none';
     }
+
+    // New notification dropdown
+    const notifDropdown = document.getElementById('notifDropdown');
+    const notifBell = document.getElementById('notifBell');
+    if (notifDropdown && notifBell && !notifDropdown.contains(e.target) && !notifBell.contains(e.target)) {
+      notifDropdown.classList.remove('open');
+    }
+
     const langDropdown = document.getElementById('langDropdown');
     const langBtn = document.getElementById('langBtn');
     if (langDropdown && langBtn && !langDropdown.contains(e.target) && e.target !== langBtn) {
       langDropdown.classList.remove('open');
     }
   });
+
+  // Notification Bell Click
+  const notifBell = document.getElementById('notifBell');
+  const notifDropdown = document.getElementById('notifDropdown');
+  if (notifBell && notifDropdown) {
+    notifBell.addEventListener('click', (e) => {
+      e.stopPropagation();
+      notifDropdown.classList.toggle('open');
+    });
+  }
 
   // Language Selection
   const langBtn = document.getElementById('langBtn');
@@ -720,16 +739,16 @@ async function loadBridgeTab(tabId) {
       titleEl.textContent = "주요 스테디 셀러";
     } else {
       const activeChip = document.querySelector('#categoryChips .chip.active');
-      const catName = activeChip ? activeChip.textContent : window.t('tabs.all');
+      const catName = activeChip ? activeChip.textContent : window.t('tabs.all') || 'All';
       titleEl.textContent = `${state.activeBridge.name} - ${catName}`;
     }
   }
   if (descEl) {
     descEl.removeAttribute('data-i18n');
     if (state.currentPlatform === 'steady_sellers') {
-      descEl.textContent = "K-Vant가 엄선한 최고의 상품 컬렉션";
+      descEl.textContent = window.t('common.desc_steady') || "K-Vant가 엄선한 최고의 상품 컬렉션";
     } else {
-      descEl.textContent = `${state.activeBridge.name} 플랫폼 데이터 분석 결과`;
+      descEl.textContent = (window.t('common.desc_platform') || '{platform} 플랫폼 데이터 분석 결과').replace('{platform}', state.activeBridge.name);
     }
   }
 
@@ -2506,10 +2525,11 @@ function filterByCategory(data, categoryField = 'category_code') {
 function filterBySearch(data) {
   if (!state.searchQuery) return data;
   const q = state.searchQuery.toLowerCase();
-  return data.filter(item =>
-    (item.name && item.name.toLowerCase().includes(q)) ||
-    (item.brand && item.brand.toLowerCase().includes(q))
-  );
+  return data.filter(item => {
+    const itemName = String(item.name || item.product_name || '').toLowerCase();
+    const itemBrand = String(item.brand || item.brand_name || '').toLowerCase();
+    return itemName.includes(q) || itemBrand.includes(q);
+  });
 }
 
 // ─── Market Insights ────────────────────────
@@ -3309,10 +3329,10 @@ document.getElementById('btnSaveProfile')?.addEventListener('click', async () =>
     const { error } = await updateUserProfile(session.user.id, {
       phone, country, city, zip_code, address1, address2
     });
-    if (error) throw new Error(error.message || '저장 실패');
-    alert('계정 정보가 성공적으로 저장되었습니다.');
+    if (error) throw new Error(error.message || (window.t('common.save_failed') || '저장 실패'));
+    alert(window.t('mypage.save_success') || '계정 정보가 성공적으로 저장되었습니다.');
   } catch (e) {
-    alert('오류: ' + e.message);
+    alert((window.t('common.error') || '오류: ') + e.message);
   } finally {
     btn.innerText = origText;
     btn.disabled = false;
