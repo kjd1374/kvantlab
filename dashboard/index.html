@@ -5,9 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>K-Vant — Korean Trend Intelligence for SEA Sellers</title>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #0a0e17;
@@ -1371,8 +1369,16 @@
       font-weight: 600 !important;
     }
 
-    /* SECTION HEADER */
-    .section-label {
+    
+    #pricing-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      font-family: 'Inter', sans-serif;
+    }
+  /* SECTION HEADER */
+    .pricing-label {
       font-size: 12px;
       letter-spacing: 0.15em;
       text-transform: uppercase;
@@ -1382,7 +1388,7 @@
       margin-bottom: 16px;
     }
 
-    .section-title {
+    .pricing-title {
       font-family: 'Syne', sans-serif;
       font-size: clamp(32px, 5vw, 52px);
       font-weight: 800;
@@ -1391,7 +1397,7 @@
       margin-bottom: 14px;
     }
 
-    .section-sub {
+    .pricing-sub {
       font-size: 16px;
       color: var(--tx2);
       text-align: center;
@@ -1615,7 +1621,7 @@
       font-weight: 600;
     }
 
-    .divider {
+    .pricing-divider {
       height: 1px;
       background: var(--bd);
       margin: 22px 0;
@@ -2155,10 +2161,11 @@
 
   <!-- PRICING -->
   <section class="section" id="pricing">
-    <div class="section-inner">
-      <div class="section-label">Pricing</div>
-      <h2 class="section-title">Simple, transparent pricing.</h2>
-      <p class="section-sub">Start free for 14 days. No credit card required.</p>
+    <div class="section-inner" style="width: 100%;">
+      <div id="pricing-wrapper">
+      <div class="pricing-label">Pricing</div>
+      <h2 class="pricing-title">Simple, transparent pricing.</h2>
+      <p class="pricing-sub">Start free for 14 days. No credit card required.</p>
 
       <div class="eb-badge">
         <div class="eb-dot"></div>
@@ -2189,7 +2196,7 @@
             </div>
             <div class="price-period">14-day trial · No credit card</div>
           </div>
-          <div class="divider"></div>
+          <div class="pricing-divider"></div>
           <p class="plan-desc">Explore K-Vant before you commit. See what's trending in Korea right now.</p>
           <ul class="features">
             <li class="feature-item"><span class="fcheck">✓</span>Top 4 rankings per platform</li>
@@ -2211,7 +2218,7 @@
           <div class="price-wrap" id="pro-price-wrap">
             <!-- JS로 채움 -->
           </div>
-          <div class="divider"></div>
+          <div class="pricing-divider"></div>
           <p class="plan-desc">Everything you need to find trending Korean products before your competitors do.</p>
           <ul class="features">
             <li class="feature-item"><span class="fcheck gold">✓</span>Full rankings — all platforms</li>
@@ -2232,7 +2239,7 @@
           <div class="ent-badge">🔒 NOT YET OPEN</div>
           <div class="coming-soon-price">Coming Soon</div>
           <div class="price-period" style="margin-bottom:16px">Currently in planning</div>
-          <div class="divider"></div>
+          <div class="pricing-divider"></div>
           <p class="plan-desc">Join the waitlist to get early access and founding member pricing.</p>
           <ul class="features ent-features">
             <li class="feature-item"><span class="fcheck">·</span>Everything in Pro</li>
@@ -2250,6 +2257,8 @@
       <div class="footnote">
         <span>All plans include a 14-day free trial.</span><br>
         Cancel anytime · Secure payment via PayPal · Prices in USD
+      </div>
+    </div>
       </div>
     </div>
   </section>
