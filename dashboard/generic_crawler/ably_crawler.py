@@ -99,6 +99,13 @@ def save_product_and_rank(item, rank, category_code, category_name):
             "url": url,
             "updated_at": datetime.now().isoformat()
         }
+        
+        review_count = item.get('review_count', 0)
+        review_rating = item.get('review_rating', 0.0)
+        if review_count and int(review_count) > 0:
+            product_record["review_count"] = int(review_count)
+        if review_rating and float(review_rating) > 0:
+            product_record["review_rating"] = float(review_rating)
 
         res = requests.post(
             f"{SUPABASE_URL}/rest/v1/products_master",
@@ -361,24 +368,36 @@ async def crawl_ably_category(page, category):
                         p_name = product_data.get('name')
                         
                         if p_id and p_name:
-                            print("DEBUG JSON:", json.dumps(product_data))
-                            import sys; sys.exit(0)
-                        
-                        if p_id and p_name:
                             # 가격 정보: sale_price가 있으면 우선, 없으면 price
                             price = product_data.get('sale_price') or product_data.get('price') or 0
                             
                             # 이미지 URL
                             p_image = product_data.get('image')
                             
-                            captured_products.append({
+                            # 리뷰 데이터 추출 (API 응답에 있을 경우)
+                            p_review_count = product_data.get('review_count', 0) or product_data.get('comment_count', 0) or 0
+                            p_satisfaction = product_data.get('satisfaction', 0) or product_data.get('review_score', 0) or 0
+                            p_review_rating = 0.0
+                            try:
+                                if p_satisfaction and int(p_satisfaction) > 0:
+                                    p_review_rating = round(int(p_satisfaction) / 20.0, 1)
+                            except (ValueError, TypeError):
+                                pass
+                            
+                            item_data = {
                                 'id': str(p_id),
                                 'name': p_name,
                                 'brand_name': product_data.get('market_name', 'Ably'),
                                 'price': price,
                                 'image': p_image,
                                 'url': f"https://m.a-bly.com/goods/{p_id}"
-                            })
+                            }
+                            if p_review_count and int(p_review_count) > 0:
+                                item_data['review_count'] = int(p_review_count)
+                            if p_review_rating > 0:
+                                item_data['review_rating'] = p_review_rating
+                            
+                            captured_products.append(item_data)
                             
         except Exception as e:
             # print(f"     (Parsing error: {e})")

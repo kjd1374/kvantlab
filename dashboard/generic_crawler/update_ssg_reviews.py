@@ -36,26 +36,52 @@ async def scrape_single_product(page, product_id):
     }
     
     try:
-        await page.goto(detail_url, wait_until="networkidle", timeout=60000)
-        await asyncio.sleep(3)
+        await page.goto(detail_url, wait_until="domcontentloaded", timeout=60000)
+        await asyncio.sleep(5)
         
-        html_content = await page.content()
-        soup = BeautifulSoup(html_content, 'html.parser')
-        text = soup.get_text(separator=' ', strip=True)
-        text = re.sub(r'\s+', ' ', text) # normalize spaces
+        # Use page.evaluate for resilient text-based extraction
+        data = await page.evaluate(r"""
+        () => {
+            const bodyText = document.body.innerText;
+            let reviewCount = 0;
+            let rating = 0.0;
+            
+            // Review count patterns
+            const rcPatterns = [
+                /고객리뷰\s*\(?\s*([0-9,]+)\s*건?\s*\)?/,
+                /리뷰\s*([0-9,]+)\s*건/,
+                /상품평\s*\(?\s*([0-9,]+)/,
+                /총\s*([0-9,]+)\s*건\s*리뷰/
+            ];
+            for (const p of rcPatterns) {
+                const m = bodyText.match(p);
+                if (m) {
+                    const v = parseInt(m[1].replace(/,/g, ''));
+                    if (v > 0) { reviewCount = v; break; }
+                }
+            }
+            
+            // Rating patterns
+            const rtPatterns = [
+                /별 5개 중\s*([0-9.]+)\s*개/,
+                /평점\s*([0-9.]+)/,
+                /([0-9.]+)\s*\/\s*5\.?0?/
+            ];
+            for (const p of rtPatterns) {
+                const m = bodyText.match(p);
+                if (m) {
+                    const v = parseFloat(m[1]);
+                    if (v > 0 && v <= 5) { rating = v; break; }
+                }
+            }
+            
+            return { reviewCount, rating };
+        }
+        """)
         
-        # 1. Review Count
-        m_rc = re.search(r'고객리뷰\s*\(\s*([0-9,]+)\s*건\s*\)', text)
-        if m_rc:
-            result["reviewCount"] = int(m_rc.group(1).replace(',', ''))
-        else:
-            m_rc2 = re.search(r'총\s*([0-9,]+)\s*건\s*리뷰', text)
-            if m_rc2: result["reviewCount"] = int(m_rc2.group(1).replace(',', ''))
-        
-        # 2. Rating
-        m_rt = re.search(r'별 5개 중\s*([0-9.]+)\s*개', text)
-        if m_rt:
-            result["rating"] = float(m_rt.group(1))
+        if data:
+            result["reviewCount"] = data.get("reviewCount", 0)
+            result["rating"] = data.get("rating", 0.0)
             
     except Exception as e:
         result["error"] = str(e)
