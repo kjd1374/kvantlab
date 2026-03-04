@@ -204,5 +204,8 @@
     "announcement_report": "Laporan",
     "announcement_update": "Pembaruan",
     "announcement_notice": "Pengumuman"
+  },
+  "platforms": {
+    "modernhouse": "Modern House"
   }
 }

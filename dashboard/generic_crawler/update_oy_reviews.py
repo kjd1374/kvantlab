@@ -49,57 +49,51 @@ async def scrape_single_product(page, goods_no):
         
         # Check for Cloudflare challenge
         title = await page.title()
-        if "잠시만 기다려" in title:
+        if "잠시만 기다려" in title or "잠시만" in title:
             await asyncio.sleep(8)
             title = await page.title()
-            if "잠시만 기다려" in title:
-                # Still blocked - wait even longer
+            if "잠시만" in title:
                 await asyncio.sleep(10)
         
         parse_script = """
         () => {
             let reviewCount = 0;
             let rating = 0.0;
-            let reviews = [];
+            const bodyText = document.body.innerText;
             
-            // Review count - multiple selectors
-            const reviewTabEl = document.querySelector('#reviewInfo');
-            if (reviewTabEl) {
-                const m = reviewTabEl.innerText.match(/([0-9,]+)/);
-                if (m) reviewCount = parseInt(m[1].replace(/,/g, '')) || 0;
+            // 1. Review count: regex from page text (most resilient)
+            const rcMatch = bodyText.match(/리뷰\\s*([0-9,]+)\\s*건/);
+            if (rcMatch) {
+                reviewCount = parseInt(rcMatch[1].replace(/,/g, '')) || 0;
             }
+            // Fallback: try DOM selectors (class names may change with React rebuilds)
             if (!reviewCount) {
-                const repEl = document.querySelector('.repReview b') || document.querySelector('.review_total em');
-                if (repEl) reviewCount = parseInt(repEl.innerText.replace(/[^0-9]/g, '')) || 0;
-            }
-            // Also try tab counter
-            if (!reviewCount) {
-                const tabCntEl = document.querySelector('.sec_tab_cnt');
-                if (tabCntEl) {
-                    const tabM = tabCntEl.innerText.match(/([0-9,]+)/);
-                    if (tabM) reviewCount = parseInt(tabM[1].replace(/,/g, '')) || 0;
+                const reviewEl = document.querySelector('[class*="review-count"]')
+                              || document.querySelector('[class*="btn-review"]')
+                              || document.querySelector('#reviewInfo');
+                if (reviewEl) {
+                    const m = reviewEl.innerText.match(/([0-9,]+)/);
+                    if (m) reviewCount = parseInt(m[1].replace(/,/g, '')) || 0;
                 }
             }
             
-            // Rating - try multiple patterns
-            const ratingEl = document.querySelector('.prd_total_score .num strong') 
-                          || document.querySelector('.num strong')
-                          || document.querySelector('.prd_total_score .score strong');
-            if (ratingEl) {
-                rating = parseFloat(ratingEl.innerText.trim()) || 0.0;
+            // 2. Rating: regex from page text
+            const rtMatch = bodyText.match(/평점\\s*([0-9.]+)/);
+            if (rtMatch) {
+                rating = parseFloat(rtMatch[1]) || 0.0;
+            }
+            // Fallback: try DOM selectors
+            if (!rating) {
+                const ratingEl = document.querySelector('[class*="rating-star"]')
+                              || document.querySelector('[class*="rating"]')
+                              || document.querySelector('.prd_total_score .num strong');
+                if (ratingEl) {
+                    const ratingText = ratingEl.innerText.replace('평점', '').trim();
+                    rating = parseFloat(ratingText) || 0.0;
+                }
             }
             
-            // Review texts
-            const reviewSelectors = ['.review_cont', '.txt_inner', '.txt_cont', '.review_text', '.inner_text'];
-            for (const sel of reviewSelectors) {
-                document.querySelectorAll(sel).forEach(r => {
-                    let text = r.innerText.trim().replace(/\\s+/g, ' ');
-                    if (text.length > 10 && !reviews.includes(text)) reviews.push(text);
-                });
-                if (reviews.length > 0) break;
-            }
-            
-            return { reviewCount, rating, reviews: reviews.slice(0, 15) };
+            return { reviewCount, rating, reviews: [] };
         }
         """
         data = await page.evaluate(parse_script)
@@ -107,36 +101,6 @@ async def scrape_single_product(page, goods_no):
         if data:
             result["reviewCount"] = data.get("reviewCount", 0)
             result["rating"] = data.get("rating", 0.0)
-            
-            # If we have review count but no reviews loaded yet, try clicking the review tab
-            if data.get("reviewCount", 0) > 0 and len(data.get("reviews", [])) == 0:
-                try:
-                    review_tab = page.locator('#reviewInfo')
-                    if await review_tab.count() > 0:
-                        await review_tab.click()
-                        await asyncio.sleep(3)
-                        
-                        reviews_re_script = """
-                        () => {
-                            let revs = [];
-                            const selectors = ['.review_cont', '.txt_inner', '.txt_cont', '.review_text', '.inner_text'];
-                            for (const sel of selectors) {
-                                document.querySelectorAll(sel).forEach(r => {
-                                    let text = r.innerText.trim().replace(/\\s+/g, ' ');
-                                    if (text.length > 10 && !revs.includes(text)) revs.push(text);
-                                });
-                                if (revs.length > 0) break;
-                            }
-                            return revs.slice(0, 15);
-                        }
-                        """
-                        reviews = await page.evaluate(reviews_re_script)
-                        if reviews:
-                            data["reviews"] = reviews
-                except Exception:
-                    pass
-            
-            result["reviews"] = data.get("reviews", [])
     
     except Exception as e:
         result["error"] = str(e)
@@ -210,14 +174,25 @@ async def run_batch(limit=50):
     
     async with async_playwright() as p:
         browser = await p.chromium.launch(
-            headless=True,
+            headless=False,
             args=['--disable-blink-features=AutomationControlled']
         )
         context = await browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            viewport={"width": 1280, "height": 1024}
+            user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            viewport={"width": 1280, "height": 900},
+            locale="ko-KR"
         )
         page = await context.new_page()
+        
+        # Warmup: visit list page first to establish valid Cloudflare session
+        print("  🔄 세션 워밍업 중 (리스트 페이지 방문)...")
+        try:
+            await page.goto("https://www.oliveyoung.co.kr/store/main/getBestList.do",
+                          wait_until="domcontentloaded", timeout=60000)
+            await asyncio.sleep(5)
+            print(f"  ✅ 세션 확립: {await page.title()}")
+        except Exception as e:
+            print(f"  ⚠️ 워밍업 실패: {e}")
         
         updated = 0
         for prod in products:

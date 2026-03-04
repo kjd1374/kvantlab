@@ -214,5 +214,8 @@
     "announcement_report": "Báo cáo",
     "announcement_update": "Cập nhật",
     "announcement_notice": "Thông báo"
+  },
+  "platforms": {
+    "modernhouse": "Modern House"
   }
 }

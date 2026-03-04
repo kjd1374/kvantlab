@@ -204,5 +204,8 @@
     "announcement_report": "รายงาน",
     "announcement_update": "อัปเดต",
     "announcement_notice": "ประกาศ"
+  },
+  "platforms": {
+    "modernhouse": "Modern House"
   }
 }

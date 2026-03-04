@@ -202,5 +202,8 @@
     "announcement_report": "レポート",
     "announcement_update": "アップデート",
     "announcement_notice": "お知らせ"
+  },
+  "platforms": {
+    "modernhouse": "モダンハウス"
   }
 }

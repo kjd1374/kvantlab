@@ -13,6 +13,7 @@ const FALLBACK_STRINGS = {
     'platforms.ssg': { ko: '신세계', en: 'Shinsegae' },
     'platforms.k_trend': { ko: '코리아 트렌드', en: 'Korea Trends' },
     'platforms.steady_sellers': { ko: '스테디 셀러', en: 'Steady Sellers' },
+    'platforms.modernhouse': { ko: '모던하우스', en: 'Modern House' },
     'table.rank': { ko: '순위', en: 'Rank' },
     'table.image': { ko: '이미지', en: 'Image' },
     'table.name': { ko: '상품명', en: 'Product Name' },

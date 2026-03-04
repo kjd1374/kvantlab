@@ -81,7 +81,7 @@ def save_product_and_rank(item, rank, category_code):
         # Translate brand
         brand_en = get_english_brand(brand) if brand else ""
 
-        # Try with review data first
+        # Try with review data first (Only if > 0)
         product_record = {
             "product_id": str(product_id),
             "source": SOURCE,
@@ -92,10 +92,13 @@ def save_product_and_rank(item, rank, category_code):
             "price": price,
             "image_url": image_url,
             "url": url,
-            "updated_at": datetime.now().isoformat(),
-            "review_count": review_count,
-            "review_rating": review_rating
+            "updated_at": datetime.now().isoformat()
         }
+        
+        if review_count > 0:
+            product_record["review_count"] = review_count
+        if review_rating > 0:
+            product_record["review_rating"] = review_rating
 
         res = requests.post(
             f"{SUPABASE_URL}/rest/v1/products_master",
@@ -295,39 +298,41 @@ async def scrape_product_reviews(page, goods_no):
             let reviewCount = 0;
             let rating = 0.0;
             let reviews = [];
+            const bodyText = document.body.innerText;
             
-            // Modern review count extractor
-            const reviewBtn = document.querySelector('.ReviewArea_btn-review__gZoOZ') || document.querySelector('.ReviewArea_review-count__WeZ28') || document.querySelector('.ReviewArea_btn-review__gZoOZ span');
-            if (reviewBtn) {
-                reviewCount = parseInt(reviewBtn.innerText.replace(/[^0-9]/g, '')) || 0;
-            } else {
-                // Fallback to old format
-                const reviewTabEl = document.querySelector('#reviewInfo');
-                if (reviewTabEl) {
-                    const m = reviewTabEl.innerText.match(/([0-9,]+)/);
+            // 1. Review count: regex from page text (most resilient)
+            const rcMatch = bodyText.match(/리뷰\\s*([0-9,]+)\\s*건/);
+            if (rcMatch) {
+                reviewCount = parseInt(rcMatch[1].replace(/,/g, '')) || 0;
+            }
+            // Fallback: try DOM selectors (class names may change with React rebuilds)
+            if (!reviewCount) {
+                const reviewEl = document.querySelector('[class*="review-count"]')
+                              || document.querySelector('[class*="btn-review"]')
+                              || document.querySelector('#reviewInfo');
+                if (reviewEl) {
+                    const m = reviewEl.innerText.match(/([0-9,]+)/);
                     if (m) reviewCount = parseInt(m[1].replace(/,/g, '')) || 0;
                 }
-                if (!reviewCount) {
-                    const repEl = document.querySelector('.repReview b');
-                    if (repEl) reviewCount = parseInt(repEl.innerText.replace(/[^0-9]/g, '')) || 0;
+            }
+            
+            // 2. Rating: regex from page text
+            const rtMatch = bodyText.match(/평점\\s*([0-9.]+)/);
+            if (rtMatch) {
+                rating = parseFloat(rtMatch[1]) || 0.0;
+            }
+            // Fallback: try DOM selectors
+            if (!rating) {
+                const ratingEl = document.querySelector('[class*="rating-star"]')
+                              || document.querySelector('[class*="rating"]')
+                              || document.querySelector('.prd_total_score .num strong');
+                if (ratingEl) {
+                    const ratingText = ratingEl.innerText.replace('평점', '').trim();
+                    rating = parseFloat(ratingText) || 0.0;
                 }
             }
             
-            // Modern rating extractor
-            const ratingEl = document.querySelector('.ReviewArea_rating-star__al_PT') || document.querySelector('.prd_total_score .num strong') || document.querySelector('.num strong');
-            if (ratingEl) {
-                // Remove the "평점" text which might be in the string, or just extract float
-                const ratingText = ratingEl.innerText.replace('평점', '').trim();
-                rating = parseFloat(ratingText) || 0.0;
-            }
-            
-            // Review texts (if needed)
-            document.querySelectorAll('.review_cont, .txt_inner, .txt_cont').forEach(r => {
-                let text = r.innerText.trim().replace(/\\s+/g, ' ');
-                if (text.length > 10) reviews.push(text);
-            });
-            
-            return { reviewCount, rating, reviews: reviews.slice(0, 10) };
+            return { reviewCount, rating, reviews: [] };
         }
         """
         data = await page.evaluate(parse_script)
