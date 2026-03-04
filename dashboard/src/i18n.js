@@ -21,7 +21,7 @@ const FALLBACK_STRINGS = {
     'table.price': { ko: '가격', en: 'Price' },
     'table.review': { ko: '리뷰', en: 'Reviews' },
     'table.rating': { ko: '평점', en: 'Rating' },
-    'table.link': { ko: '링크', en: 'Link' },
+    'table.rank_change': { ko: '변동', en: 'Change' },
     'auth.email': { 'en': 'Email', 'ko': '이메일' },
     'auth.password': { 'en': 'Password', 'ko': '비밀번호' },
     'auth.name': { 'en': 'Name', 'ko': '이름' },

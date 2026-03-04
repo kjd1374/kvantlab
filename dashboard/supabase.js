@@ -438,6 +438,30 @@ export async function fetchRankedProducts({ page = 1, perPage = 20, search = '',
                         category_code: r.category_code
                     }));
 
+                // Fetch previous day's rankings to compute rank change
+                const prevDateRes = await query('daily_rankings_v2', `select=date&source=eq.${platform}&date=lt.${latestDate}&order=date.desc&limit=1`);
+                const prevDate = prevDateRes.data?.[0]?.date;
+                if (prevDate) {
+                    let prevRankParams = `select=product_id,rank&source=eq.${platform}&date=eq.${prevDate}`;
+                    if (categoryCode && categoryCode !== 'all') {
+                        prevRankParams += `&category_code=eq.${categoryCode}`;
+                    }
+                    const prevRankResult = await query('daily_rankings_v2', prevRankParams);
+                    const prevRankMap = {};
+                    (prevRankResult.data || []).forEach(r => { prevRankMap[r.product_id] = r.rank; });
+
+                    merged.forEach(p => {
+                        const prevRank = prevRankMap[p.id];
+                        if (prevRank !== undefined) {
+                            p.prev_rank = prevRank;
+                            p.rank_change = prevRank - p.current_rank; // positive = moved up
+                        } else {
+                            p.prev_rank = null; // NEW entry
+                            p.rank_change = null;
+                        }
+                    });
+                }
+
                 // Result count should match filtered list
                 const totalMatching = merged.length;
                 const paged = merged.slice((page - 1) * perPage, page * perPage);

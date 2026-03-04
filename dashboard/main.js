@@ -872,7 +872,7 @@ function ensureDefaultTableStructure() {
             <th class="sortable" data-sort="price" data-i18n="table.price">가격</th>
             <th data-i18n="table.review">리뷰</th>
             <th data-i18n="table.rating">평점</th>
-            <th data-i18n="table.link">링크</th>
+            <th data-i18n="table.rank_change">변동</th>
           </tr>
         </thead>
         <tbody id="allProductsBody">
@@ -977,6 +977,18 @@ function renderTableRow(p, index) {
     brand = maskText(brand);
   }
 
+  // Rank change display
+  let rankChangeHtml = '<span style="color:#999;">—</span>';
+  if (p.rank_change === null || p.rank_change === undefined) {
+    if (p.prev_rank === null) {
+      rankChangeHtml = '<span style="display:inline-block;background:#3b82f6;color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;">NEW</span>';
+    }
+  } else if (p.rank_change > 0) {
+    rankChangeHtml = `<span style="color:#22c55e;font-weight:600;">▲${p.rank_change}</span>`;
+  } else if (p.rank_change < 0) {
+    rankChangeHtml = `<span style="color:#ef4444;font-weight:600;">▼${Math.abs(p.rank_change)}</span>`;
+  }
+
   return `
       <tr class="${isLocked ? 'locked-row' : ''}" 
         onclick="${isLocked ? '' : `window.__openProduct(${JSON.stringify(p).replace(/"/g, '&quot;')})`}" 
@@ -990,9 +1002,7 @@ function renderTableRow(p, index) {
         <td>${formatPrice(p.price || p.price_current)}</td>
         <td>${p.review_count > 0 ? formatNumber(p.review_count) : '0'}</td>
         <td>${p.review_rating > 0 && !isNaN(p.review_rating) ? p.review_rating : '-'}</td>
-        <td>
-          ${(p.url || p.product_url) ? `<a class="link-btn" href="${p.url || p.product_url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">보기 →</a>` : '-'}
-        </td>
+        <td style="text-align:center;">${rankChangeHtml}</td>
       </tr>
     `;
 }
@@ -1039,7 +1049,7 @@ async function loadSemanticResults() {
             <td>${price}</td>
             <td>${p.review_count > 0 ? formatNumber(p.review_count) : '0'}</td>
             <td>${p.review_rating > 0 && !isNaN(p.review_rating) ? p.review_rating : '-'}</td>
-            <td><a href="${p.url || p.product_url}" target="_blank" onclick="event.stopPropagation()">🔗</a></td>
+            <td style="text-align:center;"><span style="color:#999;">—</span></td>
           </tr>
         `;
       }).join('');
