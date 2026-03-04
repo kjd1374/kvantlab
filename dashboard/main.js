@@ -3280,7 +3280,13 @@ async function fetchAndRenderNotifications() {
   if (!session) return;
 
   try {
-    const res = await fetch(`/api/notifications?user_id=${session.user.id}`);
+    const res = await fetch(`/api/notifications?user_id=${session.user.id}&_t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        Pragma: 'no-cache',
+        Expires: '0'
+      }
+    });
     if (!res.ok) return;
     const data = await res.json();
     if (data.success && data.notifications) {

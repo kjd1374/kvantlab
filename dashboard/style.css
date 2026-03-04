@@ -1113,8 +1113,8 @@ body[data-platform="k_trend"] .filter-bar {
 
 /* Notification Specifics (Premium Look) */
 .notif-dropdown {
-  min-width: 420px;
-  max-width: 460px;
+  width: 400px;
+  max-width: 90vw;
   padding: 0;
   overflow: hidden;
 }
