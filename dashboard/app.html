@@ -31,18 +31,21 @@
   <header class="header">
     <div class="header-inner">
       <a href="/app.html" class="logo"
-        style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; cursor: pointer;">
-        <img src="/public/logo_kvant.png" alt="K-Vant Logo" style="height: 28px; border-radius: 4px;">
-        <div>K-Vant <span style="font-weight:300; color:#666; font-size:14px;">Intelligence</span></div>
+        style="display: flex; align-items: center; text-decoration: none; cursor: pointer;">
+        <img src="/public/logo_kvant_new.png" alt="K-Vant Logo"
+          style="height: 32px; width: auto; max-width: 180px; object-fit: contain;">
       </a>
 
       <nav class="header-nav">
         <a href="#" class="header-nav-item"
-          onclick="event.preventDefault(); document.querySelector('.platform-btn[data-platform=\\'oliveyoung\\']').click();">랭킹</a>
+          onclick="event.preventDefault(); document.querySelector('.platform-btn[data-platform=\\'oliveyoung\\']').click();"
+          data-i18n="tabs.ranking">랭킹</a>
         <a href="#" class="header-nav-item"
-          onclick="event.preventDefault(); document.querySelector('.platform-btn[data-platform=\\'k_trend\\']').click();">트렌드</a>
+          onclick="event.preventDefault(); document.querySelector('.platform-btn[data-platform=\\'k_trend\\']').click();"
+          data-i18n="tabs.trend">트렌드</a>
         <a href="#" class="header-nav-item"
-          onclick="event.preventDefault(); window.openMyPageModal(); setTimeout(() => document.querySelector('.auth-tab[data-mypage-tab=\\'sourcing\\']').click(), 50);">소싱-견적</a>
+          onclick="event.preventDefault(); window.openMyPageModal(); setTimeout(() => document.querySelector('.auth-tab[data-mypage-tab=\\'sourcing\\']').click(), 50);"
+          data-i18n="common.sourcing_quote">소싱-견적</a>
       </nav>
 
       <div class="header-right">

@@ -20,7 +20,8 @@
     "ai_search_inactive": "Pencarian Standar",
     "confirm_clear_notifs": "Apakah Anda yakin ingin menghapus semua notifikasi?",
     "terms_url": "/terms_en.html",
-    "privacy_url": "/privacy_en.html"
+    "privacy_url": "/privacy_en.html",
+    "sourcing_quote": "Sourcing-Quote"
   },
   "tabs": {
     "all": "Semua Produk",
@@ -29,7 +30,9 @@
     "reviews": "Analisis Ulasan",
     "insights": "Wawasan Pasar",
     "favorites": "Minat Saya",
-    "crawl_logs": "Log Pengambilan"
+    "crawl_logs": "Log Pengambilan",
+    "ranking": "Ranking",
+    "trend": "Trend"
   },
   "kpi": {
     "trending": "Tren Real-time",

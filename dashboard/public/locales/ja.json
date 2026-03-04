@@ -18,7 +18,8 @@
     "ai_search_tip": "AIスマート検索 (意味ベース検索)",
     "ai_search_active": "AIスマート検索有効",
     "ai_search_inactive": "通常検索",
-    "confirm_clear_notifs": "すべての通知を削除してもよろしいですか？"
+    "confirm_clear_notifs": "すべての通知を削除してもよろしいですか？",
+    "sourcing_quote": "소싱-견적"
   },
   "tabs": {
     "all": "すべての商品",
@@ -27,7 +28,9 @@
     "reviews": "レビュー分析",
     "insights": "市場分析",
     "favorites": "お気に入り",
-    "crawl_logs": "収集ログ"
+    "crawl_logs": "収集ログ",
+    "ranking": "랭킹",
+    "trend": "트렌드"
   },
   "kpi": {
     "trending": "リアルタイム急上昇",

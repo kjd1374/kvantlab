@@ -20,7 +20,8 @@
     "ai_search_inactive": "การค้นหามาตรฐาน",
     "confirm_clear_notifs": "คุณแน่ใจหรือไม่ว่าต้องการล้างการแจ้งเตือนทั้งหมด?",
     "terms_url": "/terms_en.html",
-    "privacy_url": "/privacy_en.html"
+    "privacy_url": "/privacy_en.html",
+    "sourcing_quote": "소싱-견적"
   },
   "tabs": {
     "all": "สินค้าทั้งหมด",
@@ -29,7 +30,9 @@
     "reviews": "วิเคราะห์รีวิว",
     "insights": "วิเคราะห์ตลาด",
     "favorites": "สินค้าที่สนใจ",
-    "crawl_logs": "ประวัติการเก็บข้อมูล"
+    "crawl_logs": "ประวัติการเก็บข้อมูล",
+    "ranking": "랭킹",
+    "trend": "트렌드"
   },
   "kpi": {
     "trending": "เทรนด์เรียลไทม์",

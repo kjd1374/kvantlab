@@ -24,7 +24,8 @@
     "save_failed": "저장 실패",
     "error": "오류: ",
     "desc_steady": "K-Vant가 엄선한 최고의 상품 컬렉션",
-    "desc_platform": "{platform} 플랫폼 데이터 분석 결과"
+    "desc_platform": "{platform} 플랫폼 데이터 분석 결과",
+    "sourcing_quote": "소싱-견적"
   },
   "landing": {
     "hero_title_1": "이커머스 트렌드의 모든 것",
@@ -53,7 +54,9 @@
     "crawl_logs": "수집 로그",
     "musinsa_ranking": "무신사 랭킹",
     "global_trends": "글로벌 트렌드",
-    "apply": "적용"
+    "apply": "적용",
+    "ranking": "랭킹",
+    "trend": "트렌드"
   },
   "kpi": {
     "trending": "실시간 급상승",

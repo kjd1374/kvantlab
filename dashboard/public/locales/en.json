@@ -24,7 +24,8 @@
     "save_failed": "Save failed",
     "error": "Error: ",
     "desc_steady": "The best product collection curated by K-Vant",
-    "desc_platform": "{platform} Platform Data Analysis Results"
+    "desc_platform": "{platform} Platform Data Analysis Results",
+    "sourcing_quote": "Sourcing-Quote"
   },
   "landing": {
     "hero_title_1": "Everything about E-commerce Trends",
@@ -53,7 +54,9 @@
     "crawl_logs": "Crawl Logs",
     "musinsa_ranking": "Musinsa Rankings",
     "global_trends": "Global Trends",
-    "apply": "Apply"
+    "apply": "Apply",
+    "ranking": "Ranking",
+    "trend": "Trend"
   },
   "kpi": {
     "trending": "Real-time Trending",

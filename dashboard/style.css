@@ -201,6 +201,10 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+.header-inner .logo {
+  flex: 1;
+}
+
 .header-right {
   display: flex;
   align-items: center;
@@ -212,8 +216,10 @@ body {
 .header-nav {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 32px;
   margin: 0 20px;
+  flex: 1;
 }
 
 .header-nav-item {

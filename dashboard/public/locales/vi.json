@@ -20,7 +20,8 @@
     "ai_search_inactive": "Tìm kiếm tiêu chuẩn",
     "confirm_clear_notifs": "Bạn có chắc chắn muốn xóa tất cả thông báo không?",
     "terms_url": "/terms_en.html",
-    "privacy_url": "/privacy_en.html"
+    "privacy_url": "/privacy_en.html",
+    "sourcing_quote": "Sourcing-Quote"
   },
   "tabs": {
     "all": "Tất cả sản phẩm",
@@ -29,7 +30,9 @@
     "reviews": "Phân tích review",
     "insights": "Phân tích thị trường",
     "favorites": "Quan tâm",
-    "crawl_logs": "Lịch sử thu thập"
+    "crawl_logs": "Lịch sử thu thập",
+    "ranking": "Ranking",
+    "trend": "Trend"
   },
   "kpi": {
     "trending": "Xu hướng thời gian thực",
