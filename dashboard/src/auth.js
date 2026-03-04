@@ -522,7 +522,7 @@ function setupAuthModals() {
       console.error('Auth error:', err);
       let msg = err.message || window.t('auth.err_general') || '인증 처리 중 오류가 발생했습니다.';
       if (msg.toLowerCase().includes('invalid login credentials')) {
-        msg = window.i18n && window.i18n.currentLang === 'en' ? 'Invalid email or password.' : '이메일 또는 비밀번호가 일치하지 않습니다.';
+        msg = window.t('auth.invalid_credentials') || '이메일 또는 비밀번호가 일치하지 않습니다.';
       }
       showError(msg);
     } finally {

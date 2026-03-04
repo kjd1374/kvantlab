@@ -203,7 +203,8 @@
     "err_req_category": "주력 카테고리를 선택 또는 입력해주세요.",
     "err_pw_match": "비밀번호가 일치하지 않습니다.",
     "err_pw_length": "비밀번호는 최소 8자 이상이어야 합니다.",
-    "err_otp_req": "이메일 인증을 먼저 완료해주세요."
+    "err_otp_req": "이메일 인증을 먼저 완료해주세요.",
+    "invalid_credentials": "이메일 또는 비밀번호가 일치하지 않습니다."
   },
   "table": {
     "rank": "순위",

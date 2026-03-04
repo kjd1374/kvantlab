@@ -161,7 +161,8 @@
     "err_req_category": "Please select a category.",
     "err_pw_match": "Passwords do not match.",
     "err_pw_length": "Password must be at least 8 chars.",
-    "err_otp_req": "Please complete email verification first."
+    "err_otp_req": "Please complete email verification first.",
+    "invalid_credentials": "อีเมลหรือรหัสผ่านไม่ถูกต้อง"
   },
   "table": {
     "rank": "อันดับ",
