@@ -1817,6 +1817,158 @@ img.lang-flag {
 }
 
 /* ============================================
+   Steady Seller Detail Page
+   ============================================ */
+.ss-detail-upper {
+  grid-template-columns: 420px 1fr;
+}
+
+.ss-gallery {
+  gap: 12px;
+}
+
+.ss-main-img-wrapper {
+  width: 100%;
+  background: #f8f8fa;
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+}
+
+.ss-main-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 16px;
+  max-height: none;
+}
+
+.ss-thumb-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.ss-thumb {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0.6;
+}
+
+.ss-thumb:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+.ss-thumb-active {
+  border-color: var(--accent-blue);
+  opacity: 1;
+  box-shadow: 0 2px 8px rgba(0, 102, 255, 0.2);
+}
+
+.ss-info {
+  gap: 16px;
+  padding-top: 8px;
+}
+
+.ss-brand-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-blue);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.ss-product-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.3;
+  margin: 0;
+}
+
+.ss-price-display {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin: 4px 0;
+}
+
+.ss-price-currency {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.ss-price-amount {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.ss-description {
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color, #eee);
+}
+
+.ss-desc-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.ss-desc-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.ss-sourcing-btn {
+  margin-top: auto;
+  padding: 16px;
+  font-size: 16px;
+  background: linear-gradient(135deg, #0066ff, #0052cc);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ss-sourcing-btn:hover {
+  background: linear-gradient(135deg, #0052cc, #003d99);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 102, 255, 0.3);
+}
+
+@media (max-width: 768px) {
+  .ss-detail-upper {
+    grid-template-columns: 1fr;
+  }
+
+  .ss-main-img-wrapper {
+    aspect-ratio: auto;
+    max-height: 300px;
+  }
+}
+
+/* ============================================
    Trend & AI Visualization Styles
    ============================================ */
 

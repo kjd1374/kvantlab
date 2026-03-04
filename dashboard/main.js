@@ -2014,14 +2014,46 @@ window.__openProduct = async function (product) {
     const ctaText = isDeal ? window.t('modal.cta_check_price') : ('🔗 ' + window.t('modal.view_in').replace('{platform}', platformName));
 
     if (sourceKey === 'steady_sellers') {
-      // --- WIP STEADY SELLER LAYOUT ---
+      // --- STEADY SELLER PRODUCT DETAIL ---
+      const imgUrls = product.image_urls && product.image_urls.length > 0
+        ? product.image_urls
+        : (product.image_url ? [product.image_url] : []);
+      const mainImg = imgUrls[0] || '';
+      const desc = product.description || '';
+      const formattedPrice = new Intl.NumberFormat().format(displayPrice || 0);
+
       modalContent = `
-        <div style="padding: 60px 40px; text-align: center; border-radius: 12px;">
-          <h2 style="font-size: 24px; color: var(--text-main); margin-bottom: 16px;">상세 페이지 준비 중</h2>
-          <p style="color: var(--text-secondary); line-height: 1.6;">
-            선택하신 스테디 셀러 <strong>${escapeHtml(getLocalizedName(product))}</strong>의 상세 분석 페이지는 현재 개발 중입니다.<br>
-            조금만 기다려주시면 더 나은 서비스로 찾아뵙겠습니다.
-          </p>
+        <div class="modal-upper ss-detail-upper">
+          <div class="modal-image-col ss-gallery">
+            <div class="ss-main-img-wrapper">
+              <img id="ssMainImage" class="modal-img-fixed ss-main-img" src="${mainImg}" alt="${escapeHtml(getLocalizedName(product))}">
+            </div>
+            ${imgUrls.length > 1 ? `
+              <div class="ss-thumb-row">
+                ${imgUrls.map((url, i) => `
+                  <img class="ss-thumb ${i === 0 ? 'ss-thumb-active' : ''}" src="${url}" alt="thumb ${i + 1}"
+                    onclick="document.getElementById('ssMainImage').src='${url}'; document.querySelectorAll('.ss-thumb').forEach(t=>t.classList.remove('ss-thumb-active')); this.classList.add('ss-thumb-active');">
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+          <div class="modal-info-col ss-info">
+            <div class="ss-brand-label">${escapeHtml(product.brand || '')}</div>
+            <h2 class="ss-product-title product-name" data-pid="${product.id}">${escapeHtml(getLocalizedName(product))}</h2>
+            <div class="ss-price-display">
+              <span class="ss-price-currency">₩</span>
+              <span class="ss-price-amount">${formattedPrice}</span>
+            </div>
+            ${desc ? `
+              <div class="ss-description">
+                <div class="ss-desc-label">${window.t('modal.product_info') || 'Product Info'}</div>
+                <p class="ss-desc-text">${escapeHtml(desc)}</p>
+              </div>
+            ` : ''}
+            <button class="btn-store-link ss-sourcing-btn" onclick="window.__openSourcingFromSteady && window.__openSourcingFromSteady(${JSON.stringify({ name: product.name, brand: product.brand, price: displayPrice, image_url: mainImg }).replace(/"/g, '&quot;')})">
+              📦 ${window.t('sourcing.request_quote') || 'Request Sourcing Quote'}
+            </button>
+          </div>
         </div>
       `;
     } else if (isTrendItem) {

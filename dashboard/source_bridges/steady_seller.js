@@ -61,6 +61,7 @@ export const SteadySellerBridge = {
             image_urls: item.image_urls || (item.image_url ? [item.image_url] : []),
             brand: item.brand,
             name: item.product_name,
+            description: item.description || '',
             current_rank: item.rank,
             special_price: item.price,
             original_price: item.price,

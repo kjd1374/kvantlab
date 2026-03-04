@@ -771,6 +771,7 @@ async function initAdmin() {
     const ssRankInput = document.getElementById('ssRank');
     const ssPriceInput = document.getElementById('ssPrice');
     const ssActiveInput = document.getElementById('ssActive');
+    const ssDescriptionInput = document.getElementById('ssDescription');
     const ssModalTitle = document.getElementById('ssModalTitle');
 
     // Image upload elements
@@ -939,6 +940,7 @@ async function initAdmin() {
         ssRankInput.value = item.rank;
         ssPriceInput.value = item.price;
         ssActiveInput.checked = item.is_active;
+        ssDescriptionInput.value = item.description || '';
 
         // Load existing images
         ssSelectedFiles = [];
@@ -969,6 +971,7 @@ async function initAdmin() {
         ssRankInput.value = '999';
         ssPriceInput.value = '0';
         ssActiveInput.checked = true;
+        ssDescriptionInput.value = '';
         ssSelectedFiles = [];
         ssExistingUrls = [];
         ssRenderPreviews();
@@ -1016,6 +1019,7 @@ async function initAdmin() {
                 rank: parseInt(ssRankInput.value) || 999,
                 price: parseInt(ssPriceInput.value) || 0,
                 image_urls: finalImageUrls,
+                description: ssDescriptionInput.value.trim(),
                 is_active: ssActiveInput.checked
             };
 
