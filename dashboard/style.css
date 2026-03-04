@@ -1088,7 +1088,8 @@ body[data-platform="k_trend"] .filter-bar {
 
 /* Notification Specifics (Premium Look) */
 .notif-dropdown {
-  min-width: 360px;
+  min-width: 420px;
+  max-width: 460px;
   padding: 0;
   overflow: hidden;
 }
@@ -1145,7 +1146,7 @@ body[data-platform="k_trend"] .filter-bar {
 }
 
 .notif-item.unread {
-  background: #f0f9ff;
+  background: #f0f7ff;
 }
 
 .notif-item.unread::before {
@@ -1156,6 +1157,61 @@ body[data-platform="k_trend"] .filter-bar {
   bottom: 0;
   width: 4px;
   background: var(--accent-blue);
+}
+
+.notif-item.read {
+  opacity: 0.7;
+}
+
+.notif-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.notif-delete-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  opacity: 0;
+}
+
+.notif-item:hover .notif-delete-btn {
+  opacity: 1;
+}
+
+.notif-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--accent-red);
+}
+
+.notif-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.notif-mark-read-btn {
+  font-size: 12px;
+  color: var(--accent-blue);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.notif-mark-read-btn:hover {
+  background: rgba(59, 130, 246, 0.1);
 }
 
 .notif-title {

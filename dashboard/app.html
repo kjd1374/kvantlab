@@ -76,8 +76,10 @@
           </button>
           <div class="notif-dropdown" id="notifDropdown">
             <div class="notif-header">
-              <h3 data-i18n="notifications.title">실시간 알림</h3>
-              <button class="notif-clear-btn" id="clearNotif" data-i18n="notifications.clear_all">비우기</button>
+              <h3 data-i18n="notifications.title">알림</h3>
+              <div class="notif-actions">
+                <!-- Dynamically populated by JS: Mark all read + Clear all -->
+              </div>
             </div>
             <div class="notif-list" id="notifList">
               <!-- Notifications will be loaded here -->

@@ -3235,19 +3235,41 @@ async function fetchAndRenderNotifications() {
       const listBody = document.getElementById('notifList');
       if (!badge || !listBody) return;
 
-      if (data.notifications.length > 0) {
+      const allNotifs = data.notifications;
+      const unreadCount = allNotifs.filter(n => !n.is_read).length;
+
+      // Badge shows only unread count
+      if (unreadCount > 0) {
         badge.style.display = 'block';
-        badge.innerText = data.notifications.length > 99 ? '99+' : data.notifications.length;
+        badge.innerText = unreadCount > 99 ? '99+' : unreadCount;
+      } else {
+        badge.style.display = 'none';
+      }
 
+      if (allNotifs.length > 0) {
         const lang = (window.i18n && window.i18n.currentLang) || 'ko';
+        const hasUnread = unreadCount > 0;
 
-        listBody.innerHTML = data.notifications.map(n => {
+        // Update header actions
+        const headerActions = document.querySelector('.notif-actions');
+        if (headerActions) {
+          headerActions.innerHTML = `
+            ${hasUnread ? `<button class="notif-mark-read-btn" onclick="window.__markAllRead()">${lang === 'en' ? 'Mark all read' : '모두 읽음'}</button>` : ''}
+            <button class="notif-clear-btn" onclick="window.__clearAllNotifs()">${lang === 'en' ? 'Clear all' : '모두 지우기'}</button>
+          `;
+        }
+
+        listBody.innerHTML = allNotifs.map(n => {
           const { title: tTitle, message: tMsg } = translateNotification(n.title, n.message, lang);
           const langCode = lang === 'en' ? 'en-US' : (lang === 'ko' ? 'ko-KR' : lang);
+          const readClass = n.is_read ? 'read' : 'unread';
 
           return `
-            <div class="notif-item" onclick="handleNotiClick('${n.id}', '${n.link}')">
-              <div class="notif-title">${escapeHtml(tTitle)}</div>
+            <div class="notif-item ${readClass}" data-nid="${n.id}" onclick="handleNotiClick('${n.id}', '${n.link || ''}')">
+              <div class="notif-item-header">
+                <div class="notif-title">${escapeHtml(tTitle)}</div>
+                <button class="notif-delete-btn" onclick="event.stopPropagation(); window.__deleteNotif('${n.id}')" title="${lang === 'en' ? 'Delete' : '삭제'}">✕</button>
+              </div>
               <div class="notif-message">${escapeHtml(tMsg)}</div>
               <div class="notif-time">${new Date(n.created_at).toLocaleString(langCode)}</div>
             </div>
@@ -3256,7 +3278,11 @@ async function fetchAndRenderNotifications() {
       } else {
         badge.style.display = 'none';
         const emptyMsg = (window.t && window.t('notifications.empty')) || '새로운 알림이 없습니다.';
-        listBody.innerHTML = `<div style="color:var(--text-muted); font-size:12px; text-align:center; padding:20px 0;">${emptyMsg}</div>`;
+        listBody.innerHTML = `<div style="color:var(--text-muted); font-size:13px; text-align:center; padding:40px 16px;">${emptyMsg}</div>`;
+
+        // Hide actions when no notifs
+        const headerActions = document.querySelector('.notif-actions');
+        if (headerActions) headerActions.innerHTML = '';
       }
     }
   } catch (e) {
@@ -3269,14 +3295,17 @@ window.renderNotifications = fetchAndRenderNotifications;
 
 window.handleNotiClick = async function (id, link) {
   try {
-    // Mark as read immediately
     await fetch(`/api/notifications/${id}/read`, { method: 'PUT' });
+    // Update UI immediately
+    const item = document.querySelector(`.notif-item[data-nid="${id}"]`);
+    if (item) {
+      item.classList.remove('unread');
+      item.classList.add('read');
+    }
   } catch (e) { console.error(e); }
 
-  // Refresh badge
+  // Refresh badge count
   fetchAndRenderNotifications();
-  const dropdown = document.getElementById('notiDropdown');
-  if (dropdown) dropdown.style.display = 'none';
 
   // Navigate Action based on link target
   if (link === 'sourcing') {
@@ -3287,6 +3316,44 @@ window.handleNotiClick = async function (id, link) {
         if (tab) tab.click();
       }, 100);
     }
+  }
+};
+
+// Delete individual notification
+window.__deleteNotif = async function (id) {
+  try {
+    await fetch(`/api/notifications/${id}`, { method: 'DELETE' });
+    // Remove from DOM immediately
+    const item = document.querySelector(`.notif-item[data-nid="${id}"]`);
+    if (item) item.remove();
+    // Refresh badge and check if empty
+    fetchAndRenderNotifications();
+  } catch (e) {
+    console.error('Delete notification error:', e);
+  }
+};
+
+// Mark all as read  
+window.__markAllRead = async function () {
+  const session = getSession();
+  if (!session) return;
+  try {
+    await fetch(`/api/notifications/mark-all-read?user_id=${session.user.id}`, { method: 'PUT' });
+    fetchAndRenderNotifications();
+  } catch (e) {
+    console.error('Mark all read error:', e);
+  }
+};
+
+// Clear all notifications
+window.__clearAllNotifs = async function () {
+  const session = getSession();
+  if (!session) return;
+  try {
+    await fetch(`/api/notifications/clear?user_id=${session.user.id}`, { method: 'DELETE' });
+    fetchAndRenderNotifications();
+  } catch (e) {
+    console.error('Clear notifications error:', e);
   }
 };
 

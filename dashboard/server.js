@@ -1028,12 +1028,8 @@ app.put('/api/admin/search-requests/:id', async (req, res) => {
 });
 
 // Notifications Endpoint
-// Get unread notifications for a user
+// Get all notifications for a user (both read and unread)
 app.get('/api/notifications', async (req, res) => {
-    // We expect the frontend to pass the user ID as a query param or Authorization header
-    // Since we don't have a middleware built-in here for JWT verification easily mapping to supabase session sync,
-    // we'll accept user_id from query for simplicity, similar to how sourcing history does it.
-    // In production, we'd verify the JWT.
     const { user_id } = req.query;
     if (!user_id) return res.status(400).json({ success: false, error: 'User ID is required' });
 
@@ -1042,9 +1038,8 @@ app.get('/api/notifications', async (req, res) => {
             .from('user_notifications')
             .select('*')
             .eq('user_id', user_id)
-            .eq('is_read', false)
             .order('created_at', { ascending: false })
-            .limit(20);
+            .limit(50);
 
         if (error) throw error;
 
@@ -1054,13 +1049,66 @@ app.get('/api/notifications', async (req, res) => {
     }
 });
 
-// Mark notification as read
+// Mark all notifications as read for a user (MUST be before :id/read)
+app.put('/api/notifications/mark-all-read', async (req, res) => {
+    const { user_id } = req.query;
+    if (!user_id) return res.status(400).json({ success: false, error: 'User ID is required' });
+
+    try {
+        const { error } = await supabase
+            .from('user_notifications')
+            .update({ is_read: true })
+            .eq('user_id', user_id)
+            .eq('is_read', false);
+
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Mark single notification as read
 app.put('/api/notifications/:id/read', async (req, res) => {
     const { id } = req.params;
     try {
         const { error } = await supabase
             .from('user_notifications')
             .update({ is_read: true })
+            .eq('id', id);
+
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Clear all notifications for a user (MUST be before :id delete)
+app.delete('/api/notifications/clear', async (req, res) => {
+    const { user_id } = req.query;
+    if (!user_id) return res.status(400).json({ success: false, error: 'User ID is required' });
+
+    try {
+        const { error } = await supabase
+            .from('user_notifications')
+            .delete()
+            .eq('user_id', user_id);
+
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Delete a single notification
+app.delete('/api/notifications/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { error } = await supabase
+            .from('user_notifications')
+            .delete()
             .eq('id', id);
 
         if (error) throw error;
