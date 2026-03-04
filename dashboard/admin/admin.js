@@ -770,10 +770,109 @@ async function initAdmin() {
     const ssBrandInput = document.getElementById('ssBrand');
     const ssRankInput = document.getElementById('ssRank');
     const ssPriceInput = document.getElementById('ssPrice');
-    const ssImageUrlInput = document.getElementById('ssImageUrl');
-    const ssLinkInput = document.getElementById('ssLink');
     const ssActiveInput = document.getElementById('ssActive');
     const ssModalTitle = document.getElementById('ssModalTitle');
+
+    // Image upload elements
+    const ssImageUploadArea = document.getElementById('ssImageUploadArea');
+    const ssImageFiles = document.getElementById('ssImageFiles');
+    const ssImagePreviews = document.getElementById('ssImagePreviews');
+    const ssUploadPlaceholder = document.getElementById('ssUploadPlaceholder');
+
+    // Track selected files + existing URLs
+    let ssSelectedFiles = []; // File objects for new uploads
+    let ssExistingUrls = [];  // URLs already uploaded (for edit mode)
+
+    function ssRenderPreviews() {
+        ssImagePreviews.innerHTML = '';
+        const allItems = [...ssExistingUrls.map(url => ({ type: 'url', value: url })), ...ssSelectedFiles.map((f, i) => ({ type: 'file', value: f, index: i }))];
+
+        if (allItems.length > 0) {
+            ssUploadPlaceholder.style.display = 'none';
+        } else {
+            ssUploadPlaceholder.style.display = 'block';
+        }
+
+        allItems.forEach((item, idx) => {
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = 'position: relative; width: 80px; height: 80px;';
+
+            const img = document.createElement('img');
+            img.style.cssText = 'width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd;';
+            if (item.type === 'url') {
+                img.src = item.value;
+            } else {
+                img.src = URL.createObjectURL(item.value);
+            }
+
+            const removeBtn = document.createElement('button');
+            removeBtn.innerHTML = '✕';
+            removeBtn.style.cssText = 'position: absolute; top: -6px; right: -6px; background: #ff4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1;';
+            removeBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (item.type === 'url') {
+                    ssExistingUrls = ssExistingUrls.filter(u => u !== item.value);
+                } else {
+                    ssSelectedFiles.splice(item.index, 1);
+                }
+                ssRenderPreviews();
+            };
+
+            wrapper.appendChild(img);
+            wrapper.appendChild(removeBtn);
+            ssImagePreviews.appendChild(wrapper);
+        });
+
+        // Add count indicator
+        const total = ssExistingUrls.length + ssSelectedFiles.length;
+        if (total > 0 && total < 5) {
+            const addMore = document.createElement('div');
+            addMore.style.cssText = 'width: 80px; height: 80px; border: 2px dashed #ccc; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #ccc; cursor: pointer;';
+            addMore.innerHTML = '+';
+            addMore.onclick = (e) => { e.stopPropagation(); ssImageFiles.click(); };
+            ssImagePreviews.appendChild(addMore);
+        }
+    }
+
+    // Click to browse
+    ssImageUploadArea?.addEventListener('click', () => ssImageFiles?.click());
+
+    // File selection
+    ssImageFiles?.addEventListener('change', (e) => {
+        const newFiles = Array.from(e.target.files);
+        const total = ssExistingUrls.length + ssSelectedFiles.length + newFiles.length;
+        if (total > 5) {
+            alert('이미지는 최대 5장까지만 등록할 수 있습니다.');
+            return;
+        }
+        ssSelectedFiles.push(...newFiles);
+        ssRenderPreviews();
+        ssImageFiles.value = ''; // reset so same file can be re-selected
+    });
+
+    // Drag and drop
+    ssImageUploadArea?.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        ssImageUploadArea.style.borderColor = '#0066ff';
+        ssImageUploadArea.style.background = '#f0f6ff';
+    });
+    ssImageUploadArea?.addEventListener('dragleave', () => {
+        ssImageUploadArea.style.borderColor = '#ddd';
+        ssImageUploadArea.style.background = '#fafafa';
+    });
+    ssImageUploadArea?.addEventListener('drop', (e) => {
+        e.preventDefault();
+        ssImageUploadArea.style.borderColor = '#ddd';
+        ssImageUploadArea.style.background = '#fafafa';
+        const newFiles = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+        const total = ssExistingUrls.length + ssSelectedFiles.length + newFiles.length;
+        if (total > 5) {
+            alert('이미지는 최대 5장까지만 등록할 수 있습니다.');
+            return;
+        }
+        ssSelectedFiles.push(...newFiles);
+        ssRenderPreviews();
+    });
 
     async function loadSteadySellers() {
         if (!ssTableBody) return;
@@ -792,11 +891,16 @@ async function initAdmin() {
             window.__steadySellers = data.steady_sellers;
 
             ssTableBody.innerHTML = data.steady_sellers.map(item => {
+                const thumbUrl = (item.image_urls && item.image_urls.length > 0) ? item.image_urls[0] : (item.image_url || '');
+                const imgCount = (item.image_urls && item.image_urls.length > 0) ? item.image_urls.length : (item.image_url ? 1 : 0);
                 return `
                 <tr style="border-bottom: 1px solid #eee;">
                     <td style="padding: 12px; font-weight: 600;">${item.rank}</td>
                     <td style="padding: 12px;">
-                        <img src="${item.image_url}" alt="Product" style="width: 50px; height: 50px; object-fit: contain; border-radius: 4px; border: 1px solid #eee;">
+                        ${thumbUrl ? `<div style="position:relative; display:inline-block;">
+                            <img src="${thumbUrl}" alt="Product" style="width: 50px; height: 50px; object-fit: contain; border-radius: 4px; border: 1px solid #eee;">
+                            ${imgCount > 1 ? `<span style="position:absolute; bottom:-2px; right:-2px; background:#0066ff; color:white; font-size:9px; padding:1px 4px; border-radius:8px;">${imgCount}</span>` : ''}
+                        </div>` : '<span style="color:#ccc;">없음</span>'}
                     </td>
                     <td style="padding: 12px;">
                         <div style="font-weight: 600; font-size: 13px; color: #333;">${item.brand}</div>
@@ -834,9 +938,12 @@ async function initAdmin() {
         ssBrandInput.value = item.brand;
         ssRankInput.value = item.rank;
         ssPriceInput.value = item.price;
-        ssImageUrlInput.value = item.image_url;
-        ssLinkInput.value = item.link;
         ssActiveInput.checked = item.is_active;
+
+        // Load existing images
+        ssSelectedFiles = [];
+        ssExistingUrls = (item.image_urls && item.image_urls.length > 0) ? [...item.image_urls] : (item.image_url ? [item.image_url] : []);
+        ssRenderPreviews();
 
         ssModal.style.display = 'flex';
     };
@@ -861,9 +968,10 @@ async function initAdmin() {
         ssBrandInput.value = '';
         ssRankInput.value = '999';
         ssPriceInput.value = '0';
-        ssImageUrlInput.value = '';
-        ssLinkInput.value = '';
         ssActiveInput.checked = true;
+        ssSelectedFiles = [];
+        ssExistingUrls = [];
+        ssRenderPreviews();
         ssModal.style.display = 'flex';
     });
 
@@ -873,20 +981,45 @@ async function initAdmin() {
 
     saveSsBtn?.addEventListener('click', async () => {
         const id = ssIdInput.value;
-        const payload = {
-            product_name: ssNameInput.value.trim(),
-            brand: ssBrandInput.value.trim(),
-            rank: parseInt(ssRankInput.value) || 999,
-            price: parseInt(ssPriceInput.value) || 0,
-            image_url: ssImageUrlInput.value.trim(),
-            link: ssLinkInput.value.trim(),
-            is_active: ssActiveInput.checked
-        };
 
-        if (!payload.product_name || !payload.brand) return alert('상품명과 브랜드를 필수 입력사항입니다.');
+        if (!ssNameInput.value.trim() || !ssBrandInput.value.trim()) {
+            return alert('상품명과 브랜드는 필수 입력사항입니다.');
+        }
 
         saveSsBtn.disabled = true;
+        const originalText = saveSsBtn.innerText;
+        saveSsBtn.innerText = '저장 중...';
+
         try {
+            // Step 1: Upload new files if any
+            let newUploadedUrls = [];
+            if (ssSelectedFiles.length > 0) {
+                saveSsBtn.innerText = '이미지 업로드 중...';
+                const formData = new FormData();
+                ssSelectedFiles.forEach(f => formData.append('images', f));
+
+                const uploadRes = await fetch('/api/admin/steady-sellers/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const uploadData = await uploadRes.json();
+                if (!uploadData.success) throw new Error(uploadData.error || '이미지 업로드 실패');
+                newUploadedUrls = uploadData.urls;
+            }
+
+            // Step 2: Combine existing + newly uploaded URLs
+            const finalImageUrls = [...ssExistingUrls, ...newUploadedUrls];
+
+            const payload = {
+                product_name: ssNameInput.value.trim(),
+                brand: ssBrandInput.value.trim(),
+                rank: parseInt(ssRankInput.value) || 999,
+                price: parseInt(ssPriceInput.value) || 0,
+                image_urls: finalImageUrls,
+                is_active: ssActiveInput.checked
+            };
+
+            saveSsBtn.innerText = '저장 중...';
             const endpoint = id ? `/api/admin/steady-sellers/${id}` : '/api/admin/steady-sellers';
             const method = id ? 'PUT' : 'POST';
 
@@ -905,6 +1038,7 @@ async function initAdmin() {
             alert('저장 실패: ' + err.message);
         } finally {
             saveSsBtn.disabled = false;
+            saveSsBtn.innerText = originalText;
         }
     });
 

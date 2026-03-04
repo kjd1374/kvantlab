@@ -8,8 +8,11 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import { fileURLToPath } from 'url';
 import nodemailer from 'nodemailer';
+import multer from 'multer';
 import dotenv from 'dotenv';
 dotenv.config();
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -1283,6 +1286,65 @@ app.post('/api/paypal/cancel', async (req, res) => {
 });
 
 // --- Steady Sellers Management APIs ---
+
+// Ensure steady-sellers storage bucket exists
+(async () => {
+    try {
+        const { data: buckets } = await supabase.storage.listBuckets();
+        const exists = buckets?.some(b => b.name === 'steady-sellers');
+        if (!exists) {
+            await supabase.storage.createBucket('steady-sellers', { public: true });
+            console.log('[Storage] Created steady-sellers bucket');
+        }
+    } catch (e) {
+        console.warn('[Storage] Bucket check/create failed:', e.message);
+    }
+})();
+
+// Ensure image_urls column exists (migration)
+(async () => {
+    try {
+        await supabase.rpc('_exec_sql', { sql: `ALTER TABLE steady_sellers ADD COLUMN IF NOT EXISTS image_urls text[] DEFAULT '{}'` });
+    } catch (e) {
+        // Column may already exist or RPC not available — ignore silently
+    }
+})();
+
+// Upload images for steady sellers (max 5)
+app.post('/api/admin/steady-sellers/upload', upload.array('images', 5), async (req, res) => {
+    try {
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ success: false, error: 'No files uploaded' });
+        }
+
+        const urls = [];
+        for (const file of req.files) {
+            const ext = file.originalname.split('.').pop() || 'jpg';
+            const filePath = `products/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('steady-sellers')
+                .upload(filePath, file.buffer, {
+                    contentType: file.mimetype,
+                    upsert: false
+                });
+
+            if (uploadError) throw uploadError;
+
+            const { data: publicUrl } = supabase.storage
+                .from('steady-sellers')
+                .getPublicUrl(filePath);
+
+            urls.push(publicUrl.publicUrl);
+        }
+
+        res.json({ success: true, urls });
+    } catch (error) {
+        console.error('[Upload] Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // 1. List Steady Sellers
 app.get('/api/admin/steady-sellers', async (req, res) => {
     try {
@@ -1301,10 +1363,20 @@ app.get('/api/admin/steady-sellers', async (req, res) => {
 // 2. Create Steady Seller
 app.post('/api/admin/steady-sellers', async (req, res) => {
     try {
-        const { product_name, brand, price, image_url, link, rank, is_active } = req.body;
+        const { product_name, brand, price, image_url, image_urls, rank, is_active } = req.body;
+        const insertData = { product_name, brand, price, rank, is_active };
+        // Support both image_urls (new) and image_url (legacy)
+        if (image_urls && image_urls.length > 0) {
+            insertData.image_urls = image_urls;
+            insertData.image_url = image_urls[0]; // backward compat
+        } else if (image_url) {
+            insertData.image_url = image_url;
+            insertData.image_urls = [image_url];
+        }
+
         const { data, error } = await supabase
             .from('steady_sellers')
-            .insert([{ product_name, brand, price, image_url, link, rank, is_active }])
+            .insert([insertData])
             .select()
             .single();
 
@@ -1319,11 +1391,20 @@ app.post('/api/admin/steady-sellers', async (req, res) => {
 app.put('/api/admin/steady-sellers/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { product_name, brand, price, image_url, link, rank, is_active } = req.body;
+        const { product_name, brand, price, image_url, image_urls, rank, is_active } = req.body;
+        const updateData = { product_name, brand, price, rank, is_active, updated_at: new Date() };
+
+        if (image_urls && image_urls.length > 0) {
+            updateData.image_urls = image_urls;
+            updateData.image_url = image_urls[0];
+        } else if (image_url) {
+            updateData.image_url = image_url;
+            updateData.image_urls = [image_url];
+        }
 
         const { data, error } = await supabase
             .from('steady_sellers')
-            .update({ product_name, brand, price, image_url, link, rank, is_active, updated_at: new Date() })
+            .update(updateData)
             .eq('id', id)
             .select()
             .single();

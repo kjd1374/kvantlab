@@ -56,8 +56,9 @@ export const SteadySellerBridge = {
         const formattedData = sourceData.map(item => ({
             id: item.id,
             product_id: item.id,
-            url: item.link,
-            image_url: item.image_url,
+            url: '',
+            image_url: (item.image_urls && item.image_urls.length > 0) ? item.image_urls[0] : (item.image_url || ''),
+            image_urls: item.image_urls || (item.image_url ? [item.image_url] : []),
             brand: item.brand,
             name: item.product_name,
             current_rank: item.rank,
