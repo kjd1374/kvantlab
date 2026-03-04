@@ -67,8 +67,13 @@ export const MusinsaBridge = {
     },
 
     renderCustomHeader(state) {
+        // Gender tabs are now rendered inline via renderGenderRow() instead of in the header
+        return '';
+    },
+
+    renderGenderRow(state) {
         return `
-      <div class="musinsa-filters" style="display:flex; gap:10px; margin-left: 20px;">
+      <div class="musinsa-gender-row" style="display:flex; gap:10px; justify-content:center; margin: 10px 0;">
         <button class="chip ${state.genderFilter === 'all' ? 'active' : ''}" onclick="setGender('all')">All</button>
         <button class="chip ${state.genderFilter === 'male' ? 'active' : ''}" onclick="setGender('male')">Men</button>
         <button class="chip ${state.genderFilter === 'female' ? 'active' : ''}" onclick="setGender('female')">Women</button>

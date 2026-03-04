@@ -461,6 +461,9 @@ export const KoreaTrendBridge = {
     },
 
     renderCustomHeader(state) {
+        // Hide filters when naver_best (Korea Best) tab is active
+        if (state.activeTab === 'naver_best') return '';
+
         return `
     <div class="k-trend-filters" style="display:flex; gap:10px; padding:10px 20px; border-bottom:1px solid var(--border-color); overflow-x:auto; align-items:center;">
                 <select id="kTrendCountry" style="padding:8px; border-radius:8px; border:1px solid #ccc;">

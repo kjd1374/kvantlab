@@ -426,7 +426,7 @@ function setupEventListeners() {
 
   if (tutorialOverlay && tutorialCarousel) {
     let currentSlide = 0;
-    const totalSlides = 3;
+    const totalSlides = 4;
 
     function updateTutorialUI() {
       // Move carousel
@@ -649,6 +649,18 @@ async function loadCategories() {
       });
       container.appendChild(btn);
     });
+
+    // Musinsa: insert gender filter row below categories
+    const existingGenderRow = document.querySelector('.musinsa-gender-row');
+    if (existingGenderRow) existingGenderRow.remove();
+    if (state.activeBridge && state.activeBridge.renderGenderRow) {
+      const filterBar = container.closest('.filter-bar');
+      if (filterBar) {
+        const genderDiv = document.createElement('div');
+        genderDiv.innerHTML = state.activeBridge.renderGenderRow(state);
+        filterBar.after(genderDiv.firstElementChild);
+      }
+    }
 
     // Translation for Categories
     if (i18n.currentLang !== 'ko') {
@@ -3407,9 +3419,13 @@ window.setGender = (gender) => {
   state.genderFilter = gender;
   state.currentPage = 1; // Reset pagination when filtering
 
-  // Re-render controls to update active state
-  const controls = document.getElementById('platformControls');
-  if (controls) controls.innerHTML = state.activeBridge.renderCustomHeader(state);
+  // Re-render gender row to update active state
+  const existingGenderRow = document.querySelector('.musinsa-gender-row');
+  if (existingGenderRow && state.activeBridge && state.activeBridge.renderGenderRow) {
+    const genderDiv = document.createElement('div');
+    genderDiv.innerHTML = state.activeBridge.renderGenderRow(state);
+    existingGenderRow.replaceWith(genderDiv.firstElementChild);
+  }
 
   loadTab(state.activeTab);
 };
