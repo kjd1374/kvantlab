@@ -3725,7 +3725,6 @@ document.getElementById('btnDeleteAccount')?.addEventListener('click', async () 
 function switchMyPageTab(tabName) {
   const accountTab = document.getElementById('myPageAccountTab');
   const billingTab = document.getElementById('myPageBillingTab');
-  const sourcingTab = document.getElementById('myPageSourcingTab');
   const supportTab = document.getElementById('myPageSupportTab');
   const tabBtns = document.querySelectorAll('#myPageModal .auth-tab');
 
@@ -3739,13 +3738,9 @@ function switchMyPageTab(tabName) {
 
   if (accountTab) accountTab.style.display = tabName === 'account' ? 'block' : 'none';
   if (billingTab) billingTab.style.display = tabName === 'billing' ? 'block' : 'none';
-  if (sourcingTab) sourcingTab.style.display = tabName === 'sourcing' ? 'block' : 'none';
   if (supportTab) supportTab.style.display = tabName === 'support' ? 'block' : 'none';
 
-  if (tabName === 'sourcing') {
-    window.loadSourcingHistory();
-    window.loadSearchRequests();
-  } else if (tabName === 'support') {
+  if (tabName === 'support') {
     window.loadFaqs();
   }
 
