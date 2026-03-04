@@ -171,13 +171,23 @@ function setupAuthModals() {
           <!-- Password -->
           <div class="form-group">
             <label><span data-i18n="auth.password">비밀번호</span> <span class="required">*</span></label>
-            <input type="password" id="authPassword" required data-i18n="auth.password_placeholder" placeholder="8자 이상 영문/숫자 조합" minlength="8">
+            <div style="position: relative; display: flex; align-items: center;">
+              <input type="password" id="authPassword" required data-i18n="auth.password_placeholder" placeholder="8자 이상 영문/숫자 조합" minlength="8" style="width: 100%; padding-right: 40px;">
+              <button type="button" tabindex="-1" onclick="window.toggleAuthPassword('authPassword', this)" style="position: absolute; right: 10px; background: none; border: none; cursor: pointer; color: #888; display: flex; align-items: center; justify-content: center; padding: 4px;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+            </div>
           </div>
 
           <!-- Password Confirm -->
           <div class="form-group signup-only" style="display:none;">
             <label><span data-i18n="auth.password_confirm">비밀번호 확인</span> <span class="required">*</span></label>
-            <input type="password" id="authPasswordConfirm" data-i18n="auth.password_confirm_placeholder" placeholder="비밀번호 재입력" minlength="8">
+            <div style="position: relative; display: flex; align-items: center;">
+              <input type="password" id="authPasswordConfirm" data-i18n="auth.password_confirm_placeholder" placeholder="비밀번호 재입력" minlength="8" style="width: 100%; padding-right: 40px;">
+              <button type="button" tabindex="-1" onclick="window.toggleAuthPassword('authPasswordConfirm', this)" style="position: absolute; right: 10px; background: none; border: none; cursor: pointer; color: #888; display: flex; align-items: center; justify-content: center; padding: 4px;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+            </div>
           </div>
 
           <!-- Name & Company (Row) -->
@@ -225,7 +235,10 @@ function setupAuthModals() {
           </div>
 
           <button type="submit" id="authSubmitBtn" class="btn-submit" data-i18n="auth.login">로그인</button>
-          <div id="authError" class="auth-error" style="color: var(--accent-red); margin-top: 10px; font-size: 12px; text-align: center;"></div>
+          <div id="authError" class="auth-error" style="display: none; align-items: center; justify-content: center; gap: 8px; background: #fff1f0; border: 1px solid #ffa39e; color: #cf1322; padding: 12px; border-radius: 8px; margin-top: 16px; font-size: 13px; font-weight: 500;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <span id="authErrorText"></span>
+          </div>
         </form>
       </div>
     </div>
@@ -244,32 +257,66 @@ function setupAuthModals() {
   const errorDiv = document.getElementById('authError');
   let mode = 'login';
   let isOtpVerified = false;
+  let otpRequested = false; // Track if OTP has been requested
+
+  // Add password toggle function explicitly 
+  window.toggleAuthPassword = window.toggleAuthPassword || function (inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (input.type === 'password') {
+      input.type = 'text';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+    } else {
+      input.type = 'password';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+    }
+  };
+
+  // Helper function to display errors safely
+  const showError = (msg) => {
+    const errorTxt = document.getElementById('authErrorText');
+    if (errorTxt) errorTxt.textContent = msg;
+    if (errorDiv) errorDiv.style.display = 'flex';
+  };
+  const clearError = () => {
+    if (errorDiv) errorDiv.style.display = 'none';
+    const otpErrorDiv = document.getElementById('otpError');
+    if (otpErrorDiv) otpErrorDiv.textContent = '';
+  };
 
   // Toggle Login/Signup
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
-      mode = tab.dataset.mode;
       tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
+      mode = tab.dataset.mode;
+      const isLogin = mode === 'login';
 
-      const submitI18nKey = mode === 'login' ? 'auth.login' : 'auth.signup';
-      submitBtn.setAttribute('data-i18n', submitI18nKey);
-      submitBtn.textContent = window.t(submitI18nKey);
+      document.querySelectorAll('.signup-only').forEach(el => el.style.display = isLogin ? 'none' : (el.classList.contains('form-row') ? 'flex' : 'block'));
 
-      errorDiv.textContent = '';
+      // Keep OTP input hidden on Signup initial load unless button pressed
+      if (!isLogin && !otpRequested) {
+        document.getElementById('otpGroup').style.display = 'none';
+      }
+      if (isLogin) {
+        document.getElementById('sendOtpBtn').style.display = 'none';
+        document.getElementById('authPassword').required = true;
+        document.getElementById('authPasswordConfirm').required = false;
+      } else {
+        document.getElementById('sendOtpBtn').style.display = 'block';
+        document.getElementById('authPassword').required = true;
+        document.getElementById('authPasswordConfirm').required = true;
+      }
 
-      // Toggle signup-only fields
-      const signupFields = document.querySelectorAll('.signup-only');
-      signupFields.forEach(el => {
-        el.style.display = mode === 'signup' ? (el.tagName === 'DIV' && el.classList.contains('form-row') ? 'flex' : (el.id === 'sendOtpBtn' ? 'block' : 'block')) : 'none';
-      });
-
-      // Clear all inputs on toggle
       form.reset();
+      clearError();
       isOtpVerified = false;
+      otpRequested = false;
       document.getElementById('authOtp').disabled = false;
       document.getElementById('verifyOtpBtn').textContent = window.t('auth.otp_verify');
       document.getElementById('verifyOtpBtn').disabled = false;
+      document.getElementById('otpSentMsg').style.display = 'none';
+      if (otpTimerInterval) clearInterval(otpTimerInterval);
+      document.getElementById('otpTimer').style.display = 'none';
     });
   });
 
@@ -304,10 +351,10 @@ function setupAuthModals() {
       timeLeft--;
       const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
       const s = (timeLeft % 60).toString().padStart(2, '0');
-      timerEl.textContent = `${window.t('auth.otp_time_left')} ${m}:${s}`;
+      timerEl.textContent = `${window.t('auth.otp_time_left') || '남은 시간:'} ${m}:${s}`;
       if (timeLeft <= 0) {
         clearInterval(otpTimerInterval);
-        timerEl.textContent = window.t('auth.otp_expired');
+        timerEl.textContent = window.t('auth.otp_expired') || '인증 시간이 만료되었습니다.';
         isOtpVerified = false;
         document.getElementById('verifyOtpBtn').disabled = true;
       }
@@ -316,11 +363,10 @@ function setupAuthModals() {
 
   // Send OTP
   document.getElementById('sendOtpBtn').addEventListener('click', async () => {
+    clearError();
     const email = document.getElementById('authEmail').value;
-    errorDiv.textContent = '';
-
-    if (!email || !email.includes('@')) {
-      errorDiv.textContent = window.t('auth.invalid_email') || '올바른 이메일 주소를 먼저 입력해주세요.';
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+      showError(window.t('auth.invalid_email') || '올바른 이메일 주소를 먼저 입력해주세요.');
       return;
     }
 
@@ -337,6 +383,7 @@ function setupAuthModals() {
       btn.disabled = false;
       btn.textContent = window.t('auth.resend_otp') || '인증번호 재발송';
     } else {
+      otpRequested = true;
       btn.textContent = window.t('auth.btn_resend') || '재발송';
       btn.disabled = false;
       document.getElementById('otpGroup').style.display = 'block';
@@ -351,7 +398,7 @@ function setupAuthModals() {
     const otp = document.getElementById('authOtp').value;
     const otpErrorDiv = document.getElementById('otpError');
 
-    errorDiv.textContent = '';
+    clearError();
     if (otpErrorDiv) otpErrorDiv.textContent = '';
 
     if (!otp || otp.length < 4) {
@@ -385,7 +432,7 @@ function setupAuthModals() {
   // Form Submission
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    errorDiv.textContent = '';
+    clearError();
 
     const email = document.getElementById('authEmail').value;
     const password = document.getElementById('authPassword').value;
@@ -472,12 +519,15 @@ function setupAuthModals() {
         window.location.href = '/app.html';
       }
     } catch (err) {
-      errorDiv.textContent = err.message || window.t('auth.err_general') || '가입 처리 중 오류가 발생했습니다.';
+      console.error('Auth error:', err);
+      let msg = err.message || window.t('auth.err_general') || '인증 처리 중 오류가 발생했습니다.';
+      if (msg.toLowerCase().includes('invalid login credentials')) {
+        msg = window.i18n && window.i18n.currentLang === 'en' ? 'Invalid email or password.' : '이메일 또는 비밀번호가 일치하지 않습니다.';
+      }
+      showError(msg);
     } finally {
       submitBtn.disabled = false;
-      const submitI18nKey = mode === 'login' ? 'auth.login' : 'auth.signup';
-      submitBtn.setAttribute('data-i18n', submitI18nKey);
-      submitBtn.textContent = window.t(submitI18nKey);
+      submitBtn.textContent = mode === 'login' ? window.t('auth.login') : window.t('auth.signup');
     }
   });
 }
