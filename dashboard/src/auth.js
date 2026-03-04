@@ -21,7 +21,7 @@ window.t = window.t || ((key) => {
     'sourcing.mypage_tab': '견적 / 소싱 장바구니',
     'support.title': '고객센터',
     'support.inquiry': '1:1 문의',
-    'support.faq': 'FAQ',
+    'support.faq': '공지사항(Notice)',
     'support.feedback': '건의 & 요청사항'
   };
   return fallbacks[key] || key.split('.').pop();
@@ -99,13 +99,12 @@ async function renderAuthButton(container, session) {
           ${isAdmin ? `<a href="/admin/index.html" class="dropdown-item" data-i18n="common.admin">${window.t('common.admin') || '관리자 페이지'}</a>` : ''}
           <a href="#" onclick="event.preventDefault(); window.openMyPageModal(); setTimeout(() => document.querySelector('.auth-tab[data-mypage-tab=\\'account\\']').click(), 50);" class="dropdown-item" data-i18n="mypage.title">${window.t('mypage.title') || '마이페이지 (계정 정보)'}</a>
           <a href="#" onclick="event.preventDefault(); window.openMyPageModal(); setTimeout(() => document.querySelector('.auth-tab[data-mypage-tab=\\'billing\\']').click(), 50);" class="dropdown-item" data-i18n="mypage.billing">${window.t('mypage.billing') || '결제 / 플랜 관리'}</a>
-          <a href="#" onclick="event.preventDefault(); window.openMyPageModal(); setTimeout(() => document.querySelector('.auth-tab[data-mypage-tab=\\'sourcing\\']').click(), 50);" class="dropdown-item" data-i18n="sourcing.mypage_tab">${window.t('sourcing.mypage_tab') || '견적 / 소싱 장바구니'}</a>
           <a href="#" onclick="event.preventDefault(); if(document.querySelector('.tab[data-tab=\\'wishlist\\']')) document.querySelector('.tab[data-tab=\\'wishlist\\']').click();" class="dropdown-item" data-i18n="tabs.favorites">${window.t('tabs.favorites') || '관심 상품 (찜)'}</a>
           
           <div style="margin-top: 8px; border-top: 1px solid #eee; padding-top: 8px;">
             <div style="font-size: 11px; color: #888; padding: 4px 12px; text-transform: uppercase;" data-i18n="support.title">${window.t('support.title') || '고객센터'}</div>
             <a href="#" onclick="event.preventDefault(); window.openMyPageModal(); setTimeout(() => { document.querySelector('.auth-tab[data-mypage-tab=\\'support\\']').click(); window.toggleSupportView('inquiry'); }, 50);" class="dropdown-item" style="font-size: 13px;" data-i18n="support.inquiry">${window.t('support.inquiry') || '1:1 문의'}</a>
-            <a href="#" onclick="event.preventDefault(); window.openMyPageModal(); setTimeout(() => { document.querySelector('.auth-tab[data-mypage-tab=\\'support\\']').click(); window.toggleSupportView('faq'); }, 50);" class="dropdown-item" style="font-size: 13px;" data-i18n="support.faq">${window.t('support.faq') || 'FAQ'}</a>
+            <a href="#" onclick="event.preventDefault(); window.openMyPageModal(); setTimeout(() => { document.querySelector('.auth-tab[data-mypage-tab=\\'support\\']').click(); window.toggleSupportView('faq'); }, 50);" class="dropdown-item" style="font-size: 13px;" data-i18n="support.faq">${window.t('support.faq') || '공지사항(Notice)'}</a>
             <a href="#" onclick="event.preventDefault(); window.openMyPageModal(); setTimeout(() => { document.querySelector('.auth-tab[data-mypage-tab=\\'support\\']').click(); window.toggleSupportView('inquiry'); document.getElementById('inquiryType').value = 'feedback'; }, 50);" class="dropdown-item" style="font-size: 13px;" data-i18n="support.feedback">${window.t('support.feedback') || '건의 & 요청사항'}</a>
           </div>
 

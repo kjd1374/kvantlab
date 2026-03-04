@@ -209,9 +209,28 @@ body {
   justify-content: flex-end;
 }
 
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  margin: 0 20px;
+}
+
+.header-nav-item {
+  text-decoration: none;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 15px;
+  transition: color 0.2s;
+}
+
+.header-nav-item:hover {
+  color: var(--accent-blue);
+}
+
 .search-box {
   position: relative;
-  max-width: 320px;
+  max-width: 220px;
   flex: 1;
 }
 

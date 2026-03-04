@@ -26,10 +26,10 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- PayPal SDK will be loaded dynamically by main.js -->
 
-<script type="module" crossorigin src="/assets/app-BftUmOxC.js"></script>
+<script type="module" crossorigin src="/assets/app-WHw3seDA.js"></script>
 <link rel="modulepreload" crossorigin href="/assets/supabase-BiZ88kko.js">
 <link rel="stylesheet" crossorigin href="/assets/app-BDkU_Ctx.css">
-<link rel="stylesheet" crossorigin href="/assets/style-BfdvyYJ0.css">
+<link rel="stylesheet" crossorigin href="/assets/style-DLV6jVfz.css">
 
 <body>
   <!-- Header -->
@@ -40,6 +40,15 @@
         <img src="/assets/logo_kvant-14fCMUP7.png" alt="K-Vant Logo" style="height: 28px; border-radius: 4px;">
         <div>K-Vant <span style="font-weight:300; color:#666; font-size:14px;">Intelligence</span></div>
       </a>
+
+      <nav class="header-nav">
+        <a href="#" class="header-nav-item"
+          onclick="event.preventDefault(); document.querySelector('.platform-btn[data-platform=\\'oliveyoung\\']').click();">랭킹</a>
+        <a href="#" class="header-nav-item"
+          onclick="event.preventDefault(); document.querySelector('.platform-btn[data-platform=\\'k_trend\\']').click();">트렌드</a>
+        <a href="#" class="header-nav-item"
+          onclick="event.preventDefault(); window.openMyPageModal(); setTimeout(() => document.querySelector('.auth-tab[data-mypage-tab=\\'sourcing\\']').click(), 50);">소싱-견적</a>
+      </nav>
 
       <div class="header-right">
         <div class="search-box">

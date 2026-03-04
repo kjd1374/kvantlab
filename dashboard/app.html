@@ -36,6 +36,15 @@
         <div>K-Vant <span style="font-weight:300; color:#666; font-size:14px;">Intelligence</span></div>
       </a>
 
+      <nav class="header-nav">
+        <a href="#" class="header-nav-item"
+          onclick="event.preventDefault(); document.querySelector('.platform-btn[data-platform=\\'oliveyoung\\']').click();">랭킹</a>
+        <a href="#" class="header-nav-item"
+          onclick="event.preventDefault(); document.querySelector('.platform-btn[data-platform=\\'k_trend\\']').click();">트렌드</a>
+        <a href="#" class="header-nav-item"
+          onclick="event.preventDefault(); window.openMyPageModal(); setTimeout(() => document.querySelector('.auth-tab[data-mypage-tab=\\'sourcing\\']').click(), 50);">소싱-견적</a>
+      </nav>
+
       <div class="header-right">
         <div class="search-box">
           <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
