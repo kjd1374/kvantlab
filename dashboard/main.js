@@ -44,6 +44,7 @@ import { AblyBridge } from './source_bridges/ably.js';
 import { ShinsegaeBridge } from './source_bridges/shinsegae.js';
 import { KoreaTrendBridge } from './source_bridges/k_trend.js?v=2';
 import { SteadySellerBridge } from './source_bridges/steady_seller.js';
+import { ModernHouseBridge } from './source_bridges/modernhouse.js';
 
 const bridges = {
   oliveyoung: OliveYoungBridge,
@@ -52,7 +53,8 @@ const bridges = {
   shinsegae: ShinsegaeBridge, // Keep key for UI mapping but ID is ssg
   ssg: ShinsegaeBridge,
   k_trend: KoreaTrendBridge,
-  steady_sellers: SteadySellerBridge
+  steady_sellers: SteadySellerBridge,
+  modernhouse: ModernHouseBridge
 };
 
 // ─── State ──────────────────────────────────
@@ -986,10 +988,10 @@ function renderTableRow(p, index) {
         </td>
         <td><span class="product-brand" data-brand-pid="${p.product_id || p.id}">${brand}</span></td>
         <td>${formatPrice(p.price || p.price_current)}</td>
-        <td>${formatNumber(p.review_count)}</td>
-        <td>${p.review_rating && !isNaN(p.review_rating) ? p.review_rating : '-'}</td>
+        <td>${p.review_count > 0 ? formatNumber(p.review_count) : '0'}</td>
+        <td>${p.review_rating > 0 && !isNaN(p.review_rating) ? p.review_rating : '-'}</td>
         <td>
-          ${(p.product_url || p.url) ? `<a class="link-btn" href="${p.product_url || p.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">보기 →</a>` : '-'}
+          ${(p.url || p.product_url) ? `<a class="link-btn" href="${p.url || p.product_url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">보기 →</a>` : '-'}
         </td>
       </tr>
     `;
@@ -1035,9 +1037,9 @@ async function loadSemanticResults() {
             <td>${name}</td>
             <td>${brand}</td>
             <td>${price}</td>
-            <td>${formatNumber(p.review_count)}</td>
-            <td>${p.review_rating && !isNaN(p.review_rating) ? p.review_rating : '-'}</td>
-            <td><a href="${p.product_url || p.url}" target="_blank" onclick="event.stopPropagation()">🔗</a></td>
+            <td>${p.review_count > 0 ? formatNumber(p.review_count) : '0'}</td>
+            <td>${p.review_rating > 0 && !isNaN(p.review_rating) ? p.review_rating : '-'}</td>
+            <td><a href="${p.url || p.product_url}" target="_blank" onclick="event.stopPropagation()">🔗</a></td>
           </tr>
         `;
       }).join('');
@@ -1652,7 +1654,7 @@ function renderProductCard(p, mode = 'normal', isGlobalTrend = false, isWishlist
       </div>
       <div class="product-card-bottom">
         ${!isGlobalTrend && (p.rank_change !== undefined && p.rank_change !== null) ? `<span class="badge ${p.rank_change > 0 ? 'badge-rank-up' : 'badge-rank-down'}">${p.rank_change > 0 ? '▲' : '▼'} ${Math.abs(p.rank_change)}</span>` : ''}
-        ${p.review_count ? `<span class="badge badge-reviews">⭐ ${p.review_rating || '-'} (${isGlobalTrend ? '-' : formatNumber(p.review_count)})</span>` : ''}
+        ${p.review_count > 0 ? `<span class="badge badge-reviews">⭐ ${p.review_rating > 0 ? p.review_rating : '-'} (${isGlobalTrend ? '-' : formatNumber(p.review_count)})</span>` : ''}
       </div>
       ${qtyHtml}
     </div>
