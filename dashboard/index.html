@@ -5,7 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>K-Vant — Korean Trend Intelligence for SEA Sellers</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet">
   <style>
     :root {
       --bg: #0a0e17;
@@ -1369,53 +1371,58 @@
       font-weight: 600 !important;
     }
 
-    
+
     #pricing-wrapper {
       display: flex;
       flex-direction: column;
       align-items: center;
       width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
       font-family: 'Inter', sans-serif;
+      padding: 60px 0;
     }
-  /* SECTION HEADER */
+
+    /* SECTION HEADER */
     .pricing-label {
-      font-size: 12px;
+      font-size: 13px;
       letter-spacing: 0.15em;
       text-transform: uppercase;
       color: var(--ac);
-      font-weight: 600;
+      font-weight: 700;
       text-align: center;
       margin-bottom: 16px;
     }
 
     .pricing-title {
       font-family: 'Syne', sans-serif;
-      font-size: clamp(32px, 5vw, 52px);
+      font-size: clamp(32px, 5vw, 56px);
       font-weight: 800;
       text-align: center;
-      line-height: 1.1;
-      margin-bottom: 14px;
+      line-height: 1;
+      margin-bottom: 20px;
+      letter-spacing: -0.02em;
     }
 
     .pricing-sub {
-      font-size: 16px;
+      font-size: 17px;
       color: var(--tx2);
       text-align: center;
-      max-width: 480px;
-      line-height: 1.7;
-      margin-bottom: 12px;
+      max-width: 500px;
+      line-height: 1.6;
+      margin-bottom: 24px;
     }
 
     /* EARLYBIRD BADGE */
     .eb-badge {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      background: rgba(245, 158, 11, 0.1);
-      border: 1px solid rgba(245, 158, 11, 0.3);
+      gap: 10px;
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.2);
       border-radius: 100px;
-      padding: 8px 18px;
-      font-size: 13px;
+      padding: 10px 22px;
+      font-size: 14px;
       font-weight: 600;
       color: var(--gold);
       margin-bottom: 48px;
@@ -2163,103 +2170,103 @@
   <section class="section" id="pricing">
     <div class="section-inner" style="width: 100%;">
       <div id="pricing-wrapper">
-      <div class="pricing-label">Pricing</div>
-      <h2 class="pricing-title">Simple, transparent pricing.</h2>
-      <p class="pricing-sub">Start free for 14 days. No credit card required.</p>
+        <div class="pricing-label">Pricing</div>
+        <h2 class="pricing-title">Simple, transparent pricing.</h2>
+        <p class="pricing-sub">Start free for 14 days. No credit card required.</p>
 
-      <div class="eb-badge">
-        <div class="eb-dot"></div>
-        Early Bird Pricing — Ends April 30
-      </div>
+        <div class="eb-badge">
+          <div class="eb-dot"></div>
+          Early Bird Pricing — Ends April 30
+        </div>
 
-      <div class="price-notice">
-        <strong>⏰ Prices increase on May 1.</strong> Lock in early bird rates now — your price stays fixed as long as
-        you stay subscribed.
-      </div>
+        <div class="price-notice">
+          <strong>⏰ Prices increase on May 1.</strong> Lock in early bird rates now — your price stays fixed as long as
+          you stay subscribed.
+        </div>
 
-      <div class="toggle-wrap">
-        <button class="toggle-btn active" id="btn-monthly" onclick="setMode('monthly')">Monthly</button>
-        <button class="toggle-btn" id="btn-annual" onclick="setMode('annual')">
-          Annual <span class="save-tag" style="margin-left:6px">Save 34%</span>
-        </button>
-      </div>
+        <div class="toggle-wrap">
+          <button class="toggle-btn active" id="btn-monthly" onclick="setMode('monthly')">Monthly</button>
+          <button class="toggle-btn" id="btn-annual" onclick="setMode('annual')">
+            Annual <span class="save-tag" style="margin-left:6px">Save 34%</span>
+          </button>
+        </div>
 
-      <div class="cards">
+        <div class="cards">
 
-        <!-- FREE -->
-        <div class="card">
-          <div class="plan-name">Free</div>
-          <div class="price-wrap">
-            <div class="price-row">
-              <span class="price-currency">$</span>
-              <span class="price-amount">0</span>
+          <!-- FREE -->
+          <div class="card">
+            <div class="plan-name">Free</div>
+            <div class="price-wrap">
+              <div class="price-row">
+                <span class="price-currency">$</span>
+                <span class="price-amount">0</span>
+              </div>
+              <div class="price-period">14-day trial · No credit card</div>
             </div>
-            <div class="price-period">14-day trial · No credit card</div>
+            <div class="pricing-divider"></div>
+            <p class="plan-desc">Explore K-Vant before you commit. See what's trending in Korea right now.</p>
+            <ul class="features">
+              <li class="feature-item"><span class="fcheck">✓</span>Top 4 rankings per platform</li>
+              <li class="feature-item"><span class="fcheck">✓</span>Basic product data</li>
+              <li class="feature-item"><span class="fcheck">✓</span>3 platforms access</li>
+              <li class="feature-item"><span class="fcheck">✓</span>1 language</li>
+              <li class="feature-item"><span class="fcheck">✓</span>14-day access</li>
+            </ul>
+            <a href="#" class="btn btn-outline"
+              onclick="event.preventDefault(); document.getElementById('authModal') && document.getElementById('authModal').classList.add('open');">Start
+              Free Trial</a>
           </div>
-          <div class="pricing-divider"></div>
-          <p class="plan-desc">Explore K-Vant before you commit. See what's trending in Korea right now.</p>
-          <ul class="features">
-            <li class="feature-item"><span class="fcheck">✓</span>Top 4 rankings per platform</li>
-            <li class="feature-item"><span class="fcheck">✓</span>Basic product data</li>
-            <li class="feature-item"><span class="fcheck">✓</span>3 platforms access</li>
-            <li class="feature-item"><span class="fcheck">✓</span>1 language</li>
-            <li class="feature-item"><span class="fcheck">✓</span>14-day access</li>
-          </ul>
-          <a href="#" class="btn btn-outline"
-            onclick="event.preventDefault(); document.getElementById('authModal') && document.getElementById('authModal').classList.add('open');">Start
-            Free Trial</a>
-        </div>
 
-        <!-- PRO -->
-        <div class="card featured">
-          <div class="popular-badge">Most Popular</div>
-          <div class="eb-corner">EARLY BIRD</div>
-          <div class="plan-name">Pro</div>
-          <div class="price-wrap" id="pro-price-wrap">
-            <!-- JS로 채움 -->
+          <!-- PRO -->
+          <div class="card featured">
+            <div class="popular-badge">Most Popular</div>
+            <div class="eb-corner">EARLY BIRD</div>
+            <div class="plan-name">Pro</div>
+            <div class="price-wrap" id="pro-price-wrap">
+              <!-- JS로 채움 -->
+            </div>
+            <div class="pricing-divider"></div>
+            <p class="plan-desc">Everything you need to find trending Korean products before your competitors do.</p>
+            <ul class="features">
+              <li class="feature-item"><span class="fcheck gold">✓</span>Full rankings — all platforms</li>
+              <li class="feature-item"><span class="fcheck gold">✓</span>30-day trend graphs</li>
+              <li class="feature-item"><span class="fcheck gold">✓</span>AI review analysis</li>
+              <li class="feature-item"><span class="fcheck gold">✓</span>Trending Now signals</li>
+              <li class="feature-item"><span class="fcheck gold">✓</span>5 SEA languages</li>
+              <li class="feature-item"><span class="fcheck gold">✓</span>Wholesale quote requests</li>
+            </ul>
+            <a href="#" class="btn btn-primary" id="pro-cta"
+              onclick="event.preventDefault(); document.getElementById('authModal') && document.getElementById('authModal').classList.add('open');">Get
+              Started</a>
           </div>
-          <div class="pricing-divider"></div>
-          <p class="plan-desc">Everything you need to find trending Korean products before your competitors do.</p>
-          <ul class="features">
-            <li class="feature-item"><span class="fcheck gold">✓</span>Full rankings — all platforms</li>
-            <li class="feature-item"><span class="fcheck gold">✓</span>30-day trend graphs</li>
-            <li class="feature-item"><span class="fcheck gold">✓</span>AI review analysis</li>
-            <li class="feature-item"><span class="fcheck gold">✓</span>Trending Now signals</li>
-            <li class="feature-item"><span class="fcheck gold">✓</span>5 SEA languages</li>
-            <li class="feature-item"><span class="fcheck gold">✓</span>Wholesale quote requests</li>
-          </ul>
-          <a href="#" class="btn btn-primary" id="pro-cta"
-            onclick="event.preventDefault(); document.getElementById('authModal') && document.getElementById('authModal').classList.add('open');">Get
-            Started</a>
+
+          <!-- ENTERPRISE -->
+          <div class="card enterprise">
+            <div class="plan-name">Enterprise</div>
+            <div class="ent-badge">🔒 NOT YET OPEN</div>
+            <div class="coming-soon-price">Coming Soon</div>
+            <div class="price-period" style="margin-bottom:16px">Currently in planning</div>
+            <div class="pricing-divider"></div>
+            <p class="plan-desc">Join the waitlist to get early access and founding member pricing.</p>
+            <ul class="features ent-features">
+              <li class="feature-item"><span class="fcheck">·</span>Everything in Pro</li>
+              <li class="feature-item"><span class="fcheck">·</span>Multi-user access</li>
+              <li class="feature-item"><span class="fcheck">·</span>API access</li>
+              <li class="feature-item"><span class="fcheck">·</span>Custom reports & CSV export</li>
+              <li class="feature-item"><span class="fcheck">·</span>Dedicated account manager</li>
+              <li class="feature-item"><span class="fcheck">·</span>& more — details TBD</li>
+            </ul>
+            <a href="#" class="btn btn-enterprise">Join Waitlist</a>
+          </div>
+
         </div>
 
-        <!-- ENTERPRISE -->
-        <div class="card enterprise">
-          <div class="plan-name">Enterprise</div>
-          <div class="ent-badge">🔒 NOT YET OPEN</div>
-          <div class="coming-soon-price">Coming Soon</div>
-          <div class="price-period" style="margin-bottom:16px">Currently in planning</div>
-          <div class="pricing-divider"></div>
-          <p class="plan-desc">Join the waitlist to get early access and founding member pricing.</p>
-          <ul class="features ent-features">
-            <li class="feature-item"><span class="fcheck">·</span>Everything in Pro</li>
-            <li class="feature-item"><span class="fcheck">·</span>Multi-user access</li>
-            <li class="feature-item"><span class="fcheck">·</span>API access</li>
-            <li class="feature-item"><span class="fcheck">·</span>Custom reports & CSV export</li>
-            <li class="feature-item"><span class="fcheck">·</span>Dedicated account manager</li>
-            <li class="feature-item"><span class="fcheck">·</span>& more — details TBD</li>
-          </ul>
-          <a href="#" class="btn btn-enterprise">Join Waitlist</a>
+        <div class="footnote">
+          <span>All plans include a 14-day free trial.</span><br>
+          Cancel anytime · Secure payment via PayPal · Prices in USD
         </div>
-
-      </div>
-
-      <div class="footnote">
-        <span>All plans include a 14-day free trial.</span><br>
-        Cancel anytime · Secure payment via PayPal · Prices in USD
       </div>
     </div>
-      </div>
     </div>
   </section>
 
@@ -2410,7 +2417,7 @@
 
     // 얼리버드 여부 (4월 30일까지)
     const isEarlyBird = new Date() <= new Date('2026-04-30T23:59:59');
-    let mode = 'monthly';
+    let mode = 'annual';
 
     // Must attach setMode to window since it's a module
     window.setMode = function (m) {
@@ -2455,6 +2462,10 @@
     }
 
     renderPrice();
+
+    // Ensure active class matches default mode on load
+    document.getElementById('btn-monthly').classList.toggle('active', mode === 'monthly');
+    document.getElementById('btn-annual').classList.toggle('active', mode === 'annual');
   </script>
 
 </body>
