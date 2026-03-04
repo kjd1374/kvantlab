@@ -264,8 +264,8 @@ export const KoreaTrendBridge = {
 
         // ── Category Donut (text-based) ─────────────────────────
         const catTotal = Object.values(catMap).reduce((s, v) => s + v, 0);
-        const catBars = Object.entries(catMap).sort((a, b) => b[1] - a[1]).map(([cat, cnt]) => {
-            const pct = Math.round((cnt / catTotal) * 100);
+        const catBars = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([cat, cnt]) => {
+            const pct = (cnt / catTotal * 100).toFixed(2);
             return `<div class="gt-cat-row"><span class="gt-cat-label">${cat}</span><div class="gt-cat-bar-track"><div class="gt-cat-bar-fill" style="width:${pct}%"></div></div><span class="gt-cat-pct">${pct}%</span></div>`;
         }).join('');
 
@@ -465,7 +465,7 @@ export const KoreaTrendBridge = {
         if (state.activeTab === 'naver_best') return '';
 
         return `
-    <div class="k-trend-filters" style="display:flex; gap:10px; padding:10px 20px; border-bottom:1px solid var(--border-color); overflow-x:auto; align-items:center;">
+    <div class="k-trend-filters" style="display:flex; gap:10px; padding:10px 0; overflow-x:auto; align-items:center;">
                 <select id="kTrendCountry" style="padding:8px; border-radius:8px; border:1px solid #ccc;">
                     <option value="VN" ${this.filterState.country === 'VN' ? 'selected' : ''} data-i18n="countries.vn">${window.t('countries.vn') || '🇻🇳 베트남 (Vietnam)'}</option>
                     <option value="TH" ${this.filterState.country === 'TH' ? 'selected' : ''} data-i18n="countries.th">${window.t('countries.th') || '🇹🇭 태국 (Thailand)'}</option>
