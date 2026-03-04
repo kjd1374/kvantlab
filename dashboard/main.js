@@ -118,11 +118,19 @@ window.switchMainTab = function (mainTabId) {
 
   const mainContent = document.getElementById('mainContent');
   const sourcingView = document.getElementById('sourcingView');
+  const kpiGrid = document.getElementById('kpiGrid');
+  const filterBar = document.querySelector('.filter-bar');
+  const tabBar = document.querySelector('.tab-bar');
 
   if (mainTabId === 'ranking') {
     document.querySelectorAll('.header-nav-item')[0].classList.add('active');
     if (mainContent) mainContent.style.display = 'flex'; // main is flex on desktop
     if (sourcingView) sourcingView.style.display = 'none';
+
+    // Show ranking-specific UI elements
+    if (kpiGrid) kpiGrid.style.display = '';
+    if (filterBar) filterBar.style.display = '';
+    if (tabBar) tabBar.style.display = '';
 
     // Show ranking platforms
     document.querySelectorAll('.platform-btn').forEach(btn => {
@@ -140,6 +148,11 @@ window.switchMainTab = function (mainTabId) {
     document.querySelectorAll('.header-nav-item')[1].classList.add('active');
     if (mainContent) mainContent.style.display = 'flex';
     if (sourcingView) sourcingView.style.display = 'none';
+
+    // Hide ranking-specific UI elements (K-Trend renders its own KPIs/filters)
+    if (kpiGrid) kpiGrid.style.display = 'none';
+    if (filterBar) filterBar.style.display = 'none';
+    if (tabBar) tabBar.style.display = 'none';
 
     // Show trend platforms
     document.querySelectorAll('.platform-btn').forEach(btn => {
@@ -316,6 +329,10 @@ async function init() {
     renderTabs();
     setupEventListeners();
     setupAuthUI();
+
+    // Apply initial main tab routing to hide non-ranking platform buttons
+    switchMainTab('ranking');
+
     await Promise.all([
       loadKPIs(),
       loadCategories()
