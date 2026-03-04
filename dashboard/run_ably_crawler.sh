@@ -10,4 +10,7 @@ echo "========================================================" >> $LOG_FILE
 echo "👗 [$(date)] [Ably] Crawler Starting..." >> $LOG_FILE
 $VENV_PYTHON -u $CRAWLER_DIR/ably_crawler.py >> $LOG_FILE 2>&1
 echo "✅ [$(date)] [Ably] Crawler Finished." >> $LOG_FILE
+echo "🤖 [$(date)] [Ably] AI Review Collector Starting..." >> $LOG_FILE
+$VENV_PYTHON -u $CRAWLER_DIR/review_collector.py --platform ably >> $LOG_FILE 2>&1
+echo "✅ [$(date)] [Ably] AI Review Collector Finished." >> $LOG_FILE
 echo "========================================================" >> $LOG_FILE

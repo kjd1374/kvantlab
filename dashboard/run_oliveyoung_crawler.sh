@@ -12,4 +12,7 @@ $VENV_PYTHON -u $CRAWLER_DIR/oliveyoung_crawler.py >> $LOG_FILE 2>&1
 echo "🔥 [$(date)] [OliveYoung Hotdeal] Crawler Starting..." >> $LOG_FILE
 $VENV_PYTHON -u $CRAWLER_DIR/oliveyoung_hotdeal_crawler.py >> $LOG_FILE 2>&1
 echo "✅ [$(date)] [OliveYoung] Crawler Finished." >> $LOG_FILE
+echo "🤖 [$(date)] [OliveYoung] AI Review Collector Starting..." >> $LOG_FILE
+$VENV_PYTHON -u $CRAWLER_DIR/review_collector.py --platform oliveyoung >> $LOG_FILE 2>&1
+echo "✅ [$(date)] [OliveYoung] AI Review Collector Finished." >> $LOG_FILE
 echo "========================================================" >> $LOG_FILE

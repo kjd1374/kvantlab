@@ -10,4 +10,7 @@ echo "========================================================" >> $LOG_FILE
 echo "👔 [$(date)] [Musinsa] Crawler Starting..." >> $LOG_FILE
 $VENV_PYTHON -u $CRAWLER_DIR/musinsa_crawler.py >> $LOG_FILE 2>&1
 echo "✅ [$(date)] [Musinsa] Crawler Finished." >> $LOG_FILE
+echo "🤖 [$(date)] [Musinsa] AI Review Collector Starting..." >> $LOG_FILE
+$VENV_PYTHON -u $CRAWLER_DIR/review_collector.py --platform musinsa >> $LOG_FILE 2>&1
+echo "✅ [$(date)] [Musinsa] AI Review Collector Finished." >> $LOG_FILE
 echo "========================================================" >> $LOG_FILE
