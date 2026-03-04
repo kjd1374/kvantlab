@@ -132,11 +132,9 @@ window.switchMainTab = function (mainTabId) {
     if (filterBar) filterBar.style.display = '';
     if (tabBar) tabBar.style.display = '';
 
-    // Show ranking platforms
-    document.querySelectorAll('.platform-btn').forEach(btn => {
-      if (btn.dataset.group === 'ranking') btn.style.display = 'inline-block';
-      else btn.style.display = 'none';
-    });
+    // Set active group on platform-switcher container (CSS handles visibility)
+    const switcher = document.querySelector('.platform-switcher');
+    if (switcher) switcher.dataset.activeGroup = 'ranking';
 
     // Default to oliveyoung if current platform is trend
     if (state.currentPlatform === 'k_trend') {
@@ -154,11 +152,9 @@ window.switchMainTab = function (mainTabId) {
     if (filterBar) filterBar.style.display = 'none';
     if (tabBar) tabBar.style.display = 'none';
 
-    // Show trend platforms
-    document.querySelectorAll('.platform-btn').forEach(btn => {
-      if (btn.dataset.group === 'trend') btn.style.display = 'inline-block';
-      else btn.style.display = 'none';
-    });
+    // Set active group on platform-switcher container (CSS handles visibility)
+    const switcher = document.querySelector('.platform-switcher');
+    if (switcher) switcher.dataset.activeGroup = 'trend';
 
     // Default to k_trend
     if (state.currentPlatform !== 'k_trend') {

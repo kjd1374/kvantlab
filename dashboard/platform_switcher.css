@@ -41,3 +41,16 @@
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15) !important;
     transform: translateY(-2px) !important;
 }
+
+/* ── Platform Group Visibility ─────────────────────────── */
+/* When ranking mode is active: hide trend & hidden group buttons */
+.platform-switcher[data-active-group="ranking"] .platform-btn[data-group="trend"],
+.platform-switcher[data-active-group="ranking"] .platform-btn[data-group="hidden"] {
+    display: none !important;
+}
+
+/* When trend mode is active: hide ranking & hidden group buttons */
+.platform-switcher[data-active-group="trend"] .platform-btn[data-group="ranking"],
+.platform-switcher[data-active-group="trend"] .platform-btn[data-group="hidden"] {
+    display: none !important;
+}
