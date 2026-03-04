@@ -118,7 +118,6 @@ window.switchMainTab = function (mainTabId) {
 
   const mainContent = document.getElementById('mainContent');
   const sourcingView = document.getElementById('sourcingView');
-  const sidebar = document.getElementById('sidebar');
 
   if (mainTabId === 'ranking') {
     document.querySelectorAll('.header-nav-item')[0].classList.add('active');
