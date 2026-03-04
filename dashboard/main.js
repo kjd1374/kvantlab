@@ -124,7 +124,7 @@ window.switchMainTab = function (mainTabId) {
 
   if (mainTabId === 'ranking') {
     document.querySelectorAll('.header-nav-item')[0].classList.add('active');
-    if (mainContent) mainContent.style.display = 'flex'; // main is flex on desktop
+    if (mainContent) mainContent.style.display = ''; // restore CSS default (block)
     if (sourcingView) sourcingView.style.display = 'none';
 
     // Show ranking-specific UI elements
@@ -146,7 +146,7 @@ window.switchMainTab = function (mainTabId) {
 
   } else if (mainTabId === 'trend') {
     document.querySelectorAll('.header-nav-item')[1].classList.add('active');
-    if (mainContent) mainContent.style.display = 'flex';
+    if (mainContent) mainContent.style.display = ''; // restore CSS default (block)
     if (sourcingView) sourcingView.style.display = 'none';
 
     // Hide ranking-specific UI elements (K-Trend renders its own KPIs/filters)
