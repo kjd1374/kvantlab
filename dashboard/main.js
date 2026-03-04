@@ -109,6 +109,62 @@ function updateURL(isReplace = false) {
   }
 }
 
+// ─── Main Tab Routing (Ranking / Trend / Sourcing) ────
+window.switchMainTab = function (mainTabId) {
+  // Update header nav active state
+  document.querySelectorAll('.header-nav-item').forEach(el => {
+    el.classList.remove('active');
+  });
+
+  const mainContent = document.getElementById('mainContent');
+  const sourcingView = document.getElementById('sourcingView');
+  const sidebar = document.getElementById('sidebar');
+
+  if (mainTabId === 'ranking') {
+    document.querySelectorAll('.header-nav-item')[0].classList.add('active');
+    if (mainContent) mainContent.style.display = 'flex'; // main is flex on desktop
+    if (sourcingView) sourcingView.style.display = 'none';
+
+    // Show ranking platforms
+    document.querySelectorAll('.platform-btn').forEach(btn => {
+      if (btn.dataset.group === 'ranking') btn.style.display = 'inline-block';
+      else btn.style.display = 'none';
+    });
+
+    // Default to oliveyoung if current platform is trend
+    if (state.currentPlatform === 'k_trend') {
+      const btn = document.querySelector('.platform-btn[data-platform="oliveyoung"]');
+      if (btn) btn.click();
+    }
+
+  } else if (mainTabId === 'trend') {
+    document.querySelectorAll('.header-nav-item')[1].classList.add('active');
+    if (mainContent) mainContent.style.display = 'flex';
+    if (sourcingView) sourcingView.style.display = 'none';
+
+    // Show trend platforms
+    document.querySelectorAll('.platform-btn').forEach(btn => {
+      if (btn.dataset.group === 'trend') btn.style.display = 'inline-block';
+      else btn.style.display = 'none';
+    });
+
+    // Default to k_trend
+    if (state.currentPlatform !== 'k_trend') {
+      const btn = document.querySelector('.platform-btn[data-platform="k_trend"]');
+      if (btn) btn.click();
+    }
+
+  } else if (mainTabId === 'sourcing') {
+    document.querySelectorAll('.header-nav-item')[2].classList.add('active');
+    if (mainContent) mainContent.style.display = 'none';
+    if (sourcingView) sourcingView.style.display = 'block';
+
+    // Reload sourcing history if the user is authenticated and function exists
+    if (window.renderSourcingHistory) window.renderSourcingHistory();
+  }
+};
+
+
 async function setPlatform(platform) {
   if (state.currentPlatform === platform) return;
   state.currentPlatform = platform;
@@ -4448,17 +4504,21 @@ window.loadSearchRequests = async function () {
       </div>`;
     }).join('');
   } catch (e) {
-    list.innerHTML = `<div style="text-align:center; padding:15px; color:#e03131; font-size:13px;">${e.message}</div>`;
+    console.error(e);
+    list.innerHTML = `<div style="color:var(--text); font-size:13px; text-align:center; padding:20px;">${window.t('sourcing.history_error')}<br>(${e.message})</div>`;
   }
 };
 
-// ─── My Page Sourcing History ────────────────
-window.loadSourcingHistory = async function () {
-  const list = document.getElementById('sourcingHistoryList');
-  if (!list) return;
-  list.innerHTML = '<div class="loading-skeleton"></div>';
+// ─── Sourcing History (Table View for Main Tab) ────────────────
+window.renderSourcingHistory = async function () {
+  const tbody = document.getElementById('sourcingHistoryTbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 30px;"><div class="loading-skeleton" style="height:40px;"></div></td></tr>';
   const session = getSession();
-  if (!session) return;
+  if (!session) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);">로그인이 필요합니다.</td></tr>`;
+    return;
+  }
 
   try {
     const res = await fetch(`/api/sourcing/history/${session.user.id}`);
@@ -4466,11 +4526,11 @@ window.loadSourcingHistory = async function () {
     if (!data.success) throw new Error(data.error);
 
     if (!data.requests || data.requests.length === 0) {
-      list.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted);">${window.t('sourcing.history_empty')}</div>`;
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);">${window.t('sourcing.history_empty') || '소싱 견적 내역이 없습니다.'}</td></tr>`;
       return;
     }
 
-    list.innerHTML = data.requests.map(req => {
+    tbody.innerHTML = data.requests.map(req => {
       const dateStr = new Date(req.created_at).toLocaleString(i18n.currentLang === 'ko' ? 'ko-KR' : 'en-US', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
       const itemCount = (req.items && Array.isArray(req.items)) ? req.items.length : 0;
       const totalCost = req.estimated_cost || 0;
@@ -4478,87 +4538,65 @@ window.loadSourcingHistory = async function () {
 
       // Status badge
       let statusColor = '#e2e3e5'; let statusText = req.status; let statusTxt = '#383d41';
-      if (req.status === 'pending') { statusColor = '#fff3cd'; statusTxt = '#856404'; statusText = window.t('sourcing.status_pending'); }
-      else if (req.status === 'quoted') { statusColor = '#d4edda'; statusTxt = '#155724'; statusText = window.t('sourcing.status_quoted'); }
-      else if (req.status === 'canceled') { statusColor = '#f8d7da'; statusTxt = '#721c24'; statusText = window.t('sourcing.status_canceled'); }
-      const statusBadge = `<span style="background:${statusColor}; color:${statusTxt}; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; white-space:nowrap;">${statusText}</span>`;
+      if (req.status === 'pending') { statusColor = '#fff3cd'; statusTxt = '#856404'; statusText = window.t('sourcing.status_pending') || '접수/검토중'; }
+      else if (req.status === 'quoted') { statusColor = '#d4edda'; statusTxt = '#155724'; statusText = window.t('sourcing.status_quoted') || '견적완료'; }
+      else if (req.status === 'canceled') { statusColor = '#f8d7da'; statusTxt = '#721c24'; statusText = window.t('sourcing.status_canceled') || '취소/반려'; }
+      const statusBadge = `<span style="background:${statusColor}; color:${statusTxt}; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; white-space:nowrap; display:inline-block;">${statusText}</span>`;
 
-      // Simple item preview
-      const itemPreview = req.items && Array.isArray(req.items)
-        ? req.items.slice(0, 3).map(i => `<span style="font-size:12px; background:#f0f0f5; padding:2px 8px; border-radius:12px; color:#555;">${i.name && i.name.length > 20 ? i.name.slice(0, 20) + '…' : (i.name || 'Item')}</span>`).join('')
-        + (req.items.length > 3 ? `<span style="font-size:12px; color:var(--text-muted);">+${req.items.length - 3}</span>` : '')
-        : '';
-
-      // Collapsible breakdown
-      let breakdownHtml = '';
-      if (req.estimated_cost) {
-        const sFee = req.shipping_fee || 0;
-        const svFee = req.service_fee || 0;
-        const itemLines = (req.items || []).map(item => {
-          const up = item.unit_price || 0;
-          return `<div style="display:flex; justify-content:space-between; font-size:12px; padding:3px 0; border-bottom:1px solid #f0f0f0; color:#444;">
-            <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-right:8px;">${item.name || ''} (×${item.quantity || 0})</span>
-            <span style="flex-shrink:0;">${up > 0 ? `₩${up.toLocaleString()}` : '-'}</span>
-          </div>`;
-        }).join('');
-
-        breakdownHtml = `
-          <div>
-            <button onclick="document.getElementById('bd-${uid}').style.display=document.getElementById('bd-${uid}').style.display==='none'?'block':'none'"
-              style="font-size:12px; color:#888; background:none; border:none; cursor:pointer; padding:4px 0; margin:8px 0 0;">
-              ▾ ${window.t('sourcing.view_details')}
-            </button>
-            <div id="bd-${uid}" style="display:none; margin-top:6px; padding:10px; background:#fafafa; border-radius:8px; border:1px solid #eee;">
-              ${itemLines}
-              <div style="display:flex; justify-content:space-between; font-size:12px; padding:4px 0; color:#666;">
-                <span>${window.t('sourcing.shipping_fee')}</span><span>${sFee > 0 ? `₩${sFee.toLocaleString()}` : '-'}</span>
-              </div>
-              <div style="display:flex; justify-content:space-between; font-size:12px; padding:4px 0; color:#666;">
-                <span>${window.t('sourcing.service_fee')}</span><span>${svFee > 0 ? `₩${svFee.toLocaleString()}` : '-'}</span>
-              </div>
-            </div>
-          </div>`;
+      // Item summary
+      let itemSummary = '';
+      if (req.items && req.items.length > 0) {
+        itemSummary = `<div style="font-weight:600; color:var(--text); margin-bottom:4px;">${escapeHtml(req.items[0].name)} ${(req.items.length > 1 ? `외 ${req.items.length - 1}건` : '')}</div>`;
+      }
+      if (req.sns_links && req.sns_links.length > 0) {
+        itemSummary += `<div style="font-size:12px; color:var(--accent-blue); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">🔗 링크 ${req.sns_links.length}개 포함</div>`;
+      }
+      if (req.note) {
+        itemSummary += `<div style="font-size:12px; color:var(--text-muted); margin-top:4px; max-height:40px; overflow:hidden; text-overflow:ellipsis;">📝 ${escapeHtml(req.note)}</div>`;
       }
 
-      // Admin reply
-      let replyHtml = '';
-      if (req.admin_reply) {
-        replyHtml = `<div style="margin-top:8px; padding:8px 12px; background:#f8f9fa; border-radius:6px; border-left:3px solid #0071e3; font-size:12px; color:#444; line-height:1.5;">
-          <span style="font-weight:600; font-size:11px; color:#0071e3; display:block; margin-bottom:3px;">${window.t('sourcing.admin_reply_title')}</span>
-          ${escapeHtml(req.admin_reply)}</div>`;
+      // Estimate / Reply
+      let estimateHtml = '-';
+      if (req.status === 'quoted' && totalCost > 0) {
+        estimateHtml = `<div style="font-weight:700; color:var(--text); font-size:14px;">₩${totalCost.toLocaleString()}</div>`;
+        if (req.admin_reply) {
+          estimateHtml += `<div style="font-size:11px; color:#0071e3; margin-top:4px; cursor:pointer;" onclick="alert('${escapeHtml(req.admin_reply)}')">[관리자 코멘트 확인]</div>`;
+        }
+      } else if (req.status === 'pending') {
+        estimateHtml = `<span style="color:var(--text-muted); font-size:12px;">견적 산출 중</span>`;
       }
 
-      // Payment button (only when quoted)
-      const payBtn = req.status === 'quoted' && totalCost > 0
-        ? `<button onclick="alert('결제 기능은 곧 오픈됩니다! 총액: ₩${totalCost.toLocaleString()}')"
-             style="width:100%; margin-top:12px; padding:12px; border-radius:10px; border:none; background:#0071e3; color:white; font-size:14px; font-weight:700; cursor:pointer; letter-spacing:-0.3px;">
-             💳 결제하기 · ₩${totalCost.toLocaleString()}
-           </button>`
-        : '';
+      // Action / Update
+      let actionHtml = '-';
+      if (req.status === 'quoted' && totalCost > 0) {
+        actionHtml = `<button onclick="alert('결제 기능은 곧 오픈됩니다!')" style="padding:6px 12px; border-radius:6px; border:none; background:var(--accent-blue); color:#fff; font-size:12px; font-weight:600; cursor:pointer;">결제하기</button>`;
+      }
 
       return `
-        <div style="border:1px solid #e8e8ed; border-radius:12px; padding:16px; background:white; box-shadow:0 1px 4px rgba(0,0,0,0.04);">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <div>
-              <div style="font-size:11px; color:#aaa; margin-bottom:2px;">${dateStr}</div>
-              <div style="font-weight:700; font-size:14px; color:#1d1d1f;">${window.t('sourcing.total_items').replace('{count}', itemCount)}</div>
-            </div>
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 16px;">
+            <div style="font-size:12px; color:var(--text); font-weight:500;">${dateStr}</div>
+          </td>
+          <td style="padding: 16px; vertical-align: middle;">
             ${statusBadge}
-          </div>
-          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:${req.user_message ? '10px' : '0'};">${itemPreview}</div>
-          ${req.user_message ? `<div style="font-size:12px; color:#888; padding:6px 10px; background:#f5f5f7; border-radius:6px; margin-top:6px;">💬 ${escapeHtml(req.user_message)}</div>` : ''}
-          ${breakdownHtml}
-          ${replyHtml}
-          ${payBtn}
-        </div>
+          </td>
+          <td style="padding: 16px; vertical-align: middle; max-width: 300px;">
+            ${itemSummary}
+          </td>
+          <td style="padding: 16px; vertical-align: middle;">
+            ${estimateHtml}
+          </td>
+          <td style="padding: 16px; vertical-align: middle; text-align: center;">
+            ${actionHtml}
+          </td>
+        </tr>
       `;
     }).join('');
-
   } catch (e) {
-    console.error(e);
-    list.innerHTML = `<div style="color:var(--text); font-size:13px; text-align:center; padding:20px;">${window.t('sourcing.history_error')}<br>(${e.message})</div>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:15px; color:#e03131; font-size:13px;">${e.message}</td></tr>`;
   }
 };
+
 
 window.__modalToggleWishlist = async function (btn, productId) {
   await window.__toggleWishlist(btn, productId);
@@ -4648,7 +4686,7 @@ window.loadFaqs = async function () {
       return `
         <div style="border:1px solid #eee; border-radius:8px; overflow:hidden; background:white;">
           <button onclick="const a = document.getElementById('faq-ans-${i}'); a.style.display = a.style.display==='none' ? 'block' : 'none';"
-                  style="width:100%; text-align:left; padding:15px; background:#f9f9fb; border:none; font-weight:600; font-size:14px; cursor:pointer; display:flex; justify-content:space-between;">
+            style="width:100%; text-align:left; padding:15px; background:#f9f9fb; border:none; font-weight:600; font-size:14px; cursor:pointer; display:flex; justify-content:space-between;">
             <span>Q. ${escapeHtml(q)}</span>
             <span style="color:#aaa;">+</span>
           </button>
@@ -4656,7 +4694,7 @@ window.loadFaqs = async function () {
             A. ${escapeHtml(a).replace(/\\n/g, '<br>')}
           </div>
         </div>
-      `;
+        `;
     }).join('');
   } catch (e) {
     list.innerHTML = `<div style="text-align:center; padding:15px; color:#e03131;">Load failed: ${e.message}</div>`;
@@ -4691,7 +4729,7 @@ window.loadUserInquiries = async function () {
           </div>
           <div style="font-weight:600; font-size:14px; margin-bottom:5px;">${escapeHtml(inq.title)}</div>
           <div style="font-size:12px; color:#666; margin-bottom:10px; line-height:1.5;">${escapeHtml(inq.message || inq.content || '').replace(/\\n/g, '<br>')}</div>
-        `;
+          `;
 
       if (inq.admin_reply) {
         html += `

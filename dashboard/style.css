@@ -4237,3 +4237,34 @@ body[data-platform="k_trend"] #tab-all {
     /* Hide scrollbar for cleaner look */
   }
 }
+/* Sourcing Route View (Full Page) */
+#sourcingView {
+  padding: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  animation: fadeIn 0.3s ease-out;
+}
+.sourcing-form-section,
+.sourcing-history-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 32px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+.sourcing-form-header h2,
+.sourcing-history-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.sourcing-form-header p {
+  color: var(--text-muted);
+  font-size: 15px;
+  margin-bottom: 24px;
+}
+.sourcing-form-body {
+  max-width: 800px;
+}
