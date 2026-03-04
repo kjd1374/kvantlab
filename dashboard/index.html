@@ -1,466 +1,832 @@
 <!DOCTYPE html>
-<html lang="ko">
-
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>K-Vant - 글로벌 K-뷰티/패션 트렌드 인텔리전스 플랫폼</title>
-    <!-- SEO Meta Tags -->
-    <meta name="description" content="K-뷰티, K-패션 이커머스 셀러와 브랜드를 위한 글로벌 트렌드 AI 분석 플랫폼. 올리브영, 무신사, 쇼피 등 데이터를 실시간으로 분석합니다.">
-    <meta name="keywords"
-        content="K-beauty trend, K-fashion, 이커머스 트렌드, 글로벌 셀러, 올리브영, 무신사, 쇼피, tiktok trend, kvant, k-vant">
-    <meta name="robots" content="index, follow">
-    <meta name="author" content="K-Vant">
-    <!-- Open Graph (SNS/카카오 공유) -->
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="K-Vant - 글로벌 K-트렌드 인텔리전스">
-    <meta property="og:description" content="이커머스 셀러를 위한 AI 기반 글로벌 뷰티/패션 트렌드 분석 플랫폼. 1개월 무료 체험.">
-    <meta property="og:url" content="https://kvant.kr">
-    <meta property="og:image" content="https://kvant.kr/public/logo_kvant.png">
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="K-Vant - 글로벌 K-트렌드 인텔리전스">
-    <meta name="twitter:description" content="이커머스 셀러를 위한 AI 기반 글로벌 뷰티/패션 트렌드 분석 플랫폼.">
-    <!-- Google Analytics 4 (GA4) - Replace G-XXXXXXXXXX with your Measurement ID -->
-    <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-XXXXXXXXXX');
-    </script> -->
-    <!-- Meta (Facebook) Pixel - Replace XXXXXXXXXXXXXXX with your Pixel ID -->
-    <!-- <script>
-      !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s)}(window, document,'script',
-      'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init', 'XXXXXXXXXXXXXXX');
-      fbq('track', 'PageView');
-    </script> -->
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <style>
-        /* Landing Page Specific Styles */
-        body {
-            --bg-main: #0a0a0a;
-            --bg-card: #111111;
-            --border-color: #333333;
-            --text-main: #ffffff;
-            --text-secondary: #aaaaaa;
-            --accent-blue: #40c4ff;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K-Vant — Korean Trend Intelligence for SEA Sellers</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #06090f;
+  --bg2: #0b1018;
+  --bg3: #101822;
+  --bd: rgba(255,255,255,0.06);
+  --bd2: rgba(255,255,255,0.1);
+  --ac: #00d4ff;
+  --ac2: #ff6b35;
+  --ac3: #7cff6b;
+  --tx: #dde6f0;
+  --tx2: #7a8fa8;
+  --tx3: #3d5068;
+  --card: rgba(255,255,255,0.025);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--tx); font-family: 'DM Sans', sans-serif; overflow-x: hidden; line-height: 1.6; }
+a { text-decoration: none; }
+img { max-width: 100%; }
 
-            background: var(--bg-main) !important;
-            color: var(--text-main) !important;
-            font-family: 'Pretendard', sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
+/* NAV */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  padding: 0 40px; height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(6,9,15,0.88); backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--bd);
+  transition: background 0.3s;
+}
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-mark {
+  width: 34px; height: 34px;
+  background: linear-gradient(135deg, var(--ac) 0%, #0055ff 100%);
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 13px; color: #000;
+  box-shadow: 0 0 20px rgba(0,212,255,0.3);
+}
+.logo-text { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 17px; color: var(--tx); letter-spacing: -0.01em; }
+.logo-tagline { font-size: 10px; color: var(--tx3); margin-top: -1px; letter-spacing: 0.02em; }
+.nav-links { display: flex; align-items: center; gap: 28px; }
+.nav-links a { color: var(--tx2); font-size: 14px; transition: color 0.2s; }
+.nav-links a:hover { color: var(--tx); }
+.nav-cta {
+  padding: 8px 20px; border: 1px solid rgba(0,212,255,0.4); color: var(--ac);
+  border-radius: 7px; font-size: 13px; font-weight: 500; transition: all 0.2s;
+  background: rgba(0,212,255,0.05);
+}
+.nav-cta:hover { background: var(--ac); color: #000; border-color: var(--ac); }
 
-        .landing-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 40px;
-            background: rgba(26, 26, 26, 0.8);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--border-color);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
+/* HERO */
+.hero {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: 100px 40px 60px; position: relative; overflow: hidden;
+}
+.hero-glow-1 {
+  position: absolute; top: -10%; left: 50%; transform: translateX(-50%);
+  width: 900px; height: 600px;
+  background: radial-gradient(ellipse at center, rgba(0,212,255,0.07) 0%, transparent 65%);
+  pointer-events: none;
+}
+.hero-glow-2 {
+  position: absolute; bottom: -10%; right: -5%;
+  width: 500px; height: 500px;
+  background: radial-gradient(ellipse, rgba(255,107,53,0.05) 0%, transparent 65%);
+  pointer-events: none;
+}
+.hero-grid-bg {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black, transparent);
+  pointer-events: none;
+}
+.hero-inner {
+  max-width: 1160px; width: 100%;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 70px; align-items: center;
+  position: relative; z-index: 1;
+}
+.hero-pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; margin-bottom: 24px;
+  background: rgba(0,212,255,0.07); border: 1px solid rgba(0,212,255,0.18);
+  border-radius: 100px; font-size: 12px; color: var(--ac); letter-spacing: 0.04em;
+  animation: fadeUp 0.5s ease forwards;
+}
+.pill-dot { width: 6px; height: 6px; background: var(--ac); border-radius: 50%; animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+.hero-h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(36px, 4.2vw, 56px);
+  font-weight: 800; line-height: 1.08;
+  letter-spacing: -0.025em; margin-bottom: 20px;
+  animation: fadeUp 0.5s 0.1s ease both;
+}
+.hero-h1 em { font-style: normal; color: var(--ac); }
+.hero-h1 .line2 { display: block; color: var(--tx2); font-size: 0.82em; margin-top: 4px; }
+.hero-sub {
+  font-size: 17px; color: var(--tx2); line-height: 1.75;
+  max-width: 460px; margin-bottom: 36px;
+  animation: fadeUp 0.5s 0.2s ease both;
+}
+.hero-cta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; animation: fadeUp 0.5s 0.3s ease both; }
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 14px 30px; background: var(--ac); color: #000;
+  border-radius: 9px; font-weight: 600; font-size: 15px;
+  transition: all 0.25s; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  box-shadow: 0 0 30px rgba(0,212,255,0.25);
+}
+.btn-primary:hover { background: #22dcff; transform: translateY(-2px); box-shadow: 0 8px 40px rgba(0,212,255,0.4); }
+.btn-ghost { color: var(--tx2); font-size: 14px; display: flex; align-items: center; gap: 5px; transition: color 0.2s; }
+.btn-ghost:hover { color: var(--tx); }
+.hero-note { margin-top: 14px; font-size: 14px; color: var(--tx2); animation: fadeUp 0.5s 0.4s ease both; }
+.hero-flags { display: flex; align-items: center; gap: 8px; margin-top: 20px; font-size: 15px; color: var(--tx2); animation: fadeUp 0.5s 0.45s ease both; }
+.hero-flags .flag { font-size: 19px; }
 
-        .landing-logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--accent-blue);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+/* MOCKUP CARD */
+.mockup-wrap { position: relative; animation: fadeUp 0.6s 0.25s ease both; }
+.mockup {
+  background: var(--bg3); border: 1px solid var(--bd2);
+  border-radius: 18px; overflow: hidden;
+  box-shadow: 0 50px 100px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+}
+.mockup-bar {
+  background: var(--bg2); padding: 11px 16px;
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid var(--bd);
+}
+.mbar-dot { width: 10px; height: 10px; border-radius: 50%; }
+.mbar-title { font-size: 11px; color: var(--tx3); margin-left: 6px; }
+.mockup-tabs { display: flex; gap: 3px; padding: 10px 14px 0; background: var(--bg2); border-bottom: 1px solid var(--bd); }
+.mtab { padding: 5px 13px; border-radius: 7px 7px 0 0; font-size: 11px; color: var(--tx3); cursor: pointer; }
+.mtab.active { background: rgba(0,212,255,0.1); color: var(--ac); border: 1px solid rgba(0,212,255,0.2); border-bottom: none; }
+.mockup-body { padding: 14px; }
+.mockup-kpis { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-bottom: 12px; }
+.mkpi { background: rgba(255,255,255,0.03); border: 1px solid var(--bd); border-radius: 8px; padding: 8px 10px; }
+.mkpi-val { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; }
+.mkpi-val.c1 { color: var(--ac); } .mkpi-val.c2 { color: var(--ac2); } .mkpi-val.c3 { color: var(--ac3); }
+.mkpi-label { font-size: 9px; color: var(--tx3); margin-top: 1px; }
+.mrow { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--bd); }
+.mrow:last-child { border: none; }
+.mrank { width: 21px; height: 21px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; font-family: 'Syne', sans-serif; flex-shrink: 0; }
+.rank-gold { background: #FFD700; color: #000; }
+.rank-silver { background: #C0C0C0; color: #000; }
+.rank-bronze { background: #CD7F32; color: #fff; }
+.rank-n { background: var(--bg2); color: var(--tx3); }
+.mthumb { width: 28px; height: 28px; border-radius: 5px; background: linear-gradient(135deg, #162030, #0c1520); display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+.mprod { flex: 1; min-width: 0; }
+.mprod-name { font-size: 10px; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mprod-brand { font-size: 9px; color: var(--ac); margin-top: 1px; }
+.mtrend-up { font-size: 10px; font-weight: 700; color: var(--ac3); flex-shrink: 0; }
+.mtrend-dn { font-size: 10px; font-weight: 700; color: #ff4d6d; flex-shrink: 0; }
+.mrow-blur { filter: blur(5px); opacity: 0.35; user-select: none; pointer-events: none; }
+/* FLOATING BADGES */
+.fbadge-1 {
+  position: absolute; top: -14px; right: -14px; z-index: 10;
+  background: var(--bg3); border: 1px solid rgba(124,255,107,0.35);
+  border-radius: 12px; padding: 10px 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.fb1-label { font-size: 9px; color: var(--tx3); }
+.fb1-val { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--ac3); line-height: 1; margin: 2px 0; }
+.fb1-sub { font-size: 9px; color: var(--tx3); }
+.fbadge-2 {
+  position: absolute; bottom: -14px; left: -14px; z-index: 10;
+  background: var(--bg3); border: 1px solid rgba(255,107,53,0.35);
+  border-radius: 12px; padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.fb2-icon { font-size: 22px; }
+.fb2-label { font-size: 9px; color: var(--tx3); }
+.fb2-val { font-size: 12px; font-weight: 600; color: var(--ac2); }
 
-        .hero-section {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 100px 20px;
-            background: radial-gradient(circle at center, rgba(64, 196, 255, 0.1) 0%, transparent 70%);
-        }
+/* STATS BAR */
+.stats-bar { background: var(--bg2); border-top: 1px solid var(--bd); border-bottom: 1px solid var(--bd); padding: 48px 40px; }
+.stats-inner { max-width: 1160px; margin: 0 auto; display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; text-align: center; }
+.stat-num { font-family: 'Syne', sans-serif; font-size: 38px; font-weight: 800; color: var(--ac); letter-spacing: -0.02em; line-height: 1; }
+.stat-label { font-size: 13px; color: var(--tx2); margin-top: 6px; }
 
-        .hero-title {
-            font-size: 3.5rem;
-            font-weight: 800;
-            line-height: 1.2;
-            margin-bottom: 24px;
-            background: linear-gradient(90deg, #ffffff, var(--accent-blue));
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+/* SHARED SECTION STYLES */
+.section { padding: 100px 40px; }
+.section-inner { max-width: 1160px; margin: 0 auto; }
+.s-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ac); margin-bottom: 12px; }
+.s-title { font-family: 'Syne', sans-serif; font-size: clamp(28px, 3vw, 40px); font-weight: 800; line-height: 1.18; letter-spacing: -0.02em; margin-bottom: 14px; }
+.s-sub { font-size: 16px; color: var(--tx2); line-height: 1.75; max-width: 560px; }
+.divider { height: 1px; background: linear-gradient(90deg, transparent, var(--bd2) 30%, var(--bd2) 70%, transparent); max-width: 1160px; margin: 0 auto; }
 
-        .hero-subtitle {
-            font-size: 1.25rem;
-            color: var(--text-secondary);
-            margin-bottom: 40px;
-            max-width: 600px;
-            line-height: 1.6;
-        }
+/* PROBLEM SECTION */
+.problem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 70px; align-items: center; margin-top: 60px; }
+.problem-quote { font-family: 'Syne', sans-serif; font-size: clamp(22px, 2.5vw, 32px); font-weight: 700; line-height: 1.4; }
+.problem-quote em { font-style: normal; color: var(--ac2); }
+.problem-sub { font-size: 15px; color: var(--tx2); line-height: 1.75; margin-top: 20px; }
+.problem-items { display: flex; flex-direction: column; gap: 14px; }
+.problem-item {
+  display: flex; gap: 16px; padding: 20px; cursor: default;
+  background: var(--card); border: 1px solid var(--bd);
+  border-radius: 14px; transition: all 0.25s;
+}
+.problem-item:hover { border-color: rgba(255,107,53,0.3); background: rgba(255,107,53,0.04); transform: translateX(4px); }
+.problem-item-icon { font-size: 22px; flex-shrink: 0; line-height: 1.4; }
+.problem-item-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.problem-item-desc { font-size: 13px; color: var(--tx2); line-height: 1.65; }
 
-        .hero-cta {
-            padding: 18px 40px;
-            font-size: 1.2rem;
-            font-weight: 700;
-            background: var(--accent-blue);
-            color: #000;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            box-shadow: 0 0 20px rgba(64, 196, 255, 0.4);
-            transition: all 0.3s ease;
-        }
+/* FEATURES */
+.features-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; margin-top: 56px; }
+.feature-card {
+  background: var(--card); border: 1px solid var(--bd);
+  border-radius: 18px; padding: 28px; position: relative;
+  overflow: hidden; transition: all 0.3s; cursor: default;
+}
+.feature-card::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  opacity: 0; transition: opacity 0.3s;
+}
+.feature-card.f1::after { background: var(--ac); }
+.feature-card.f2::after { background: var(--ac2); }
+.feature-card.f3::after { background: var(--ac3); }
+.feature-card:hover { border-color: rgba(255,255,255,0.1); transform: translateY(-5px); }
+.feature-card:hover::after { opacity: 1; }
+.feature-icon {
+  width: 48px; height: 48px; border-radius: 13px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; margin-bottom: 20px;
+}
+.fi1 { background: rgba(0,212,255,0.1); }
+.fi2 { background: rgba(255,107,53,0.1); }
+.fi3 { background: rgba(124,255,107,0.1); }
+.feature-title { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 10px; letter-spacing: -0.01em; }
+.feature-desc { font-size: 13px; color: var(--tx2); line-height: 1.75; }
 
-        .hero-cta:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 30px rgba(64, 196, 255, 0.6);
-        }
+/* PREVIEW */
+.preview-tabs { display: flex; gap: 8px; margin-top: 48px; margin-bottom: 28px; flex-wrap: wrap; }
+.preview-tab {
+  padding: 7px 20px; border-radius: 100px; font-size: 13px;
+  border: 1px solid var(--bd); background: transparent; color: var(--tx2);
+  cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+}
+.preview-tab.active, .preview-tab:hover { background: rgba(0,212,255,0.08); border-color: rgba(0,212,255,0.3); color: var(--ac); }
+.preview-window {
+  background: var(--bg3); border: 1px solid var(--bd2);
+  border-radius: 20px; overflow: hidden;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+}
+.preview-chrome { background: var(--bg2); padding: 13px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--bd); }
+.chrome-dots { display: flex; gap: 6px; }
+.chrome-dot { width: 12px; height: 12px; border-radius: 50%; }
+.chrome-url { background: rgba(255,255,255,0.04); border-radius: 7px; padding: 6px 14px; font-size: 12px; color: var(--tx3); max-width: 280px; flex: 1; }
+.preview-body { padding: 24px; }
+.preview-header { display: grid; grid-template-columns: 50px 50px 1fr 120px 90px 90px; gap: 12px; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 6px; font-size: 11px; color: var(--tx3); font-weight: 500; }
+.preview-row { display: grid; grid-template-columns: 50px 50px 1fr 120px 90px 90px; gap: 12px; padding: 11px 12px; border-radius: 8px; align-items: center; transition: background 0.15s; }
+.preview-row:hover { background: rgba(255,255,255,0.025); }
+.preview-row.blurred { filter: blur(5px); opacity: 0.35; user-select: none; pointer-events: none; }
+.prev-thumb { width: 38px; height: 38px; border-radius: 8px; background: linear-gradient(135deg, #182535, #0e1a28); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.prev-name { font-size: 12px; color: var(--tx); }
+.prev-brand { font-size: 11px; color: var(--ac); margin-top: 2px; }
+.prev-price { font-size: 12px; color: var(--tx); }
+.prev-up { font-size: 12px; font-weight: 600; color: var(--ac3); }
+.prev-dn { font-size: 12px; font-weight: 600; color: #ff4d6d; }
+.prev-st { font-size: 12px; color: var(--tx3); }
+.lock-banner {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 18px; margin-top: 8px;
+  background: rgba(0,212,255,0.03); border: 1px dashed rgba(0,212,255,0.18);
+  border-radius: 12px; font-size: 13px; color: var(--tx2);
+}
+.lock-banner a { color: var(--ac); font-weight: 600; }
 
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-            max-width: 1200px;
-            margin: 0 auto 100px;
-            padding: 0 20px;
-        }
+/* PRICING */
+.pricing-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; margin-top: 56px; }
+.pricing-card {
+  background: var(--card); border: 1px solid var(--bd);
+  border-radius: 20px; padding: 32px; position: relative; transition: all 0.3s;
+}
+.pricing-card.featured { background: rgba(0,212,255,0.035); border-color: rgba(0,212,255,0.28); }
+.pricing-card:hover { transform: translateY(-5px); }
+.pricing-badge {
+  position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+  background: var(--ac); color: #000; font-size: 11px; font-weight: 700;
+  padding: 4px 14px; border-radius: 100px; white-space: nowrap;
+}
+.pricing-tier { font-size: 12px; color: var(--tx3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.pricing-price { font-family: 'Syne', sans-serif; font-size: 44px; font-weight: 800; letter-spacing: -0.025em; line-height: 1; margin-bottom: 4px; }
+.pricing-price sup { font-size: 20px; vertical-align: top; margin-top: 8px; }
+.pricing-price sub { font-size: 15px; color: var(--tx3); font-family: 'DM Sans', sans-serif; font-weight: 400; }
+.pricing-desc { font-size: 13px; color: var(--tx2); margin-bottom: 24px; margin-top: 4px; }
+.pricing-list { list-style: none; margin-bottom: 28px; }
+.pricing-list li { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--tx2); padding: 6px 0; border-bottom: 1px solid var(--bd); }
+.pricing-list li:last-child { border: none; }
+.pricing-list li.off { opacity: 0.38; }
+.check { color: var(--ac3); flex-shrink: 0; margin-top: 1px; }
+.lock-ic { color: var(--tx3); flex-shrink: 0; margin-top: 1px; }
+.btn-plan {
+  width: 100%; padding: 13px; border-radius: 11px; font-family: 'DM Sans', sans-serif;
+  font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  display: block; text-align: center; border: none;
+}
+.btn-plan.primary { background: var(--ac); color: #000; }
+.btn-plan.primary:hover { background: #22dcff; }
+.btn-plan.outline { background: transparent; border: 1px solid var(--bd2); color: var(--tx2); }
+.btn-plan.outline:hover { border-color: var(--ac); color: var(--ac); }
 
-        .feature-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 30px;
-            text-align: left;
-            transition: transform 0.3s ease;
-        }
+/* FAQ */
+.faq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 50px; }
+.faq-item {
+  background: var(--card); border: 1px solid var(--bd);
+  border-radius: 14px; padding: 22px 24px; transition: all 0.2s; cursor: default;
+}
+.faq-item:hover { border-color: rgba(0,212,255,0.2); background: rgba(0,212,255,0.02); }
+.faq-q { font-weight: 600; font-size: 14px; margin-bottom: 8px; color: var(--tx); }
+.faq-a { font-size: 13px; color: var(--tx2); line-height: 1.7; }
 
-        .feature-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent-blue);
-        }
+/* FINAL CTA */
+.final-cta { padding: 130px 40px; text-align: center; position: relative; overflow: hidden; }
+.final-glow { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 700px; height: 400px; background: radial-gradient(ellipse, rgba(0,212,255,0.09) 0%, transparent 70%); pointer-events: none; }
+.final-inner { position: relative; z-index: 1; }
+.final-cta h2 { font-family: 'Syne', sans-serif; font-size: clamp(34px, 4.5vw, 56px); font-weight: 800; letter-spacing: -0.025em; margin-bottom: 16px; line-height: 1.1; }
+.final-cta p { font-size: 17px; color: var(--tx2); max-width: 520px; margin: 0 auto 40px; line-height: 1.75; }
+.final-note { margin-top: 20px; font-size: 12px; color: var(--tx3); }
+.final-flags { margin-top: 44px; font-size: 28px; letter-spacing: 8px; opacity: 0.65; }
 
-        .feature-icon {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-        }
+/* FOOTER */
+footer { border-top: 1px solid var(--bd); padding: 36px 40px; }
+.footer-inner { max-width: 1160px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--tx3); }
+.footer-links { display: flex; gap: 22px; }
+.footer-links a { color: var(--tx3); transition: color 0.2s; }
+.footer-links a:hover { color: var(--tx2); }
 
-        .feature-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 12px;
-            color: #ffffff;
-        }
+/* ANIMATIONS */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
 
-        .feature-desc {
-            color: var(--text-secondary);
-            line-height: 1.5;
-        }
+/* Lang Selector & Auth Styles */
+.lang-selector { position: relative; }
+.header-icon-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+.header-icon-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3); }
+.lang-dropdown { position: absolute; right: 0; top: 100%; margin-top: 8px; background: #0b1018; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; width: 140px; display: none; flex-direction: column; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+.lang-dropdown.open { display: flex; }
+.lang-item { padding: 10px 14px; font-size: 13px; color: #7a8fa8; cursor: pointer; transition: background 0.2s; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; gap: 8px; align-items: center; }
+.lang-item:last-child { border-bottom: none; }
+.lang-item:hover { background: rgba(255,255,255,0.03); color: #dde6f0; }
 
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
+.header-right { display: flex; align-items: center; gap: 16px; }
+.header-auth .btn-login { color: #fff !important; border: 1px solid rgba(0,212,255,0.4) !important; padding: 8px 20px !important; border-radius: 7px !important; font-size: 13px !important; background: rgba(0,212,255,0.05) !important; font-weight: 500 !important; font-family: 'DM Sans', sans-serif !important; cursor: pointer !important; transition: all 0.2s !important; text-decoration: none !important; }
+.header-auth .btn-login:hover { background: #00d4ff !important; color: #000 !important; border-color: #00d4ff !important; }
 
-        /* Lang Selector Styles */
-        .lang-selector {
-            position: relative;
-        }
+/* Custom Base Style overrides for compatibility */
+.auth-modal input { background: #ffffff !important; color: #000000 !important; border: 1px solid #d9d9d9 !important; }
+.auth-modal label { color: #111111 !important; font-size: 12px !important; font-weight: 600 !important; }
 
-        .header-icon-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+</style>
 
-        .header-icon-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
+<link rel="stylesheet" href="style.css">
+<!-- Notice Modal styles fix for landing page inheritance -->
+<style>
+.modal { color: #111; font-family: 'Pretendard', 'DM Sans', sans-serif; }
+.modal-overlay { z-index: 9999; }
+</style>
 
-
-
-        /* Override Auth Buttons for Dark Theme */
-        .header-auth .btn-login {
-            color: #ffffff !important;
-            border: 1px solid rgba(255, 255, 255, 0.3) !important;
-            padding: 8px 16px !important;
-            border-radius: 8px !important;
-            font-size: 0.95rem !important;
-            background: rgba(255, 255, 255, 0.05) !important;
-            font-weight: 600 !important;
-        }
-
-        .header-auth .btn-login:hover {
-            background: rgba(255, 255, 255, 0.15) !important;
-            border-color: rgba(255, 255, 255, 0.5) !important;
-        }
-
-        .header-auth .user-dropdown {
-            background: #1a1a1a !important;
-            border: 1px solid #333 !important;
-        }
-
-        .header-auth .dropdown-item {
-            color: #fff !important;
-        }
-
-        .header-auth .dropdown-item:hover {
-            background: rgba(255, 255, 255, 0.1) !important;
-        }
-
-        /* Announcements Section */
-        .announcements-section {
-            max-width: 800px;
-            margin: 0 auto 100px;
-            padding: 0 20px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .section-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 24px;
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .announcement-list {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .announcement-item {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: background 0.2s;
-            cursor: pointer;
-        }
-
-        .announcement-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .ai-badge {
-            background: rgba(144, 202, 249, 0.15);
-            color: #90caf9;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-right: 12px;
-        }
-
-        .a-title {
-            color: var(--text-main);
-            font-weight: 500;
-        }
-
-        .a-date {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        .announcement-pagination {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 20px;
-        }
-
-        .announcement-pagination .page-num {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            background: var(--bg-card);
-            color: var(--text-secondary);
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .announcement-pagination .page-num:hover {
-            border-color: var(--accent-blue);
-            color: var(--accent-blue);
-        }
-
-        .announcement-pagination .page-num.active {
-            background: var(--accent-blue);
-            border-color: var(--accent-blue);
-            color: #000;
-        }
-
-        footer {
-            text-align: center;
-            padding: 40px;
-            border-top: 1px solid var(--border-color);
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-    </style>
 </head>
-
 <body>
 
-    <header class="landing-header">
-        <div class="landing-logo">
-            <img src="/public/logo_kvant.png" alt="K-Vant Logo"
-                style="height: 32px; margin-right: 10px; border-radius: 6px; vertical-align: middle;">
-            <span>K-Vant</span>
-        </div>
-        <div class="header-right">
-            <!-- Language Switcher -->
-            <div class="lang-selector">
-                <button class="header-icon-btn" id="langBtn" title="Change Language">
-                    <span id="currentLangIcon">🌐</span>
-                </button>
-                <div class="lang-dropdown" id="langDropdown">
-                    <div class="lang-item" data-lang="ko"><span class="lang-flag">🇰🇷</span> South Korea</div>
-                    <div class="lang-item" data-lang="en"><span class="lang-flag">🇺🇸</span> English</div>
-                    <div class="lang-item" data-lang="vi"><span class="lang-flag">🇻🇳</span> Tiếng Việt</div>
-                    <div class="lang-item" data-lang="th"><span class="lang-flag">🇹🇭</span> ไทย</div>
-                    <div class="lang-item" data-lang="id"><span class="lang-flag">🇮🇩</span> Indonesia</div>
-                    <div class="lang-item" data-lang="ja"><span class="lang-flag">🇯🇵</span> 日本語</div>
-                </div>
-            </div>
-            <!-- Auth buttons will be injected here by auth.js -->
-        </div>
-    </header>
+<!-- NAV -->
 
-    <section class="hero-section">
-        <h1 class="hero-title">
-            <span data-i18n="landing.hero_title_1">이커머스 트렌드의 모든 것</span><br>
-            <span data-i18n="landing.hero_title_2">AI가 분석하는 인사이트</span>
-        </h1>
-        <p class="hero-subtitle">
-            <span data-i18n="landing.hero_subtitle_1">실시간 쇼핑 랭킹부터 글로벌 K-뷰티 트렌드 분석, 유망 제품 예측까지.</span><br>
-            <span data-i18n="landing.hero_subtitle_2">K-Vant에서 데이터 기반의 소싱 기회를 가장 빠르게 발굴하세요.</span>
-        </p>
-        <button class="hero-cta" id="startTrialBtn" data-i18n="common.login_signup">로그인 / 회원가입</button>
-    </section>
-
-    <section class="features-grid">
-        <div class="feature-card">
-            <div class="feature-icon">🇰🇷</div>
-            <div class="feature-title" data-i18n="landing.feature1_title">실시간 랭킹 & 트렌드 분석</div>
-            <div class="feature-desc" data-i18n="landing.feature1_desc">주요 커머스 플랫폼의 일간 순위 데이터를 실시간으로 파악하고, 시장의 핵심 트렌드
-                흐름을 한곳에서 비교 분석합니다.</div>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon">🤖</div>
-            <div class="feature-title" data-i18n="landing.feature2_title">예상 제품 & AI 리뷰 마이닝</div>
-            <div class="feature-desc" data-i18n="landing.feature2_desc">수천 개의 리뷰를 AI가 분석하여 소비자의 니즈를 파악하고, 다음 시장을 주도할 유망
-                상품을 예측해 냅니다.</div>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon">🌏</div>
-            <div class="feature-title" data-i18n="landing.feature3_title">편리한 글로벌 B2B 소싱</div>
-            <div class="feature-desc" data-i18n="landing.feature3_desc">발굴한 트렌디한 제품들을 장바구니에 담아, 합리적인 매입 단가와 배송비 견적을 쉽고
-                빠르게 요청할 수 있습니다.</div>
-        </div>
-    </section>
-
-    <section class="announcements-section">
-        <h2 class="section-title"><span>📢</span> <span data-i18n="landing.announcements_title">최신 업데이트 및 리포트</span>
-        </h2>
-        <div class="announcement-list" id="announcementList">
-            <!-- Announcements dynamically loaded here -->
-        </div>
-        <div class="announcement-pagination" id="announcementPagination"></div>
-    </section>
-
-    <footer>
-        <p data-i18n="common.footer_text">K-Trend Intelligence © 2026 · Global K-Beauty & Fashion Intelligence ·
-            Analytics for Global Sellers · K-Vant</p>
-        <div class="footer-links"
-            style="margin-top: 10px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
-            <a href="/terms.html" data-i18n-href="common.terms_url"
-                style="color: var(--text-secondary); font-size: 13px; text-decoration: none;">이용약관</a>
-            <a href="/privacy.html" data-i18n-href="common.privacy_url"
-                style="color: var(--text-secondary); font-size: 13px; text-decoration: none;">개인정보
-                처리방침</a>
-            <a href="mailto:contact@k-vant.kr"
-                style="color: var(--text-secondary); font-size: 13px; text-decoration: none;">문의하기</a>
-        </div>
-    </footer>
-
-    <!-- Notice Modal -->
-    <div class="modal-overlay" id="noticeModalOverlay">
-        <div class="modal" id="noticeModal"
-            style="max-width: 600px; max-height: 80vh; overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main);">
-            <div class="modal-close" id="noticeModalClose" style="color: var(--text-secondary);">✕</div>
-            <div class="modal-header"
-                style="border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;">
-                <h2 id="noticeModalTitle" style="font-size: 1.5rem; margin-bottom: 8px; margin-top: 0;">제목</h2>
-                <div id="noticeModalDate" style="color: var(--text-secondary); font-size: 0.9rem;">날짜</div>
-            </div>
-            <div class="modal-body" id="noticeModalBody"
-                style="line-height: 1.6; color: var(--text-secondary); white-space: pre-wrap; word-break: break-all;">
-                내용
-            </div>
+<nav>
+  <a href="#" class="logo">
+    <div class="logo-mark">KV</div>
+    <div>
+      <div class="logo-text">K-Vant</div>
+      <div class="logo-tagline">Korean Trend Intelligence</div>
+    </div>
+  </a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#preview">Preview</a>
+    <a href="#pricing">Pricing</a>
+  </div>
+  <div class="header-right">
+    <!-- Language Switcher -->
+    <div class="lang-selector">
+        <button class="header-icon-btn" id="langBtn" title="Change Language">
+            <span id="currentLangIcon">🌐</span>
+        </button>
+        <div class="lang-dropdown" id="langDropdown">
+            <div class="lang-item" data-lang="ko"><span class="lang-flag">🇰🇷</span> South Korea</div>
+            <div class="lang-item" data-lang="en"><span class="lang-flag">🇺🇸</span> English</div>
+            <div class="lang-item" data-lang="vi"><span class="lang-flag">🇻🇳</span> Tiếng Việt</div>
+            <div class="lang-item" data-lang="th"><span class="lang-flag">🇹🇭</span> ไทย</div>
+            <div class="lang-item" data-lang="id"><span class="lang-flag">🇮🇩</span> Indonesia</div>
+            <div class="lang-item" data-lang="ja"><span class="lang-flag">🇯🇵</span> 日本語</div>
         </div>
     </div>
+    <!-- auth.js will inject login button/profile here inside .header-auth automatically -->
+  </div>
+</nav>
+
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow-1"></div>
+  <div class="hero-glow-2"></div>
+  <div class="hero-grid-bg"></div>
+  <div class="hero-inner">
+    <div>
+      <div class="hero-pill">
+        <span class="pill-dot"></span>
+        Real-time Korean Market Intelligence
+      </div>
+      <h1 class="hero-h1">
+        Your competitors already<br>know what's trending<br>
+        <em>in Korea.</em>
+        <span class="line2">Do you?</span>
+      </h1>
+      <p class="hero-sub">Real-time rankings from Olive Young, Musinsa, Ably, Naver Shopping & more — with AI-powered review analysis. Built for K-product sellers across Southeast Asia.</p>
+      <div class="hero-cta">
+        <a href="#" class="btn-primary">Start Free &mdash; 14 Days &rarr;</a>
+        <a href="#preview" class="btn-ghost">See live data &darr;</a>
+      </div>
+      <p class="hero-note">No credit card required &nbsp;&middot;&nbsp; Cancel anytime</p>
+      <div class="hero-flags">
+        <span class="flag">&#127481;&#127469;</span>
+        <span class="flag">&#127483;&#127475;</span>
+        <span class="flag">&#127470;&#127465;</span>
+        <span class="flag">&#127474;&#127486;</span>
+        <span class="flag">&#127477;&#127469;</span>
+        <span style="font-size:13px;margin-left:4px">Available in 5 languages</span>
+      </div>
+    </div>
+
+    <div class="mockup-wrap">
+      <div class="fbadge-1">
+        <div class="fb1-label">&#128293; Trending this week</div>
+        <div class="fb1-val">+47</div>
+        <div class="fb1-sub">rank positions jumped</div>
+      </div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mbar-dot" style="background:#ff5f57"></div>
+          <div class="mbar-dot" style="background:#febc2e"></div>
+          <div class="mbar-dot" style="background:#28c840"></div>
+          <div class="mbar-title">K-Vant Intelligence &mdash; Olive Young &middot; Skincare</div>
+        </div>
+        <div class="mockup-tabs">
+          <div class="mtab active">Olive Young</div>
+          <div class="mtab">Musinsa</div>
+          <div class="mtab">Naver</div>
+        </div>
+        <div class="mockup-body">
+          <div class="mockup-kpis">
+            <div class="mkpi"><div class="mkpi-val c1">Real-time</div><div class="mkpi-label">Trending</div></div>
+            <div class="mkpi"><div class="mkpi-val c2">20</div><div class="mkpi-label">Daily Deals</div></div>
+            <div class="mkpi"><div class="mkpi-val c3">369</div><div class="mkpi-label">Rising Reviews</div></div>
+          </div>
+          <div class="mrow">
+            <div class="mrank rank-gold">1</div>
+            <div class="mthumb">&#129516;</div>
+            <div class="mprod"><div class="mprod-name">Zeroid Intensive Cream 80ml</div><div class="mprod-brand">ZEROID</div></div>
+            <div class="mtrend-up">&#8593; NEW</div>
+          </div>
+          <div class="mrow">
+            <div class="mrank rank-silver">2</div>
+            <div class="mthumb">&#128138;</div>
+            <div class="mprod"><div class="mprod-name">Atobarrier 365 Cream Awards Ed.</div><div class="mprod-brand">AESTURA</div></div>
+            <div class="mtrend-up">&#8593; +3</div>
+          </div>
+          <div class="mrow">
+            <div class="mrank rank-bronze">3</div>
+            <div class="mthumb">&#127807;</div>
+            <div class="mprod"><div class="mprod-name">Goodal Green Tangerine Vita C</div><div class="mprod-brand">GOODAL</div></div>
+            <div class="mtrend-dn">&#8595; -1</div>
+          </div>
+          <div class="mrow mrow-blur">
+            <div class="mrank rank-n">4</div>
+            <div class="mthumb">&#10024;</div>
+            <div class="mprod">
+              <div class="mprod-name" style="background:rgba(255,255,255,0.14);color:transparent;border-radius:3px">Hidden Product Name Here</div>
+              <div class="mprod-brand" style="background:rgba(0,212,255,0.18);color:transparent;border-radius:3px;margin-top:2px;width:50px">Brand</div>
+            </div>
+            <div class="mtrend-up">&#8593; +12</div>
+          </div>
+          <div class="mrow mrow-blur">
+            <div class="mrank rank-n">5</div>
+            <div class="mthumb">&#128300;</div>
+            <div class="mprod">
+              <div class="mprod-name" style="background:rgba(255,255,255,0.14);color:transparent;border-radius:3px">Hidden Product Name Here</div>
+              <div class="mprod-brand" style="background:rgba(0,212,255,0.18);color:transparent;border-radius:3px;margin-top:2px;width:50px">Brand</div>
+            </div>
+            <div class="mtrend-up">&#8593; +47</div>
+          </div>
+        </div>
+      </div>
+      <div class="fbadge-2">
+        <div class="fb2-icon">&#129302;</div>
+        <div>
+          <div class="fb2-label">AI Review Score</div>
+          <div class="fb2-val">Positive 92% &middot; 369 rising</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div class="reveal"><div class="stat-num">11</div><div class="stat-label">Korean Platforms Tracked</div></div>
+    <div class="reveal"><div class="stat-num">6,279+</div><div class="stat-label">Products Monitored Daily</div></div>
+    <div class="reveal"><div class="stat-num">5</div><div class="stat-label">SEA Languages Supported</div></div>
+    <div class="reveal"><div class="stat-num">Real-time</div><div class="stat-label">Ranking Updates</div></div>
+  </div>
+</div>
+
+<!-- PROBLEM -->
+<section class="section">
+  <div class="section-inner">
+    <div class="problem-grid">
+      <div class="reveal">
+        <div class="s-label">The Problem</div>
+        <p class="problem-quote">By the time a trending Korean product reaches your radar, your competitors have <em>already sold out.</em></p>
+        <p class="problem-sub">K-Vant closes that gap with daily ranking data from Korea&rsquo;s top platforms &mdash; so you source before the crowd, not after.</p>
+      </div>
+      <div class="problem-items">
+        <div class="problem-item reveal">
+          <div class="problem-item-icon">&#127760;</div>
+          <div>
+            <div class="problem-item-title">Language barrier blocks access</div>
+            <div class="problem-item-desc">Korean-only platforms make it impossible to track real rankings without fluency. Everything is locked behind a language wall.</div>
+          </div>
+        </div>
+        <div class="problem-item reveal">
+          <div class="problem-item-icon">&#8987;</div>
+          <div>
+            <div class="problem-item-title">2&ndash;4 weeks behind on trends</div>
+            <div class="problem-item-desc">By the time a viral Korean product reaches your sourcing list, the margin is already squeezed and competition is fierce.</div>
+          </div>
+        </div>
+        <div class="problem-item reveal">
+          <div class="problem-item-icon">&#128269;</div>
+          <div>
+            <div class="problem-item-title">No insight into why products sell</div>
+            <div class="problem-item-desc">A high ranking alone doesn&rsquo;t tell you if buyers genuinely love the product &mdash; or if it&rsquo;s just a promotion spike.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="section-inner">
+    <div class="s-label reveal">What You Get</div>
+    <h2 class="s-title reveal">Everything you need<br>to source smarter.</h2>
+    <p class="s-sub reveal">Three core capabilities built specifically for K-product sellers in Southeast Asia.</p>
+    <div class="features-grid">
+      <div class="feature-card f1 reveal">
+        <div class="feature-icon fi1">&#128202;</div>
+        <div class="feature-title">Daily Rankings from Korea&rsquo;s Top Platforms</div>
+        <div class="feature-desc">Real-time bestseller data from Olive Young, Musinsa, Ably, Shinsegae &amp; Naver Shopping &mdash; updated daily across every category. See what&rsquo;s rising, what&rsquo;s dropping, and what&rsquo;s about to explode.</div>
+      </div>
+      <div class="feature-card f2 reveal">
+        <div class="feature-icon fi2">&#129302;</div>
+        <div class="feature-title">AI Review Analysis &mdash; Know Why It Sells</div>
+        <div class="feature-desc">Our AI reads thousands of Korean buyer reviews and distills them into clear Pros, Cons &amp; sentiment scores &mdash; in English, Thai, Vietnamese, Indonesian or Filipino. Instantly.</div>
+      </div>
+      <div class="feature-card f3 reveal">
+        <div class="feature-icon fi3">&#128200;</div>
+        <div class="feature-title">Trend Graphs &amp; Global K-Beauty Intelligence</div>
+        <div class="feature-desc">Track 7-day &amp; 30-day rank movement for every product. Plus our Global Trends dashboard shows which K-beauty brands are getting attention worldwide &mdash; before they peak in SEA.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PREVIEW -->
+<section class="section" id="preview">
+  <div class="section-inner">
+    <div class="s-label reveal">Live Data Preview</div>
+    <h2 class="s-title reveal">See exactly what<br>you&rsquo;re working with.</h2>
+    <p class="s-sub reveal">No vague promises. This is the actual dashboard data &mdash; updated every day.</p>
+    <div class="preview-tabs">
+      <button class="preview-tab active" onclick="setTab(this)">Olive Young &middot; Skincare</button>
+      <button class="preview-tab" onclick="setTab(this)">Naver &middot; Fashion</button>
+      <button class="preview-tab" onclick="setTab(this)">Global K-Beauty Trends</button>
+    </div>
+    <div class="preview-window reveal">
+      <div class="preview-chrome">
+        <div class="chrome-dots">
+          <div class="chrome-dot" style="background:#ff5f57"></div>
+          <div class="chrome-dot" style="background:#febc2e"></div>
+          <div class="chrome-dot" style="background:#28c840"></div>
+        </div>
+        <div class="chrome-url">kvantlab.com/dashboard</div>
+      </div>
+      <div class="preview-body">
+        <div class="preview-header"><div>Rank</div><div>Image</div><div>Product</div><div>Brand</div><div>Price</div><div>7-Day</div></div>
+        <div class="preview-row">
+          <div><div class="mrank rank-gold">1</div></div>
+          <div class="prev-thumb">&#129516;</div>
+          <div><div class="prev-name">Zeroid Intensive Cream 80ml</div></div>
+          <div class="prev-brand">ZEROID</div>
+          <div class="prev-price">&#8361;40,000</div>
+          <div class="prev-up">&#8593; NEW</div>
+        </div>
+        <div class="preview-row">
+          <div><div class="mrank rank-silver">2</div></div>
+          <div class="prev-thumb">&#128138;</div>
+          <div><div class="prev-name">Atobarrier 365 Cream Awards Edition</div></div>
+          <div class="prev-brand">AESTURA</div>
+          <div class="prev-price">&#8361;24,700</div>
+          <div class="prev-up">&#8593; +3</div>
+        </div>
+        <div class="preview-row">
+          <div><div class="mrank rank-bronze">3</div></div>
+          <div class="prev-thumb">&#127807;</div>
+          <div><div class="prev-name">Goodal Green Tangerine Vita C Serum</div></div>
+          <div class="prev-brand">GOODAL</div>
+          <div class="prev-price">&#8361;46,000</div>
+          <div class="prev-st">&mdash; stable</div>
+        </div>
+        <div class="preview-row">
+          <div><div class="mrank rank-n">4</div></div>
+          <div class="prev-thumb">&#10024;</div>
+          <div><div class="prev-name">Wellage Real Hyaluronic 100 Ampoule</div></div>
+          <div class="prev-brand">WELLAGE</div>
+          <div class="prev-price">&#8361;29,300</div>
+          <div class="prev-up">&#8593; +2</div>
+        </div>
+        <div class="preview-row blurred">
+          <div><div class="mrank rank-n">5</div></div>
+          <div class="prev-thumb">&#128300;</div>
+          <div><div style="height:13px;background:rgba(255,255,255,0.18);border-radius:4px;width:85%"></div></div>
+          <div style="height:13px;background:rgba(0,212,255,0.18);border-radius:4px;width:70px"></div>
+          <div style="height:13px;background:rgba(255,255,255,0.1);border-radius:4px;width:60px"></div>
+          <div class="prev-up">&#8593; +47</div>
+        </div>
+        <div class="preview-row blurred">
+          <div><div class="mrank rank-n">6</div></div>
+          <div class="prev-thumb">&#129397;</div>
+          <div><div style="height:13px;background:rgba(255,255,255,0.18);border-radius:4px;width:75%"></div></div>
+          <div style="height:13px;background:rgba(0,212,255,0.18);border-radius:4px;width:70px"></div>
+          <div style="height:13px;background:rgba(255,255,255,0.1);border-radius:4px;width:60px"></div>
+          <div class="prev-up">&#8593; +31</div>
+        </div>
+        <div class="lock-banner">
+          &#128274;&nbsp; Full rankings, 30-day trend graphs &amp; AI review analysis are available on Pro.
+          &nbsp;<a href="#pricing">Unlock with free trial &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PRICING -->
+<section class="section" id="pricing">
+  <div class="section-inner">
+    <div class="s-label reveal">Pricing</div>
+    <h2 class="s-title reveal">Start free. Upgrade<br>when it pays for itself.</h2>
+    <p class="s-sub reveal">No contracts. No credit card for the trial. Cancel anytime.</p>
+    <div class="pricing-grid">
+      <div class="pricing-card reveal">
+        <div class="pricing-tier">Free Trial</div>
+        <div class="pricing-price">$0<sub> / 14 days</sub></div>
+        <div class="pricing-desc">Get a real feel for the data before committing.</div>
+        <ul class="pricing-list">
+          <li><span class="check">&#10003;</span> Olive Young &amp; Musinsa rankings</li>
+          <li><span class="check">&#10003;</span> Top 4 products per category</li>
+          <li><span class="check">&#10003;</span> Basic product info &amp; price</li>
+          <li><span class="check">&#10003;</span> 5 SEA languages supported</li>
+          <li class="off"><span class="lock-ic">&#128274;</span> Rank trend graphs</li>
+          <li class="off"><span class="lock-ic">&#128274;</span> AI Review Analysis</li>
+          <li class="off"><span class="lock-ic">&#128274;</span> Trending Now alerts</li>
+        </ul>
+        <a href="#" class="btn-plan outline">Start Free Trial</a>
+      </div>
+      <div class="pricing-card featured reveal">
+        <div class="pricing-badge">&#9733; Most Popular</div>
+        <div class="pricing-tier">Pro</div>
+        <div class="pricing-price"><sup>$</sup>17.9<sub> / month</sub></div>
+        <div class="pricing-desc">The full toolkit for serious K-product sellers.</div>
+        <ul class="pricing-list">
+          <li><span class="check">&#10003;</span> Full rankings, all categories</li>
+          <li><span class="check">&#10003;</span> 7-day &amp; 30-day trend graphs</li>
+          <li><span class="check">&#10003;</span> AI Review Analysis (Pros &amp; Cons)</li>
+          <li><span class="check">&#10003;</span> Trending Now &amp; Rising signals</li>
+          <li><span class="check">&#10003;</span> Global K-Beauty Trend dashboard</li>
+          <li><span class="check">&#10003;</span> Daily Best Deals tracking</li>
+          <li><span class="check">&#10003;</span> All 6 Korean platforms</li>
+        </ul>
+        <a href="#" class="btn-plan primary">Start Free Trial &rarr;</a>
+      </div>
+      <div class="pricing-card reveal">
+        <div style="display:inline-block;background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.3);color:var(--ac2);font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;margin-bottom:10px;letter-spacing:0.04em;">🔒 NOT YET OPEN</div>
+        <div class="pricing-tier">Enterprise</div>
+        <div class="pricing-price" style="font-size:32px;letter-spacing:-0.01em;color:var(--tx2)">Coming<br>Soon</div>
+        <div class="pricing-desc">Currently in planning. Join the waitlist to get early access &amp; founding member pricing.</div>
+        <ul class="pricing-list">
+          <li><span class="check" style="color:var(--tx3)">&#8901;</span> Everything in Pro</li>
+          <li><span class="check" style="color:var(--tx3)">&#8901;</span> Multi-user access</li>
+          <li><span class="check" style="color:var(--tx3)">&#8901;</span> API access</li>
+          <li><span class="check" style="color:var(--tx3)">&#8901;</span> Custom reports &amp; CSV export</li>
+          <li><span class="check" style="color:var(--tx3)">&#8901;</span> Dedicated account manager</li>
+          <li><span class="check" style="color:var(--tx3)">&#8901;</span> &amp; more — details TBD</li>
+        </ul>
+        <a href="#" class="btn-plan outline">Join Waitlist</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FAQ -->
+<section class="section" id="faq">
+  <div class="section-inner">
+    <div class="s-label reveal">FAQ</div>
+    <h2 class="s-title reveal">Common questions</h2>
+    <div class="faq-grid">
+      <div class="faq-item reveal">
+        <div class="faq-q">Do I need to know Korean to use K-Vant?</div>
+        <div class="faq-a">Not at all. All ranking data, product names, and AI review analysis are fully translated into English, Thai, Vietnamese, Indonesian, and Filipino.</div>
+      </div>
+      <div class="faq-item reveal">
+        <div class="faq-q">How often is the ranking data updated?</div>
+        <div class="faq-a">Daily for product rankings. Trending alerts and rank changes update near real-time throughout the day so you always have the freshest picture.</div>
+      </div>
+      <div class="faq-item reveal">
+        <div class="faq-q">Which Korean platforms do you cover?</div>
+        <div class="faq-a">Currently Olive Young, Musinsa, Ably, Shinsegae &amp; Naver Shopping &mdash; plus our Global K-Beauty Trends and Steady Sellers intelligence layers.</div>
+      </div>
+      <div class="faq-item reveal">
+        <div class="faq-q">Is there a long-term commitment?</div>
+        <div class="faq-a">No. Monthly subscription, cancel anytime from your dashboard. The 14-day free trial requires no credit card at all &mdash; just sign up and start exploring.</div>
+      </div>
+      <div class="faq-item reveal">
+        <div class="faq-q">What&rsquo;s the difference between Free and Pro?</div>
+        <div class="faq-a">Free gives you top 4 rankings and basic product data for 14 days — no credit card needed. Pro unlocks full rankings, 30-day trend graphs, AI review analysis, and Trending Now signals, all for just $17.9/month.</div>
+      </div>
+      <div class="faq-item reveal">
+        <div class="faq-q">Is there an Enterprise or Team plan?</div>
+        <div class="faq-a">Our Enterprise plan is currently in planning and not yet open. Join the waitlist to get early access and founding member pricing. Details will be announced soon.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+  <div class="final-glow"></div>
+  <div class="final-inner">
+    <h2>Stop sourcing blind.<br>Start with data.</h2>
+    <p>Join K-product sellers across Southeast Asia who track Korean trends before their competitors do.</p>
+    <a href="#" class="btn-primary" style="font-size:16px;padding:16px 38px;display:inline-flex">Try K-Vant Free for 14 Days &rarr;</a>
+    <div class="final-note">No credit card required &nbsp;&middot;&nbsp; Cancel anytime &nbsp;&middot;&nbsp; Available in 5 languages</div>
+    <div class="final-flags">&#127481;&#127469; &#127483;&#127475; &#127470;&#127465; &#127474;&#127486; &#127477;&#127469;</div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div>&copy; 2025 K-Vant &nbsp;&middot;&nbsp; Korean Trend Intelligence for SEA Sellers</div>
+    <div class="footer-links">
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Smooth scroll
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const id = a.getAttribute('href');
+    if (id.length > 1) {
+      const t = document.querySelector(id);
+      if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth' }); }
+    }
+  });
+});
+
+// Preview tabs
+function setTab(el) {
+  document.querySelectorAll('.preview-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// Scroll reveal
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
 
     <!-- Firebase / Supabase SDKs -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module">
-        import { setupAuthUI } from './src/auth.js?v=10';
-        import { getSession, fetchPublishedAnnouncements } from './supabase.js';
-        import { i18n } from './src/i18n.js?v=6';
+        import { setupAuthUI } from './src/auth.js?v=11';
+        import { getSession } from './supabase.js';
+        import { i18n } from './src/i18n.js?v=7';
 
         document.addEventListener('DOMContentLoaded', async () => {
-            // Check session. If logged in, redirect to app.html
             const session = await getSession();
             if (session) {
                 window.location.href = '/app.html';
                 return;
             }
 
-            // Init i18n
             await i18n.init();
 
-            // Language Selector Logic
             const langBtn = document.getElementById('langBtn');
             const langDropdown = document.getElementById('langDropdown');
             const langItems = document.querySelectorAll('.lang-item');
@@ -483,121 +849,31 @@
             });
 
             window.addEventListener('languageChanged', () => {
-                // Re-render auth elements so dynamic strings from auth.js are translated
                 setupAuthUI();
-
-                // Update CTA button manually as fallback if data-i18n is delayed
-                const ctaBtn = document.getElementById('startTrialBtn');
-                if (ctaBtn && window.t) {
-                    ctaBtn.textContent = window.t('common.login_signup');
-                }
-
-                // Re-fetch announcements to apply translations to dynamic JS data
-                loadAnnouncements();
             });
 
-            // Init Auth UI for Login/Signup
             setupAuthUI();
 
-            // Setup CTA Button
-            document.getElementById('startTrialBtn').addEventListener('click', () => {
-                const loginBtn = document.getElementById('loginOpenBtn');
-                if (loginBtn) {
-                    loginBtn.click();
-                    // Optional: auto-switch to signup tab
-                    setTimeout(() => {
-                        const signupTab = document.querySelector('.auth-tab[data-mode="signup"]');
-                        if (signupTab) signupTab.click();
-                    }, 50);
-                }
-            });
-
-            // Fetch Announcements with Pagination
-            const ANNOUNCEMENTS_PER_PAGE = 4;
-            let currentAnnouncementPage = 0;
-
-            async function loadAnnouncements(page = 0) {
-                currentAnnouncementPage = page;
-                const listEl = document.getElementById('announcementList');
-                const paginationEl = document.getElementById('announcementPagination');
-                try {
-                    const offset = page * ANNOUNCEMENTS_PER_PAGE;
-                    const { data, error, count } = await fetchPublishedAnnouncements(ANNOUNCEMENTS_PER_PAGE, offset);
-                    if (error || !data || data.length === 0) {
-                        const emptyMsg = window.t ? window.t('landing.empty_announcements') : '등록된 공지사항이 없습니다.';
-                        listEl.innerHTML = `<div style="text-align:center; padding: 20px; color: #888;">${emptyMsg}</div>`;
-                        if (paginationEl) paginationEl.innerHTML = '';
-                        return;
+            // Hook up CTA buttons
+            const ctaBtns = document.querySelectorAll('.btn-primary, .btn-plan, .nav-cta');
+            ctaBtns.forEach((btn, idx) => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const loginBtn = document.getElementById('loginOpenBtn');
+                    if (loginBtn) {
+                        loginBtn.click();
+                        // If it's a free trial button, maybe auto-switch to signup
+                        if (btn.textContent.toLowerCase().includes('trial') || btn.textContent.toLowerCase().includes('free')) {
+                            setTimeout(() => {
+                                const signupTab = document.querySelector('.auth-tab[data-mode="signup"]');
+                                if (signupTab) signupTab.click();
+                            }, 50);
+                        }
                     }
-
-                    listEl.innerHTML = data.map(item => {
-                        const lang = window.i18n ? window.i18n.currentLang : 'ko';
-                        const displayTitle = (lang !== 'ko' && item[`title_${lang}`]) ? item[`title_${lang}`] : item.title;
-                        const displayContent = (lang !== 'ko' && item[`content_${lang}`]) ? item[`content_${lang}`] : (item.content || '');
-
-                        const badgeText = item.type === 'report' ? (window.t ? window.t('landing.announcement_report') : '리포트')
-                            : item.type === 'update' ? (window.t ? window.t('landing.announcement_update') : '업데이트')
-                                : (window.t ? window.t('landing.announcement_notice') : '공지사항');
-                        const langCode = window.i18n ? (window.i18n.currentLang === 'en' ? 'en-US' : window.i18n.currentLang) : 'ko-KR';
-                        const dateText = new Date(item.created_at).toLocaleDateString(langCode);
-
-                        const safeTitle = displayTitle.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-                        const safeContent = displayContent.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, "\\n");
-
-                        return `
-                            <div class="announcement-item" onclick="openNoticeModal('${safeTitle}', '${dateText}', '${safeContent}')">
-                                <div>
-                                    <span class="ai-badge">${badgeText}</span>
-                                    <span class="a-title">${displayTitle}</span>
-                                </div>
-                                <span class="a-date">${dateText}</span>
-                            </div>
-                        `;
-                    }).join('');
-
-                    // Render pagination
-                    const totalCount = count || data.length;
-                    const totalPages = Math.ceil(totalCount / ANNOUNCEMENTS_PER_PAGE);
-                    if (paginationEl && totalPages > 1) {
-                        paginationEl.innerHTML = Array.from({ length: totalPages }, (_, i) =>
-                            `<button class="page-num ${i === page ? 'active' : ''}" onclick="window.__loadAnnouncementPage(${i})">${i + 1}</button>`
-                        ).join('');
-                    } else if (paginationEl) {
-                        paginationEl.innerHTML = '';
-                    }
-                } catch (e) {
-                    listEl.innerHTML = '<div style="text-align:center; padding: 20px; color: #888;">공지사항을 불러오지 못했습니다.</div>';
-                }
-            }
-
-            window.__loadAnnouncementPage = function (page) {
-                loadAnnouncements(page);
-            };
-
-            loadAnnouncements(0);
-
-            // Notice Modal Logic
-            window.openNoticeModal = function (title, date, content) {
-                document.getElementById('noticeModalTitle').textContent = title;
-                document.getElementById('noticeModalDate').textContent = date;
-                document.getElementById('noticeModalBody').innerHTML = content.replace(/\\n/g, '<br>');
-                document.getElementById('noticeModalOverlay').classList.add('open');
-                document.body.style.overflow = 'hidden';
-            };
-
-            document.getElementById('noticeModalClose').addEventListener('click', () => {
-                document.getElementById('noticeModalOverlay').classList.remove('open');
-                document.body.style.overflow = '';
-            });
-
-            document.getElementById('noticeModalOverlay').addEventListener('click', (e) => {
-                if (e.target.id === 'noticeModalOverlay') {
-                    document.getElementById('noticeModalOverlay').classList.remove('open');
-                    document.body.style.overflow = '';
-                }
+                });
             });
         });
     </script>
-</body>
 
+</body>
 </html>
