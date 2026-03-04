@@ -82,7 +82,8 @@
     "ai_analyzing": "AI đang phân tích và lưu dữ liệu đánh giá...",
     "sentiment_pos": "Tích cực",
     "sentiment_neg": "Tiêu cực",
-    "ai_disclaimer": "Tóm tắt này được tạo tự động bởi AI dựa trên đánh giá thực tế và được lưu DB sau lần phân tích đầu tiên."
+    "ai_disclaimer": "Tóm tắt này được tạo tự động bởi AI dựa trên đánh giá thực tế và được lưu DB sau lần phân tích đầu tiên.",
+    "product_info": "Thông tin sản phẩm"
   },
   "sections": {
     "all": "Xếp hạng danh mục",
@@ -220,5 +221,8 @@
   },
   "platforms": {
     "modernhouse": "Modern House"
+  },
+  "sourcing": {
+    "request_quote": "Yêu cầu báo giá tìm nguồn"
   }
 }

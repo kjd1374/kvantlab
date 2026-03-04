@@ -80,7 +80,8 @@
     "ai_analyzing": "AIがレビューデータを分析中...",
     "sentiment_pos": "ポジティブ",
     "sentiment_neg": "ネガティブ",
-    "ai_disclaimer": "この要約はAIにより自動生成され、初回分析後にDBへ保存されます。"
+    "ai_disclaimer": "この要約はAIにより自動生成され、初回分析後にDBへ保存されます。",
+    "product_info": "商品情報"
   },
   "sections": {
     "all": "カテゴリー別ランキング",
@@ -208,5 +209,8 @@
   },
   "platforms": {
     "modernhouse": "モダンハウス"
+  },
+  "sourcing": {
+    "request_quote": "ソーシング見積もりをリクエスト"
   }
 }

@@ -82,7 +82,8 @@
     "ai_analyzing": "AI sedang menganalisis data ulasan...",
     "sentiment_pos": "Positif",
     "sentiment_neg": "Negatif",
-    "ai_disclaimer": "Ringkasan ini dibuat otomatis oleh AI berdasarkan ulasan nyata dan disimpan ke DB setelah analisis pertama."
+    "ai_disclaimer": "Ringkasan ini dibuat otomatis oleh AI berdasarkan ulasan nyata dan disimpan ke DB setelah analisis pertama.",
+    "product_info": "Informasi Produk"
   },
   "sections": {
     "all": "Peringkat Kategori",
@@ -210,5 +211,8 @@
   },
   "platforms": {
     "modernhouse": "Modern House"
+  },
+  "sourcing": {
+    "request_quote": "Minta Penawaran Sumber"
   }
 }
