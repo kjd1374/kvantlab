@@ -142,21 +142,21 @@ async function sendOtpEmail(toEmail, code) {
     const mailOptions = {
         from: `"K-Vant" <${smtpUser}>`,
         to: toEmail,
-        subject: `[K-Vant] 이메일 인증번호 / Email Verification Code`,
+        subject: `[K-Vant] Please verify your email address`,
         html: `
             <div style="font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;max-width:500px;margin:0 auto;padding:30px 20px;">
                 <div style="text-align:center;margin-bottom:30px;">
                     <h1 style="color:#0071e3;font-size:24px;margin:0;">K-Vant</h1>
-                    <p style="color:#86868b;font-size:13px;margin-top:4px;">DataPool 회원가입 인증</p>
                 </div>
                 <div style="background:#f5f5f7;border-radius:16px;padding:32px;text-align:center;margin-bottom:20px;">
-                    <p style="color:#1d1d1f;font-size:14px;margin:0 0 16px 0;">아래의 인증번호를 가입 화면에 입력해주세요.</p>
+                    <h2 style="color:#1d1d1f;font-size:18px;font-weight:700;margin:0 0 8px 0;">Welcome to K-Vant!</h2>
+                    <p style="color:#1d1d1f;font-size:14px;line-height:1.6;margin:0 0 20px 0;">Thank you for signing up. To complete your registration and secure your account, please enter the verification code below on the sign-up page:</p>
                     <div style="background:#fff;border-radius:12px;padding:20px;display:inline-block;margin:0 auto;">
                         <span style="font-size:36px;font-weight:800;letter-spacing:8px;color:#0071e3;">${code}</span>
                     </div>
-                    <p style="color:#86868b;font-size:12px;margin-top:16px;">이 인증번호는 5분간 유효합니다.</p>
+                    <p style="color:#86868b;font-size:12px;margin-top:16px;">This code is valid for the next 5 minutes.</p>
                 </div>
-                <p style="color:#86868b;font-size:11px;text-align:center;">본인이 요청하지 않은 경우 이 메일을 무시해주세요.<br/>This email was sent automatically from K-Vant.</p>
+                <p style="color:#86868b;font-size:12px;text-align:center;line-height:1.6;">If you did not request this code, please ignore this email.<br/><br/>Best regards,<br/>The K-Vant Team</p>
             </div>
         `
     };
