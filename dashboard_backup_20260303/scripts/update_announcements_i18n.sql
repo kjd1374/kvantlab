@@ -1,0 +1,12 @@
+-- Add multi-language columns for announcements
+ALTER TABLE public.board_announcements 
+ADD COLUMN IF NOT EXISTS title_en TEXT,
+ADD COLUMN IF NOT EXISTS content_en TEXT,
+ADD COLUMN IF NOT EXISTS title_ja TEXT,
+ADD COLUMN IF NOT EXISTS content_ja TEXT,
+ADD COLUMN IF NOT EXISTS title_th TEXT,
+ADD COLUMN IF NOT EXISTS content_th TEXT,
+ADD COLUMN IF NOT EXISTS title_vi TEXT,
+ADD COLUMN IF NOT EXISTS content_vi TEXT,
+ADD COLUMN IF NOT EXISTS title_id TEXT,
+ADD COLUMN IF NOT EXISTS content_id TEXT;

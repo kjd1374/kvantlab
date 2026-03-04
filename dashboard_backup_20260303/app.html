@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K-Vant Dashboard - K-Trend Intelligence</title>
+  <meta name="description" content="동남아시아 이커머스 셀러를 위한 한국 이커머스 트렌드 인텔리전스 대시보드. 올리브영, 무신사, 쇼피 실시간 분석." />
+  <meta name="robots" content="noindex, nofollow" />
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="K-Vant - K-Trend Intelligence Dashboard">
+  <meta property="og:description" content="AI 기반 글로벌 뷰티/패션 트렌드 분석 플랫폼.">
+  <meta property="og:url" content="https://kvant.kr/app.html">
+  <!-- Google Analytics 4 (GA4) - Replace G-XXXXXXXXXX with your Measurement ID -->
+  <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script> -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- PayPal SDK will be loaded dynamically by main.js -->
+
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="/app.html" class="logo"
+        style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; cursor: pointer;">
+        <img src="/public/logo_kvant.png" alt="K-Vant Logo" style="height: 28px; border-radius: 4px;">
+        <div>K-Vant <span style="font-weight:300; color:#666; font-size:14px;">Intelligence</span></div>
+      </a>
+
+      <div class="header-right">
+        <div class="search-box">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+          <input type="text" id="searchInput" data-i18n="common.search_placeholder" placeholder="상품명, 브랜드 검색..." />
+          <button class="ai-toggle-btn" id="aiSearchToggle" data-i18n-title="common.ai_search_tip"
+            title="AI 스마트 검색 사용">✨</button>
+        </div>
+
+        <!-- Language Switcher -->
+        <div class="lang-selector">
+          <button class="header-icon-btn" id="langBtn" title="Change Language">
+            <span id="currentLangIcon">🌐</span>
+          </button>
+          <div class="lang-dropdown" id="langDropdown">
+            <div class="lang-item" data-lang="ko"><img src="https://flagcdn.com/w20/kr.png" width="20" height="15"
+                alt="KR" class="lang-flag"> South Korea</div>
+            <div class="lang-item" data-lang="en"><img src="https://flagcdn.com/w20/us.png" width="20" height="15"
+                alt="US" class="lang-flag"> English</div>
+            <div class="lang-item" data-lang="vi"><img src="https://flagcdn.com/w20/vn.png" width="20" height="15"
+                alt="VN" class="lang-flag"> Tiếng Việt</div>
+            <div class="lang-item" data-lang="th"><img src="https://flagcdn.com/w20/th.png" width="20" height="15"
+                alt="TH" class="lang-flag"> ไทย</div>
+            <div class="lang-item" data-lang="id"><img src="https://flagcdn.com/w20/id.png" width="20" height="15"
+                alt="ID" class="lang-flag"> Indonesia</div>
+            <div class="lang-item" data-lang="ja"><img src="https://flagcdn.com/w20/jp.png" width="20" height="15"
+                alt="JP" class="lang-flag"> 日本語</div>
+          </div>
+        </div>
+
+        <div class="notification-wrapper">
+          <button class="header-icon-btn" id="notifBell" data-i18n-title="notifications.title">
+            <span class="bell-icon">🔔</span>
+            <span class="unread-badge" id="notifBadge" style="display:none"></span>
+          </button>
+          <div class="notif-dropdown" id="notifDropdown">
+            <div class="notif-header">
+              <h3 data-i18n="notifications.title">실시간 알림</h3>
+              <button class="notif-clear-btn" id="clearNotif" data-i18n="notifications.clear_all">비우기</button>
+            </div>
+            <div class="notif-list" id="notifList">
+              <!-- Notifications will be loaded here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main">
+    <!-- New Platform Bar: Centralized Controls -->
+    <section class="platform-bar">
+      <div class="platform-switcher">
+        <button class="platform-btn active" data-platform="oliveyoung" data-i18n="platforms.oliveyoung">Olive
+          Young</button>
+        <button class="platform-btn" data-platform="musinsa" data-i18n="platforms.musinsa">Musinsa</button>
+        <button class="platform-btn" data-platform="ably" data-i18n="platforms.ably">Ably</button>
+        <button class="platform-btn" data-platform="ssg" data-i18n="platforms.ssg">Shinsegae</button>
+        <button class="platform-btn" data-platform="k_trend" data-i18n="">
+          <span data-i18n="platforms.k_trend">Korea Trends</span>
+          <span class="tab-beta-badge">BETA</span>
+        </button>
+        <button class="platform-btn" data-platform="steady_sellers" data-i18n="">
+          <span data-i18n="platforms.steady_sellers">Steady Sellers</span>
+          <span class="tab-beta-badge">BETA</span>
+        </button>
+      </div>
+      <div id="platformControls" class="platform-controls"></div>
+    </section>
+
+    <!-- KPI Cards -->
+    <section class="kpi-grid" id="kpiGrid">
+      <div class="kpi-card kpi-trending">
+        <div class="kpi-icon">🔥</div>
+        <div class="kpi-content">
+          <div class="kpi-value" id="kpiTrending">-</div>
+          <div class="kpi-label" data-i18n="kpi.trending">7일 급상승</div>
+        </div>
+      </div>
+      <div class="kpi-card kpi-deals">
+        <div class="kpi-icon">💰</div>
+        <div class="kpi-content">
+          <div class="kpi-value" id="kpiDeals">-</div>
+          <div class="kpi-label" data-i18n="kpi.deals">오늘 할인</div>
+        </div>
+      </div>
+      <div class="kpi-card kpi-reviews">
+        <div class="kpi-icon">⭐</div>
+        <div class="kpi-content">
+          <div class="kpi-value" id="kpiReviews">-</div>
+          <div class="kpi-label" data-i18n="kpi.reviews">리뷰 상위</div>
+        </div>
+      </div>
+      <div class="kpi-card kpi-total">
+        <div class="kpi-icon">📦</div>
+        <div class="kpi-content">
+          <div class="kpi-value" id="kpiTotal">-</div>
+          <div class="kpi-label" data-i18n="kpi.total">전체 상품</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Category Filter -->
+    <section class="filter-bar">
+      <div class="filter-label" data-i18n="filters.category">카테고리</div>
+      <div class="category-chips" id="categoryChips">
+      </div>
+    </section>
+
+    <!-- Tab Navigation -->
+    <section class="tab-bar">
+      <button class="tab active" data-tab="all"><span>📋</span> <span data-i18n="tabs.all">전체 상품</span></button>
+      <button class="tab" data-tab="trending"><span>🔥</span> <span data-i18n="tabs.trending">급상승 TOP</span></button>
+      <button class="tab" data-tab="deals"><span>💰</span> <span data-i18n="tabs.deals">할인 특가</span></button>
+      <button class="tab" data-tab="reviews"><span>⭐</span> <span data-i18n="tabs.reviews">리뷰 인기</span></button>
+      <button class="tab" data-tab="wishlist"><span>❤️</span> <span data-i18n="tabs.favorites">관심 상품</span></button>
+      <button class="tab" data-tab="insights"><span>📊</span> <span data-i18n="tabs.insights">시장 분석</span></button>
+      <!-- <button class="tab" data-tab="logs"><span>📋</span> <span data-i18n="tabs.crawl_logs">수집 로그</span></button> -->
+    </section>
+
+    <!-- Content Area -->
+    <section class="content-area">
+      <!-- Trending Tab -->
+      <div class="tab-content" id="tab-trending">
+        <div class="section-header">
+          <h2 data-i18n="sections.trending">7일간 급상승 상품</h2>
+          <p class="section-desc" data-i18n="sections.trending_desc">최근 7일 동안 랭킹이 가장 크게 상승한 상품들</p>
+        </div>
+        <div class="products-grid" id="trendingGrid">
+          <div class="loading-skeleton"></div>
+        </div>
+      </div>
+
+      <!-- Deals Tab -->
+      <div class="tab-content" id="tab-deals">
+        <div class="section-header">
+          <h2 data-i18n="sections.deals">오늘의 특가 할인</h2>
+          <p class="section-desc" data-i18n="sections.deals_desc">가장 큰 폭으로 할인 중인 상품들</p>
+        </div>
+        <div class="products-grid" id="dealsGrid">
+          <div class="loading-skeleton"></div>
+        </div>
+      </div>
+
+      <!-- Reviews Tab -->
+      <div class="tab-content" id="tab-reviews">
+        <div class="section-header">
+          <h2 data-i18n="sections.reviews">리뷰 인기 상품</h2>
+          <p class="section-desc" data-i18n="sections.reviews_desc">리뷰 수가 가장 많은 검증된 인기 상품들</p>
+        </div>
+        <div class="products-grid" id="reviewsGrid">
+          <div class="loading-skeleton"></div>
+        </div>
+      </div>
+
+      <!-- Wishlist Tab -->
+      <div class="tab-content" id="tab-wishlist">
+        <div class="section-header">
+          <h2 data-i18n="sourcing.cart_title">나의 관심 상품 & 소싱 카트</h2>
+          <p class="section-desc" data-i18n="sourcing.cart_desc">찜한 상품들을 체계적으로 모아보고 B2B 견적을 요청하세요</p>
+        </div>
+        <div class="products-grid" id="wishlistGrid">
+          <div class="loading-skeleton"></div>
+        </div>
+        <div class="sourcing-action-bar" id="sourcingActionBar"
+          style="display:none; margin-top: 30px; text-align: center; background: var(--bg-card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
+          <button class="btn-primary" id="btnRequestQuote"
+            style="width: 100%; padding: 15px; font-size: 16px; border-radius: 12px; border: none; background: var(--accent-blue); color: #fff; cursor: pointer; font-weight: 700; box-shadow: var(--shadow-sm); transition: transform 0.2s;"
+            onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'"
+            onclick="openQuoteModal()" data-i18n="sourcing.btn_request_quote">📦 카트에 담긴 상품 견적 요청하기</button>
+        </div>
+      </div>
+
+      <!-- Global Trends Tab (Korea Trend AI Mining) -->
+      <div class="tab-content" id="tab-global_trends">
+        <div class="section-header">
+          <h2 data-i18n="sections.global_trends">글로벌 실구매 트렌드</h2>
+          <p class="section-desc" data-i18n="sections.global_trends_desc">해외에서 먼저 검증된 한국 상품 인기 리스트</p>
+        </div>
+        <div class="products-grid" id="global_trendsGrid">
+          <div class="loading-skeleton"></div>
+        </div>
+      </div>
+
+      <!-- Naver Best Tab -->
+      <div class="tab-content" id="tab-naver_best">
+        <div class="section-header">
+          <h2 data-i18n="naver_best.header">🇰🇷 네이버 베스트 트렌드</h2>
+          <p class="section-desc" data-i18n="naver_best.count">오늘의 베스트셀러</p>
+        </div>
+        <div class="products-grid custom-content-area" id="naver_bestGrid">
+          <div class="loading-skeleton"></div>
+        </div>
+      </div>
+
+      <!-- Insights Tab -->
+      <div class="tab-content" id="tab-insights">
+        <div class="section-header">
+          <h2 data-i18n="sections.insights">시장 인지도 및 분석</h2>
+          <p class="section-desc" data-i18n="sections.insights_desc">현재 수집된 데이터를 바탕으로 한 시장 종합 통계입니다.</p>
+        </div>
+        <div class="insights-grid">
+          <div class="insight-card">
+            <h3 data-i18n="insights.category_share">📂 카테고리별 점유율</h3>
+            <div class="chart-wrapper">
+              <canvas id="categoryShareChart"></canvas>
+            </div>
+          </div>
+          <div class="insight-card">
+            <h3 data-i18n="insights.brand_power">🏷️ 브랜드 파워 TOP 10</h3>
+            <div class="chart-wrapper">
+              <canvas id="brandPowerChart"></canvas>
+            </div>
+          </div>
+          <div class="insight-card full-width">
+            <h3 data-i18n="insights.price_range">💰 가격대별 상품 분포</h3>
+            <div class="chart-wrapper">
+              <canvas id="priceRangeChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logs Tab -->
+      <div class="tab-content" id="tab-logs" style="display:none!important;">
+        <div class="section-header">
+          <h2 data-i18n="sections.logs">데이터 수집 로그</h2>
+          <p class="section-desc" data-i18n="sections.logs_desc">최근 30일간의 수집 성공/실패 기록입니다.</p>
+        </div>
+        <div class="log-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th data-i18n="table.time">수집 시간</th>
+                <th data-i18n="table.job">작업명</th>
+                <th data-i18n="table.status">상태</th>
+                <th data-i18n="table.count">수집량</th>
+                <th data-i18n="table.message">메시지</th>
+              </tr>
+            </thead>
+            <tbody id="crawlLogsBody">
+              <tr>
+                <td colspan="5" style="text-align:center; padding:40px;">데이터를 불러오는 중...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="tab-content active" id="tab-all">
+        <div class="section-header">
+          <h2 id="rankingTitle" data-i18n="sections.all">카테고리별 랭킹</h2>
+          <p id="rankingDesc" class="section-desc" data-i18n="sections.all_desc">올리브영 카테고리별 순위 기반 상품 목록</p>
+        </div>
+        <div class="table-container">
+          <table class="data-table" id="allProductsTable">
+            <thead>
+              <tr>
+                <th data-i18n="table.rank">순위</th>
+                <th data-i18n="table.image">이미지</th>
+                <th class="sortable" data-sort="name" data-i18n="table.name">상품명</th>
+                <th class="sortable" data-sort="brand" data-i18n="table.brand">브랜드</th>
+                <th class="sortable" data-sort="price" data-i18n="table.price">가격</th>
+                <th data-i18n="table.review">리뷰</th>
+                <th data-i18n="table.rating">평점</th>
+                <th data-i18n="table.link">링크</th>
+              </tr>
+            </thead>
+            <tbody id="allProductsBody">
+              <tr>
+                <td colspan="8" class="loading-cell">데이터 로딩 중...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Product Detail Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="productModal">
+      <button class="modal-close" id="modalClose">&times;</button>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <!-- Quote Request Modal -->
+  <div class="modal-overlay" id="quoteModalOverlay">
+    <div class="modal" id="quoteModal" style="max-width: 500px; padding: 30px;">
+      <button class="modal-close" onclick="closeQuoteModal()">&times;</button>
+      <h2 style="margin-bottom: 20px;" data-i18n="sourcing.modal_title">📦 B2B 소싱 견적 요청</h2>
+      <div style="margin-bottom: 20px;">
+        <p style="margin-bottom: 15px; color: var(--text-muted); font-size: 14px; line-height: 1.5;"
+          data-i18n="sourcing.modal_desc">카트에 담긴 관심 상품들에 대한 매입 단가 및 배송비 견적을 K-Vant 에 요청합니다. 선택하신 상품 목록과 수량을 확인해 주세요.</p>
+
+        <!-- Product List Preview -->
+        <div id="quoteProductList"
+          style="margin-bottom: 15px; max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px 15px; background: var(--surface-light);">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <textarea id="quoteMessage" class="form-input" rows="3" id-i18n-placeholder="sourcing.modal_placeholder"
+          style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; resize: vertical; margin-bottom: 14px;"></textarea>
+
+        <!-- Multi SNS Links -->
+        <div style="margin-bottom: 12px;">
+          <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px;"
+            data-i18n="sourcing.quote_sns_label">📌 SNS / 상품 링크 (최대 5개)</div>
+          <div id="quoteSnsLinksContainer" style="display: flex; flex-direction: column; gap: 7px;">
+            <div class="sns-link-row" style="display: flex; flex-direction: column; gap: 4px;">
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <input type="url" class="form-input quote-sns-input"
+                  id-i18n-placeholder="sourcing.modal_sns_placeholder"
+                  style="flex:1; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;"
+                  oninput="window.__validateSnsInput(this)">
+                <button type="button" onclick="window.__addSnsInput()"
+                  style="padding: 8px 11px; border-radius: 8px; border: 1px solid var(--accent-blue); background: transparent; color: var(--accent-blue); font-size: 16px; cursor: pointer; font-weight: 700; line-height: 1;"
+                  title="추가">+</button>
+              </div>
+              <div class="sns-error" style="display:none; font-size:11px; color:#e03131; padding-left:2px;">올바른 URL 형식을
+                입력해주세요. (예: https://www.instagram.com/...)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Image Upload -->
+        <div style="margin-bottom: 14px;">
+          <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px;"
+            data-i18n="sourcing.quote_img_label">📷 상품 이미지 첨부 (최대 5장)</div>
+          <label for="quoteImageInput" id="quoteImageDropZone"
+            style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border: 2px dashed var(--border); border-radius: 10px; cursor: pointer; background: var(--card-bg); font-size: 13px; color: var(--text-muted); transition: border-color 0.2s;"
+            ondragover="event.preventDefault(); this.style.borderColor='var(--accent-blue)'"
+            ondragleave="this.style.borderColor='var(--border)'"
+            ondrop="event.preventDefault(); window.__handleQuoteImageDrop(event)"
+            data-i18n="sourcing.quote_img_upload_hint">
+            📁 클릭 또는 드래그하여 업로드
+          </label>
+          <input type="file" id="quoteImageInput" multiple accept="image/*" style="display:none;"
+            onchange="window.__previewQuoteImages(this.files)">
+          <div id="quoteImagePreviews" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;"></div>
+        </div>
+
+        <div
+          style="margin-bottom: 20px; padding: 12px; border-radius: 8px; background: rgba(255, 77, 79, 0.05); border: 1px solid rgba(255, 77, 79, 0.2);">
+          <p style="color: #ff4d4f; font-size: 13px; font-weight: 500; line-height: 1.5; margin: 0; display: flex; gap: 8px;"
+            data-i18n="sourcing.modal_warning">
+            ⚠️ 견적 산출에는 약간의 시간이 소요될 수 있습니다. 완료 시 대시보드 알림과 메일로 안내해 드립니다.
+          </p>
+        </div>
+      </div>
+      <button class="btn-primary" id="btnSubmitQuote"
+        style="width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: 700; cursor: pointer; color: white; background: var(--accent-blue); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);"
+        onclick="submitQuoteRequest()" data-i18n="sourcing.btn_submit">견적 요청 전송</button>
+    </div>
+  </div>
+
+  <!-- My Page Modal -->
+  <div class="modal-overlay" id="myPageModalOverlay">
+    <div class="modal my-page-modal" id="myPageModal">
+      <button class="modal-close" id="myPageModalClose">&times;</button>
+      <h2 class="my-page-title" data-i18n="mypage.title">마이페이지</h2>
+      <div class="auth-tabs" style="margin-bottom: 24px;">
+        <button class="auth-tab active" data-mypage-tab="account" data-i18n="mypage.account">계정 관리</button>
+        <button class="auth-tab" data-mypage-tab="billing" data-i18n="mypage.billing">결제 관리</button>
+        <button class="auth-tab" data-mypage-tab="sourcing" data-i18n="sourcing.mypage_tab">견적/소싱 내역</button>
+        <button class="auth-tab" data-mypage-tab="support" data-i18n="support.title">고객센터</button>
+      </div>
+
+      <div class="my-page-content" id="myPageAccountTab">
+        <div class="form-group">
+          <label data-i18n="mypage.email">이메일</label>
+          <input type="text" id="myPageEmail" disabled class="form-input disabled-input">
+        </div>
+        <div class="form-group">
+          <label data-i18n="mypage.phone">연락처 (Phone)</label>
+          <input type="text" id="myPagePhone" class="form-input" placeholder="연락처를 입력하세요"
+            data-i18n="mypage.phone_placeholder">
+        </div>
+
+        <div class="form-group">
+          <label data-i18n="mypage.country">국가 (Country)</label>
+          <input type="text" id="myPageCountry" class="form-input" placeholder="국가를 입력하세요"
+            data-i18n="mypage.country_placeholder">
+        </div>
+
+        <div class="form-group" style="display: flex; gap: 10px;">
+          <div style="flex: 1;">
+            <label data-i18n="mypage.city">도시 (City)</label>
+            <input type="text" id="myPageCity" class="form-input" placeholder="도시를 입력하세요"
+              data-i18n="mypage.city_placeholder">
+          </div>
+          <div style="flex: 1;">
+            <label data-i18n="mypage.zip_code">우편번호 (ZIP Code)</label>
+            <input type="text" id="myPageZip" class="form-input" placeholder="우편번호 입력"
+              data-i18n="mypage.zip_placeholder">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label data-i18n="mypage.address1">주소 상세 1 (Address Line 1)</label>
+          <input type="text" id="myPageAddress1" class="form-input" placeholder="도로명, 지번 주소 등"
+            data-i18n="mypage.address1_placeholder">
+        </div>
+
+        <div class="form-group">
+          <label data-i18n="mypage.address2">주소 상세 2 (Address Line 2)</label>
+          <input type="text" id="myPageAddress2" class="form-input" placeholder="상세주소 (동/호수, 건물명 등)"
+            data-i18n="mypage.address2_placeholder">
+        </div>
+
+
+
+        <div style="margin-top: 20px; text-align: right;">
+          <button id="btnSaveProfile" class="btn-primary" data-i18n="mypage.save"
+            style="padding: 10px 20px; border-radius: 8px; border: none; background: var(--accent-blue); color: white; font-weight: 600; cursor: pointer;">저장하기</button>
+        </div>
+
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); text-align: right;">
+          <button id="btnDeleteAccount" class="btn-secondary" data-i18n="mypage.delete_account"
+            style="padding: 8px 16px; border-radius: 8px; border: 1px solid #ffc9c9; background: #fff5f5; color: #e03131; font-weight: 600; cursor: pointer;">회원
+            탈퇴</button>
+        </div>
+      </div>
+
+      <div class="my-page-content" id="myPageBillingTab" style="display:none;">
+        <div class="billing-card">
+          <div class="billing-header">
+            <h3 data-i18n="mypage.current_plan">현재 구독 플랜</h3>
+            <span class="plan-badge" id="myPagePlanBadge">Free</span>
+          </div>
+          <p class="billing-desc" id="myPagePlanDesc" data-i18n="mypage.status_free">현재 무료 플랜을 이용 중입니다. (일일 상세 조회 10회
+            제한)</p>
+
+          <div class="billing-info-row">
+            <span class="info-label" data-i18n="mypage.subscribed_at">가입/체험 시작일</span>
+            <span class="info-value" id="myPageSubscribedAt">-</span>
+          </div>
+          <div class="billing-info-row">
+            <span class="info-label" data-i18n="mypage.expires_at">만료/갱신 예정일</span>
+            <span class="info-value" id="myPageExpiresAt">-</span>
+          </div>
+        </div>
+
+        <div id="tos-container"
+          style="display:none; max-width: 400px; margin: 0 auto 15px auto; text-align: left; background: #f9fafb; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+          <label
+            style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; font-size: 13px; color: #475569; line-height: 1.4;">
+            <input type="checkbox" id="tosCheckbox" style="margin-top: 3px; accent-color: var(--accent-blue);">
+            <span>
+              <strong style="color: #1e293b;" data-i18n="mypage.tos_agree_bold">[필수] 결제 및 환불 규정 동의</strong><br>
+              <span data-i18n="mypage.tos_agree_desc">본 서비스는 디지털 콘텐츠(데이터 리포트) 제공 서비스로서, 결제 완료 및 서비스 권한 부여 이후에는 전자상거래법에
+                의거하여 <strong>환불이 불가</strong>함을 확인하고 동의합니다. (I agree to the Terms of Service & No-Refund Policy for
+                digital goods.)</span>
+            </span>
+          </label>
+        </div>
+        <div id="paypal-button-container"
+          style="display:none; max-width: 400px; margin: 0 auto; transition: opacity 0.3s;" class="disabled-paypal">
+        </div>
+        <div class="subscription-btn-group"
+          style="display: flex; flex-direction: column; gap: 10px; max-width: 400px; margin: 12px auto 0;">
+          <button id="renewSubscriptionBtn" class="btn-primary sub-action-btn sub-renew"
+            style="display:none; width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; color: #fff; background: linear-gradient(135deg, var(--accent-blue), #6c5ce7); box-shadow: 0 4px 14px rgba(59,130,246,0.3); transition: all 0.2s;"
+            data-i18n="mypage.btn_renew">🔄 구독 갱신 (Renew)</button>
+          <button id="extendSubscriptionBtn" class="btn-primary sub-action-btn sub-extend"
+            style="display:none; width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; color: #fff; background: linear-gradient(135deg, #00b894, #00cec9); box-shadow: 0 4px 14px rgba(0,184,148,0.3); transition: all 0.2s;"
+            data-i18n="mypage.btn_extend">⏳ 구독 연장 (Extend)</button>
+          <button id="cancelSubscriptionBtn" class="btn-secondary sub-action-btn sub-cancel"
+            style="display:none; width: 100%; padding: 12px; background: #fff5f5; color: #e03131; border: 1px solid #ffc9c9; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s;"
+            data-i18n="mypage.btn_cancel">🚫 구독 해지 (Cancel)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sourcing History Tab -->
+    <div class="my-page-content" id="myPageSourcingTab" style="display: none;">
+      <h3 style="font-size: 16px; margin-bottom: 15px;" data-i18n="sourcing.history_title">📦 나의 소싱 견적 내역</h3>
+      <div id="sourcingHistoryList"
+        style="max-height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;">
+        <div class="loading-skeleton"></div>
+      </div>
+
+    </div>
+
+    <!-- Customer Center Tab -->
+    <div class="my-page-content" id="myPageSupportTab" style="display: none;">
+      <div class="support-header" style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <button class="chip active" onclick="window.toggleSupportView('faq')" data-i18n="support.faq"
+          id="btnSupportFaq">FAQ (자주 묻는 질문)</button>
+        <button class="chip" onclick="window.toggleSupportView('inquiry')" data-i18n="support.inquiry"
+          id="btnSupportInquiry">1:1 문의</button>
+      </div>
+
+      <!-- FAQ View -->
+      <div id="supportFaqView">
+        <div id="faqList"
+          style="display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto;">
+          <div class="loading-skeleton"></div>
+        </div>
+      </div>
+
+      <!-- Inquiry View -->
+      <div id="supportInquiryView" style="display: none;">
+        <div class="inquiry-form"
+          style="background: var(--card-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 25px;">
+          <h4 style="margin-top: 0; margin-bottom: 12px; font-size: 14px;" data-i18n="support.new_inquiry_title">새 문의
+            작성</h4>
+          <div class="form-group">
+            <select id="inquiryType" class="form-input">
+              <option value="general" selected>1:1 문의사항</option>
+              <option value="sourcing">소싱/견적 관련</option>
+              <option value="billing">결제/구독 관련</option>
+              <option value="technical">기술적 오류 제보</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <input type="text" id="inquiryTitle" class="form-input" placeholder="제목을 입력해주세요"
+              data-i18n="support.title_placeholder">
+          </div>
+          <div class="form-group">
+            <textarea id="inquiryContent" class="form-input" rows="4" placeholder="문의 내용이나 건의사항을 상세히 작성해주세요."
+              data-i18n="support.message_placeholder"></textarea>
+          </div>
+          <button id="btnSubmitInquiry" class="btn-primary"
+            style="width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer;"
+            data-i18n="support.submit">등록하기</button>
+        </div>
+
+        <h4 style="margin-bottom: 10px; font-size: 14px; border-top: 1px solid #eee; padding-top: 20px;">나의 문의 내역</h4>
+        <div id="inquiryList"
+          style="display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto;">
+          <div class="loading-skeleton"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  </div>
+
+  <footer class="footer">
+    <p data-i18n="common.footer_text">K-Trend Intelligence © 2026 · Global K-Beauty & Fashion Intelligence · Analytics
+      for Global Sellers · K-Vant</p>
+    <div class="footer-links"
+      style="margin-top: 8px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; opacity: 0.8;">
+      <a href="/terms.html" data-i18n-href="common.terms_url"
+        style="color: var(--text-secondary); font-size: 13px; text-decoration: none;">이용약관</a>
+      <a href="/privacy.html" data-i18n-href="common.privacy_url"
+        style="color: var(--text-secondary); font-size: 13px; text-decoration: none;">개인정보 처리방침</a>
+      <a href="mailto:contact@k-vant.kr"
+        style="color: var(--text-secondary); font-size: 13px; text-decoration: none;">문의하기</a>
+    </div>
+  </footer>
+
+  <!-- Onboarding Tutorial Modal (Carousel) -->
+  <div class="modal-overlay" id="tutorialModalOverlay">
+    <div class="modal-content"
+      style="max-width: 800px; padding: 0; overflow: hidden; background: #fff; position: relative; border-radius: 16px; display: flex; flex-direction: column;">
+
+      <!-- Close / Skip Button -->
+      <button id="skipTutorialBtn"
+        style="position: absolute; top: 16px; right: 20px; background: rgba(0,0,0,0.5); color: #fff; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 18px; cursor: pointer; z-index: 20; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">&times;</button>
+
+      <!-- Carousel Container -->
+      <div id="tutorialCarousel"
+        style="display: flex; flex-wrap: nowrap; transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); width: 300%; flex: 1;">
+
+        <!-- Slide 1 -->
+        <div class="tutorial-slide" style="flex: 0 0 33.3333%; width: 33.3333%;">
+          <div
+            style="height: 400px; background: #f8fafc; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #e2e8f0; position: relative;">
+            <div
+              style="width: 80%; height: 80%; background: #e2e8f0; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; color: #64748b; font-weight: bold; border: 2px dashed #cbd5e1; text-align: center;">
+              [여기에 Step 1 스크린샷 삽입 - 800x400 권장]<br>
+              <span style="font-size:12px; font-weight: normal; margin-top:8px;">앱 화면의 코리아 트렌드 랭킹 영역 캡처 이미지를 추가해
+                주세요.</span>
+            </div>
+          </div>
+          <div style="padding: 40px; text-align: center;">
+            <div
+              style="display: inline-block; padding: 4px 12px; background: #e0e7ff; color: #4338ca; border-radius: 20px; font-size: 13px; font-weight: 700; margin-bottom: 12px;">
+              STEP 1</div>
+            <h3 style="font-size: 22px; font-weight: 800; color: #1e293b; margin-bottom: 12px;"
+              data-i18n="tutorial.step1_title">실시간 급상승 브랜드 포착</h3>
+            <p style="font-size: 15px; color: #475569; line-height: 1.6; max-width: 600px; margin: 0 auto;"
+              data-i18n="tutorial.step1_desc">한국 1위 H&B 스토어(올리브영)와 패션 플랫폼(무신사)에서 지금 현지인들이 가장 많이 찾는 브랜드를 실시간으로 확인하세요.
+              <strong>BETA로 제공되는 코리아 트렌드/스테디 셀러</strong> 탭은 최고의 소싱 소스입니다.
+            </p>
+          </div>
+        </div>
+
+        <!-- Slide 2 -->
+        <div class="tutorial-slide" style="flex: 0 0 33.3333%; width: 33.3333%;">
+          <div
+            style="height: 400px; background: #f8fafc; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #e2e8f0; position: relative;">
+            <div
+              style="width: 80%; height: 80%; background: #e2e8f0; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; color: #64748b; font-weight: bold; border: 2px dashed #cbd5e1; text-align: center;">
+              [여기에 Step 2 스크린샷 삽입 - 800x400 권장]<br>
+              <span style="font-size:12px; font-weight: normal; margin-top:8px;">상품 카드에서 [장바구니] 또는 [견적 요청] 버튼 부분을 캡처해
+                주세요.</span>
+            </div>
+          </div>
+          <div style="padding: 40px; text-align: center;">
+            <div
+              style="display: inline-block; padding: 4px 12px; background: #e0e7ff; color: #4338ca; border-radius: 20px; font-size: 13px; font-weight: 700; margin-bottom: 12px;">
+              STEP 2</div>
+            <h3 style="font-size: 22px; font-weight: 800; color: #1e293b; margin-bottom: 12px;"
+              data-i18n="tutorial.step2_title">원클릭 B2B 도매 소싱 요청</h3>
+            <p style="font-size: 15px; color: #475569; line-height: 1.6; max-width: 600px; margin: 0 auto;"
+              data-i18n="tutorial.step2_desc">마음에 드는 상품의 장바구니 버튼을 눌러 소싱 리스트에 담으세요. 이후 우측 하단의 [견적 요청] 버튼을 누르면 K-Vant 전문
+              소서가 최저가 도매가로 상품을 한국에서 공급해 드립니다.</p>
+          </div>
+        </div>
+
+        <!-- Slide 3 -->
+        <div class="tutorial-slide" style="flex: 0 0 33.3333%; width: 33.3333%;">
+          <div
+            style="height: 400px; background: #f8fafc; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #e2e8f0; position: relative;">
+            <div
+              style="width: 80%; height: 80%; background: #e2e8f0; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; color: #64748b; font-weight: bold; border: 2px dashed #cbd5e1; text-align: center;">
+              [여기에 Step 3 스크린샷 삽입 - 800x400 권장]<br>
+              <span style="font-size:12px; font-weight: normal; margin-top:8px;">가격/결제 페이지 또는 AI리뷰 요약 캡처를 추가해
+                주세요.</span>
+            </div>
+          </div>
+          <div style="padding: 40px; text-align: center;">
+            <div
+              style="display: inline-block; padding: 4px 12px; background: #e0e7ff; color: #4338ca; border-radius: 20px; font-size: 13px; font-weight: 700; margin-bottom: 12px;">
+              STEP 3</div>
+            <h3 style="font-size: 22px; font-weight: 800; color: #1e293b; margin-bottom: 12px;"
+              data-i18n="tutorial.step3_title">Pro 버전을 통한 무제한 분석</h3>
+            <p style="font-size: 15px; color: #475569; line-height: 1.6; max-width: 600px; margin: 0 auto;"
+              data-i18n="tutorial.step3_desc">Free 버전을 통해 경험해보신 후, Pro 플랜으로 업그레이드하여 AI 브랜드 리뷰 마이닝 및 제한 없는 상세 상품 데이터 조회를
+              시작하세요. <strong>Pro 회원에게는 소싱 수수료 감면 혜택</strong>도 주어집니다.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Navigation Chevrons -->
+      <button id="tutorialPrevBtn"
+        style="position: absolute; top: 180px; left: 20px; width: 44px; height: 44px; border-radius: 50%; background: #fff; border: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #475569; transition: all 0.2s; z-index: 10; display: none;">&#10094;</button>
+      <button id="tutorialNextBtn"
+        style="position: absolute; top: 180px; right: 20px; width: 44px; height: 44px; border-radius: 50%; background: #fff; border: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #475569; transition: all 0.2s; z-index: 10;">&#10095;</button>
+
+      <!-- Bottom Bar -->
+      <div
+        style="padding: 20px 30px; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #fff;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+          <label
+            style="font-size: 13px; color: #64748b; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <input type="checkbox" id="dontShowTutorial" style="accent-color: #4f46e5; width: 16px; height: 16px;">
+            <span data-i18n="tutorial.dont_show">다시 보지 않기</span>
+          </label>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 20px;">
+          <!-- Dots -->
+          <div id="tutorialDots" style="display: flex; gap: 8px;">
+            <div class="dot active"
+              style="width: 10px; height: 10px; border-radius: 50%; background: #4f46e5; transition: background 0.3s;">
+            </div>
+            <div class="dot"
+              style="width: 10px; height: 10px; border-radius: 50%; background: #cbd5e1; transition: background 0.3s;">
+            </div>
+            <div class="dot"
+              style="width: 10px; height: 10px; border-radius: 50%; background: #cbd5e1; transition: background 0.3s;">
+            </div>
+          </div>
+          <button id="tutorialPrimaryBtn" class="btn-primary"
+            style="padding: 10px 24px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; border: none; background: #4f46e5; color: white; width: 160px;"
+            data-i18n="tutorial.next_btn">다음 (Next)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/main.js?v=27"></script>
+  <!-- Reliable body[data-platform] setter independent of ES module system -->
+  <script>
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('.platform-btn');
+      if (btn && btn.dataset.platform) {
+        document.body.dataset.platform = btn.dataset.platform;
+      }
+    });
+  </script>
+</body>
+
+</html>

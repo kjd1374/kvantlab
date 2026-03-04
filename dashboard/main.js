@@ -650,15 +650,24 @@ async function loadCategories() {
       container.appendChild(btn);
     });
 
-    // Musinsa: insert gender filter row below categories
+    // Musinsa: insert gender filter row in the section-header (right side of title)
     const existingGenderRow = document.querySelector('.musinsa-gender-row');
     if (existingGenderRow) existingGenderRow.remove();
     if (state.activeBridge && state.activeBridge.renderGenderRow) {
-      const filterBar = container.closest('.filter-bar');
-      if (filterBar) {
+      const sectionHeader = document.querySelector('#tab-all .section-header');
+      if (sectionHeader) {
+        sectionHeader.style.position = 'relative';
         const genderDiv = document.createElement('div');
         genderDiv.innerHTML = state.activeBridge.renderGenderRow(state);
-        filterBar.after(genderDiv.firstElementChild);
+        const genderEl = genderDiv.firstElementChild;
+        if (genderEl) {
+          genderEl.style.position = 'absolute';
+          genderEl.style.right = '0';
+          genderEl.style.top = '50%';
+          genderEl.style.transform = 'translateY(-50%)';
+          genderEl.style.margin = '0';
+          sectionHeader.appendChild(genderEl);
+        }
       }
     }
 

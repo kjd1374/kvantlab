@@ -1,0 +1,43 @@
+/* Dedicated styling for the 6-platform switcher cards */
+.platform-switcher {
+    display: flex !important;
+    background: transparent !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    margin-bottom: 20px !important;
+}
+
+.platform-btn {
+    padding: 12px 24px !important;
+    border: 1px solid #e0e0e0 !important;
+    background: #ffffff !important;
+    color: #666 !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    border-radius: 12px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    min-width: 140px !important;
+    text-align: center !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.platform-btn:hover {
+    border-color: #007aff !important;
+    background: #f9f9f9 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.platform-btn.active {
+    background: #ffffff !important;
+    color: #000 !important;
+    border: 2px solid #000 !important;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15) !important;
+    transform: translateY(-2px) !important;
+}

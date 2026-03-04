@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-Vant - 글로벌 K-뷰티/패션 트렌드 인텔리전스 플랫폼</title>
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="K-뷰티, K-패션 이커머스 셀러와 브랜드를 위한 글로벌 트렌드 AI 분석 플랫폼. 올리브영, 무신사, 쇼피 등 데이터를 실시간으로 분석합니다.">
+    <meta name="keywords"
+        content="K-beauty trend, K-fashion, 이커머스 트렌드, 글로벌 셀러, 올리브영, 무신사, 쇼피, tiktok trend, kvant, k-vant">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="K-Vant">
+    <!-- Open Graph (SNS/카카오 공유) -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="K-Vant - 글로벌 K-트렌드 인텔리전스">
+    <meta property="og:description" content="이커머스 셀러를 위한 AI 기반 글로벌 뷰티/패션 트렌드 분석 플랫폼. 1개월 무료 체험.">
+    <meta property="og:url" content="https://kvant.kr">
+    <meta property="og:image" content="https://kvant.kr/public/logo_kvant.png">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="K-Vant - 글로벌 K-트렌드 인텔리전스">
+    <meta name="twitter:description" content="이커머스 셀러를 위한 AI 기반 글로벌 뷰티/패션 트렌드 분석 플랫폼.">
+    <!-- Google Analytics 4 (GA4) - Replace G-XXXXXXXXXX with your Measurement ID -->
+    <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script> -->
+    <!-- Meta (Facebook) Pixel - Replace XXXXXXXXXXXXXXX with your Pixel ID -->
+    <!-- <script>
+      !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', 'XXXXXXXXXXXXXXX');
+      fbq('track', 'PageView');
+    </script> -->
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Landing Page Specific Styles */
+        body {
+            --bg-main: #0a0a0a;
+            --bg-card: #111111;
+            --border-color: #333333;
+            --text-main: #ffffff;
+            --text-secondary: #aaaaaa;
+            --accent-blue: #40c4ff;
+
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Pretendard', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .landing-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: rgba(26, 26, 26, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .landing-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hero-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 100px 20px;
+            background: radial-gradient(circle at center, rgba(64, 196, 255, 0.1) 0%, transparent 70%);
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 24px;
+            background: linear-gradient(90deg, #ffffff, var(--accent-blue));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        .hero-cta {
+            padding: 18px 40px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: var(--accent-blue);
+            color: #000;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(64, 196, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .hero-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(64, 196, 255, 0.6);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto 100px;
+            padding: 0 20px;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: left;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-blue);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        .feature-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #ffffff;
+        }
+
+        .feature-desc {
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* Lang Selector Styles */
+        .lang-selector {
+            position: relative;
+        }
+
+        .header-icon-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-icon-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .lang-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 8px;
+            min-width: 150px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 1000;
+        }
+
+        .lang-dropdown.show {
+            display: flex;
+        }
+
+        .lang-item {
+            padding: 10px 12px;
+            color: #ddd;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        .lang-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        /* Override Auth Buttons for Dark Theme */
+        .header-auth .btn-login {
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            padding: 8px 16px !important;
+            border-radius: 8px !important;
+            font-size: 0.95rem !important;
+            background: rgba(255, 255, 255, 0.05) !important;
+            font-weight: 600 !important;
+        }
+
+        .header-auth .btn-login:hover {
+            background: rgba(255, 255, 255, 0.15) !important;
+            border-color: rgba(255, 255, 255, 0.5) !important;
+        }
+
+        .header-auth .user-dropdown {
+            background: #1a1a1a !important;
+            border: 1px solid #333 !important;
+        }
+
+        .header-auth .dropdown-item {
+            color: #fff !important;
+        }
+
+        .header-auth .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        /* Announcements Section */
+        .announcements-section {
+            max-width: 800px;
+            margin: 0 auto 100px;
+            padding: 0 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .announcement-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .announcement-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        .announcement-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .ai-badge {
+            background: rgba(144, 202, 249, 0.15);
+            color: #90caf9;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 12px;
+        }
+
+        .a-title {
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .a-date {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="landing-header">
+        <div class="landing-logo">
+            <img src="/public/logo_kvant.png" alt="K-Vant Logo"
+                style="height: 32px; margin-right: 10px; border-radius: 6px; vertical-align: middle;">
+            <span>K-Vant</span>
+        </div>
+        <div class="header-right">
+            <!-- Language Switcher -->
+            <div class="lang-selector">
+                <button class="header-icon-btn" id="langBtn" title="Change Language">
+                    <span id="currentLangIcon">🌐</span>
+                </button>
+                <div class="lang-dropdown" id="langDropdown">
+                    <div class="lang-item" data-lang="ko"><span class="lang-flag">🇰🇷</span> South Korea</div>
+                    <div class="lang-item" data-lang="en"><span class="lang-flag">🇺🇸</span> English</div>
+                    <div class="lang-item" data-lang="vi"><span class="lang-flag">🇻🇳</span> Tiếng Việt</div>
+                    <div class="lang-item" data-lang="th"><span class="lang-flag">🇹🇭</span> ไทย</div>
+                    <div class="lang-item" data-lang="id"><span class="lang-flag">🇮🇩</span> Indonesia</div>
+                    <div class="lang-item" data-lang="ja"><span class="lang-flag">🇯🇵</span> 日本語</div>
+                </div>
+            </div>
+            <!-- Auth buttons will be injected here by auth.js -->
+        </div>
+    </header>
+
+    <section class="hero-section">
+        <h1 class="hero-title">
+            <span data-i18n="landing.hero_title_1">이커머스 트렌드의 모든 것</span><br>
+            <span data-i18n="landing.hero_title_2">AI가 분석하는 인사이트</span>
+        </h1>
+        <p class="hero-subtitle">
+            <span data-i18n="landing.hero_subtitle_1">올리브영, 무신사, 에이블리의 실시간 랭킹부터 글로벌 K-뷰티 트렌드까지.</span><br>
+            <span data-i18n="landing.hero_subtitle_2">K-Vant에서 가장 빠르고 정확한 커머스 지표를 확인하세요.</span>
+        </p>
+        <button class="hero-cta" id="startTrialBtn" data-i18n="common.login_signup">1개월 무료로 시작하기</button>
+    </section>
+
+    <section class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon">🇰🇷</div>
+            <div class="feature-title" data-i18n="landing.feature1_title">핵심 커머스 랭킹 종합</div>
+            <div class="feature-desc" data-i18n="landing.feature1_desc">올리브영, 에이블리, 무신사, 신세계 등 국내 최고 플랫폼의 일간 순위를 한 곳에서
+                손쉽게 비교 기획하세요.</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <div class="feature-title" data-i18n="landing.feature2_title">Gemini AI 리뷰 마이닝</div>
+            <div class="feature-desc" data-i18n="landing.feature2_desc">수천 개의 실사용 리뷰를 AI가 요약하여 감성, 효능, 단점을 크로스 분석해
+                제공합니다.</div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🌏</div>
+            <div class="feature-title" data-i18n="landing.feature3_title">글로벌 실구매 트렌드 추적</div>
+            <div class="feature-desc" data-i18n="landing.feature3_desc">동남아시아 뷰티 인플루언서 및 구글 검색 빅데이터를 분석하여 해외 K-Trend를
+                발굴합니다.</div>
+        </div>
+    </section>
+
+    <section class="announcements-section">
+        <h2 class="section-title"><span>📢</span> <span data-i18n="landing.announcements_title">최신 업데이트 및 리포트</span>
+        </h2>
+        <div class="announcement-list" id="announcementList">
+            <!-- Announcements dynamically loaded here -->
+        </div>
+    </section>
+
+    <footer>
+        <p data-i18n="common.footer_text">K-Trend Intelligence © 2026 · Global K-Beauty & Fashion Intelligence ·
+            Analytics for Global Sellers · K-Vant</p>
+        <div class="footer-links"
+            style="margin-top: 10px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+            <a href="/terms.html" data-i18n-href="common.terms_url"
+                style="color: var(--text-secondary); font-size: 13px; text-decoration: none;">이용약관</a>
+            <a href="/privacy.html" data-i18n-href="common.privacy_url"
+                style="color: var(--text-secondary); font-size: 13px; text-decoration: none;">개인정보
+                처리방침</a>
+            <a href="mailto:contact@k-vant.kr"
+                style="color: var(--text-secondary); font-size: 13px; text-decoration: none;">문의하기</a>
+        </div>
+    </footer>
+
+    <!-- Firebase / Supabase SDKs -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module">
+        import { setupAuthUI } from './src/auth.js?v=4';
+        import { getSession, fetchPublishedAnnouncements } from './supabase.js';
+        import { i18n } from './src/i18n.js?v=4';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check session. If logged in, redirect to app.html
+            const session = await getSession();
+            if (session) {
+                window.location.href = '/app.html';
+                return;
+            }
+
+            // Init i18n
+            await i18n.init();
+
+            // Language Selector Logic
+            const langBtn = document.getElementById('langBtn');
+            const langDropdown = document.getElementById('langDropdown');
+            const langItems = document.querySelectorAll('.lang-item');
+
+            langBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                langDropdown.classList.toggle('show');
+            });
+
+            document.addEventListener('click', () => {
+                langDropdown.classList.remove('show');
+            });
+
+            langItems.forEach(item => {
+                item.addEventListener('click', async () => {
+                    const lang = item.dataset.lang;
+                    await i18n.setLanguage(lang);
+                    langDropdown.classList.remove('show');
+                });
+            });
+
+            window.addEventListener('languageChanged', () => {
+                // Re-render auth elements so dynamic strings from auth.js are translated
+                setupAuthUI();
+
+                // Update CTA button manually as fallback if data-i18n is delayed
+                const ctaBtn = document.getElementById('startTrialBtn');
+                if (ctaBtn && window.t) {
+                    ctaBtn.textContent = window.t('common.login_signup');
+                }
+
+                // Re-fetch announcements to apply translations to dynamic JS data
+                loadAnnouncements();
+            });
+
+            // Init Auth UI for Login/Signup
+            setupAuthUI();
+
+            // Setup CTA Button
+            document.getElementById('startTrialBtn').addEventListener('click', () => {
+                const loginBtn = document.getElementById('loginOpenBtn');
+                if (loginBtn) {
+                    loginBtn.click();
+                    // Optional: auto-switch to signup tab
+                    setTimeout(() => {
+                        const signupTab = document.querySelector('.auth-tab[data-mode="signup"]');
+                        if (signupTab) signupTab.click();
+                    }, 50);
+                }
+            });
+
+            // Fetch Announcements
+            async function loadAnnouncements() {
+                const listEl = document.getElementById('announcementList');
+                try {
+                    const { data, error } = await fetchPublishedAnnouncements(3);
+                    if (error || !data || data.length === 0) {
+                        const emptyMsg = window.t ? window.t('landing.empty_announcements') : '등록된 공지사항이 없습니다.';
+                        listEl.innerHTML = `<div style="text-align:center; padding: 20px; color: #888;">${emptyMsg}</div>`;
+                        return;
+                    }
+
+                    listEl.innerHTML = data.map(item => {
+                        const badgeText = item.type === 'report' ? (window.t ? window.t('landing.announcement_report') : '리포트')
+                            : item.type === 'update' ? (window.t ? window.t('landing.announcement_update') : '업데이트')
+                                : (window.t ? window.t('landing.announcement_notice') : '공지사항');
+                        const langCode = window.i18n ? (window.i18n.currentLang === 'en' ? 'en-US' : window.i18n.currentLang) : 'ko-KR';
+                        const dateText = new Date(item.created_at).toLocaleDateString(langCode);
+
+                        return `
+                            <div class="announcement-item" onclick="alert('공지 상세 보기 구현 예정: ' + '${item.title}')">
+                                <div>
+                                    <span class="ai-badge">${badgeText}</span>
+                                    <span class="a-title">${item.title}</span>
+                                </div>
+                                <span class="a-date">${dateText}</span>
+                            </div>
+                        `;
+                    }).join('');
+                } catch (e) {
+                    listEl.innerHTML = '<div style="text-align:center; padding: 20px; color: #888;">공지사항을 불러오지 못했습니다.</div>';
+                }
+            }
+            loadAnnouncements();
+        });
+    </script>
+</body>
+
+</html>
