@@ -73,10 +73,6 @@ def save_product_and_rank(item, rank, category_code):
         price = int(str(item['price']).replace(',', '')) if item['price'] else 0
         image_url = item['image']
         url = item['url']
-        
-        # New fields
-        review_count = item.get('review_count', 0)
-        review_rating = item.get('review_rating', 0.0)
 
         # Translate brand
         brand_en = get_english_brand(brand) if brand else ""
@@ -94,11 +90,6 @@ def save_product_and_rank(item, rank, category_code):
             "url": url,
             "updated_at": datetime.now().isoformat()
         }
-        
-        if review_count > 0:
-            product_record["review_count"] = review_count
-        if review_rating > 0:
-            product_record["review_rating"] = review_rating
 
         res = requests.post(
             f"{SUPABASE_URL}/rest/v1/products_master",
@@ -440,19 +431,14 @@ async def oliveyoung_crawl():
         except Exception as e:
             print(f"  ❌ Error processing categories: {e}")
         
-        # Phase 2: Update review data for products with missing reviews
-        try:
-            reviews_updated = await update_reviews_for_products(page, limit=50)
-        except Exception as e:
-            print(f"  ❌ Error updating reviews: {e}")
+        # Review data is now collected separately by review_collector.py (AI Vision)
             
         await browser.close()
         
     duration = str(datetime.now() - start_time)
-    print(f"[{datetime.now()}] 크롤링 종료. 총 {total_saved}개 저장, {reviews_updated}개 리뷰 업데이트. 소요시간: {duration}")
+    print(f"[{datetime.now()}] 크롤링 종료. 총 {total_saved}개 저장. 소요시간: {duration}")
     log_crawl("completed", {
         "total_saved": total_saved, 
-        "reviews_updated": reviews_updated,
         "duration": duration
     })
 

@@ -102,25 +102,6 @@ def musinsa_crawl():
                         link_url = f"https://www.musinsa.com/products/{product_id}"
                         rank = idx + 1
                         
-                        # Extract reviews from analytic payload if available
-                        review_count = 0
-                        review_rating = 0.0
-                        amp_payload = item.get("onClick", {}).get("eventLog", {}).get("amplitude", {}).get("payload", {})
-                        raw_rc = amp_payload.get("reviewCount")
-                        raw_score = amp_payload.get("reviewScore")
-                        try:
-                            if raw_rc:
-                                review_count = int(float(str(raw_rc)))
-                        except (ValueError, TypeError):
-                            pass
-                        try:
-                            if raw_score:
-                                score_val = int(float(str(raw_score)))
-                                if 0 < score_val <= 100:
-                                    review_rating = round(score_val / 20.0, 1)
-                        except (ValueError, TypeError):
-                            pass
-                        
                         if title and product_id:
                             brand_en = get_english_brand(brand) if brand else ""
                             product_record = {
@@ -136,11 +117,7 @@ def musinsa_crawl():
                                 "tags": {"gender": "male" if gender == 'M' else "female"},
                                 "updated_at": datetime.now().isoformat()
                             }
-                            # Only include review data if > 0 to avoid overwriting existing data
-                            if review_count > 0:
-                                product_record["review_count"] = review_count
-                            if review_rating > 0:
-                                product_record["review_rating"] = review_rating
+                            # Review data is now collected by review_collector.py (AI Vision)
                             if cat != '000' and cat in category_map:
                                 product_record["category"] = category_map[cat]
                             

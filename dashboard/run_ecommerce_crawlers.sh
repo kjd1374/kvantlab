@@ -30,6 +30,11 @@ echo "➡️ [$(date)] Starting SSG Crawler..." >> $LOG_FILE
 $VENV_PYTHON -u $CRAWLER_DIR/ssg_crawler.py >> $LOG_FILE 2>&1
 echo "✅ [$(date)] SSG Crawler Finished." >> $LOG_FILE
 
+# 5. AI Vision Review Collector (runs after all crawlers)
+echo "➡️ [$(date)] Starting AI Vision Review Collector..." >> $LOG_FILE
+$VENV_PYTHON -u $CRAWLER_DIR/review_collector.py >> $LOG_FILE 2>&1
+echo "✅ [$(date)] AI Vision Review Collector Finished." >> $LOG_FILE
+
 echo "========================================================" >> $LOG_FILE
 echo "🎉 [$(date)] Daily E-commerce Crawling Pipeline Completed!" >> $LOG_FILE
 echo "========================================================" >> $LOG_FILE

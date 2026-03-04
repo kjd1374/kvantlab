@@ -1000,8 +1000,8 @@ function renderTableRow(p, index) {
         </td>
         <td><span class="product-brand" data-brand-pid="${p.product_id || p.id}">${brand}</span></td>
         <td>${formatPrice(p.price || p.price_current)}</td>
-        <td>${p.review_count > 0 ? formatNumber(p.review_count) : '0'}</td>
-        <td>${p.review_rating > 0 && !isNaN(p.review_rating) ? p.review_rating : '-'}</td>
+        <td>${p.review_count > 0 ? formatNumber(p.review_count) : '-'}</td>
+        <td>${p.review_rating > 5 ? '❤️ ' + formatNumber(p.review_rating) : (p.review_rating > 0 && !isNaN(p.review_rating) ? p.review_rating : '-')}</td>
         <td style="text-align:center;">${rankChangeHtml}</td>
       </tr>
     `;
@@ -1047,8 +1047,8 @@ async function loadSemanticResults() {
             <td>${name}</td>
             <td>${brand}</td>
             <td>${price}</td>
-            <td>${p.review_count > 0 ? formatNumber(p.review_count) : '0'}</td>
-            <td>${p.review_rating > 0 && !isNaN(p.review_rating) ? p.review_rating : '-'}</td>
+            <td>${p.review_count > 0 ? formatNumber(p.review_count) : '-'}</td>
+            <td>${p.review_rating > 5 ? '❤️ ' + formatNumber(p.review_rating) : (p.review_rating > 0 && !isNaN(p.review_rating) ? p.review_rating : '-')}</td>
             <td style="text-align:center;"><span style="color:#999;">—</span></td>
           </tr>
         `;

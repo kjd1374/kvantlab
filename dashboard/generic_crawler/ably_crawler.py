@@ -99,13 +99,6 @@ def save_product_and_rank(item, rank, category_code, category_name):
             "url": url,
             "updated_at": datetime.now().isoformat()
         }
-        
-        review_count = item.get('review_count', 0)
-        review_rating = item.get('review_rating', 0.0)
-        if review_count and int(review_count) > 0:
-            product_record["review_count"] = int(review_count)
-        if review_rating and float(review_rating) > 0:
-            product_record["review_rating"] = float(review_rating)
 
         res = requests.post(
             f"{SUPABASE_URL}/rest/v1/products_master",

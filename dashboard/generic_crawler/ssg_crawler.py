@@ -54,6 +54,7 @@ def log_crawl(status, metadata=None):
 
 def save_product_and_rank(product_id, name, brand, price, image_url, url, rank, category_code, category_name):
     """products_master에 upsert 후, daily_rankings_v2에 랭킹 저장"""
+    # Review data is now collected by review_collector.py (AI Vision)
     brand_en = get_english_brand(brand) if brand else ""
 
     product_record = {
@@ -66,7 +67,7 @@ def save_product_and_rank(product_id, name, brand, price, image_url, url, rank, 
         "price": int(price) if price else None,
         "image_url": image_url,
         "url": url,
-        "category": category_code, # 검색용 추가
+        "category": category_code,
         "updated_at": datetime.now().isoformat()
     }
 
