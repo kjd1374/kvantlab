@@ -3329,7 +3329,7 @@ function translateNotification(title, message, lang) {
   const translations = {
     en: {
       '📦 견적 출발 안내': '📦 Quote Preparation Started',
-      '💰 견적 도착 안내': '💰 Quote Ready',
+      '📦 견적 도착 안내': '📦 Quote Ready',
       '✅ 발주/배송 환료': '✅ Order/Delivery Completed',
       '❌ 요청 취소 안내': '❌ Request Canceled',
       '요청하신 소싱 제품의 견적 산출이 시작되었습니다.': 'We have started calculating the quote for the requested sourcing products.',
@@ -3340,7 +3340,7 @@ function translateNotification(title, message, lang) {
     },
     ja: {
       '📦 견적 출발 안내': '📦 見積開始の案内',
-      '💰 견적 도착 안내': '💰 見積完了の案内',
+      '📦 견적 도착 안내': '📦 見積完了の案内',
       '✅ 발주/배송 환료': '✅ 発注/配送完了',
       '❌ 요청 취소 안내': '❌ リクエストキャンセル案内',
       '요청하신 소싱 제품의 견적 산출이 시작되었습니다.': 'リクエストされたソーシング製品の見積算出が開始されました。',
@@ -3351,14 +3351,14 @@ function translateNotification(title, message, lang) {
     },
     th: {
       '📦 견적 출발 안내': '📦 แจ้งเริ่มดำเนินการประเมินราคา',
-      '💰 견적 도착 안내': '💰 แจ้งการประเมินราคาเสร็จสิ้น',
+      '📦 견적 도착 안내': '📦 แจ้งการประเมินราคาเสร็จสิ้น',
       '✅ 발주/배송 환료': '✅ สั่งซื้อ/จัดส่งเสร็จสมบูรณ์',
       '❌ 요청 취소 안내': '❌ แจ้งยกเลิกคำขอ',
       '새로운 알림이 없습니다.': 'ไม่มีการแจ้งเตือนใหม่'
     },
     vi: {
       '📦 견적 출발 안내': '📦 Thông báo bắt đầu báo giá',
-      '💰 견적 도착 안내': '💰 Thông báo báo giá đã sẵn sàng',
+      '📦 견적 도착 안내': '📦 Thông báo báo giá đã sẵn sàng',
       '✅ 발주/배송 환료': '✅ Đơn hàng/Giao hàng hoàn tất',
       '❌ 요청 취소 안내': '❌ Thông báo hủy yêu cầu',
       '새로운 알림이 없습니다.': 'Không có thông báo mới'
