@@ -122,22 +122,38 @@
             <th style="padding: 15px 20px; font-weight: 600; color: var(--text-secondary); width: 25%;">등록일</th>
           </tr>
         </thead>
-        <tbody>
-          <tr style="border-bottom: 1px solid var(--border);">
-            <td style="padding: 20px; color: var(--accent-blue); font-weight: 600; font-size: 14px;">[공지]</td>
-            <td style="padding: 20px; font-weight: 500; color: var(--text-primary);">K-Vant 베타 서비스 오픈 안내</td>
-            <td style="padding: 20px; color: var(--text-secondary); font-size: 14px;">2026. 03. 01</td>
-          </tr>
-          <tr style="border-bottom: 1px solid var(--border);">
-            <td style="padding: 20px; color: #00b894; font-weight: 600; font-size: 14px;">[업데이트]</td>
-            <td style="padding: 20px; font-weight: 500; color: var(--text-primary);">다국어 지원(EN, JA, TH, VI, ID) 및 결제 기능
-              추가</td>
-            <td style="padding: 20px; color: var(--text-secondary); font-size: 14px;">2026. 03. 04</td>
+        <tbody id="noticeTableBody">
+          <tr>
+            <td colspan="3" style="text-align:center; padding: 40px; color: #888;">데이터를 불러오는 중...</td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="noticePagination"
+      style="margin-top: 30px; display: flex; justify-content: center; gap: 8px;">
+      <!-- Pagination buttons will be generated here -->
+    </div>
   </main>
+
+  <!-- Notice Detail Modal -->
+  <div class="src-modal-overlay" id="noticeDetailOverlay"
+    onclick="if(event.target===this) window.__closeNoticeDetail()">
+    <div class="src-modal-panel" style="max-width: 600px;">
+      <button class="src-modal-close" onclick="window.__closeNoticeDetail()">&times;</button>
+      <div id="noticeDetailContent" style="padding: 20px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+          <span id="ndBadge" style="padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;"></span>
+          <span id="ndDate" style="color:#888; font-size:13px;"></span>
+        </div>
+        <h3 id="ndTitle"
+          style="margin-top:0; margin-bottom:20px; font-size:20px; color:var(--text-primary); line-height:1.4;"></h3>
+        <div id="ndBody" style="font-size:15px; line-height:1.6; color:var(--text-secondary); white-space:pre-wrap;">
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Product Detail Modal -->
   <div class="modal-overlay" id="modalOverlay">
@@ -501,6 +517,135 @@
       }
     });
   </script>
+</body>
+
+</html>
+<script type="module">
+  import { getSession } from './supabase.js';
+  import { fetchPublishedAnnouncements } from './supabase.js';
+
+  let allNotices = [];
+  let currentPage = 1;
+  const itemsPerPage = 7;
+  let currentLang = localStorage.getItem('appLang') || 'ko';
+
+  async function loadNotices() {
+    try {
+      const data = await fetchPublishedAnnouncements(100, 0);
+      allNotices = data || [];
+      renderNoticePage(1);
+    } catch (err) {
+      console.error('Failed to load notices', err);
+      document.getElementById('noticeTableBody').innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 40px; color: #dc3545;">데이터를 불러오는 데 실패했습니다.</td></tr>`;
+    }
+  }
+
+  function renderNoticePage(page) {
+    const tbody = document.getElementById('noticeTableBody');
+    const start = (page - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const paginatedData = allNotices.slice(start, end);
+
+    if (paginatedData.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 40px; color: #888;">등록된 공지사항이 없습니다.</td></tr>`;
+      renderPagination();
+      return;
+    }
+
+    let html = '';
+    paginatedData.forEach(item => {
+      const t = item.type || 'NOTICE';
+      let typeText = t === 'UPDATE' ? '[업데이트]' : (t === 'REPORT' ? '[리포트]' : '[공지]');
+      let typeColor = t === 'UPDATE' ? '#00b894' : (t === 'REPORT' ? '#6c5ce7' : 'var(--accent-blue)');
+
+      const i18nTitleMap = typeof item.title_i18n === 'string' ? JSON.parse(item.title_i18n || '{}') : (item.title_i18n || {});
+      let displayTitle = i18nTitleMap[currentLang] || item.title;
+
+      const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '';
+      const safeItemStr = encodeURIComponent(JSON.stringify(item));
+
+      html += `
+          <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s; cursor: pointer;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'" onclick="window.__openNoticeDetail('${safeItemStr}')">
+            <td style="padding: 20px; color: ${typeColor}; font-weight: 600; font-size: 14px; white-space: nowrap;">${typeText}</td>
+            <td style="padding: 20px; font-weight: 500; color: var(--text-primary); cursor: pointer;">${escapeHtml(displayTitle)}</td>
+            <td style="padding: 20px; color: var(--text-secondary); font-size: 14px;">${dateStr}</td>
+          </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+
+    currentPage = page;
+    renderPagination();
+  }
+
+  function renderPagination() {
+    const pgBox = document.getElementById('noticePagination');
+    pgBox.innerHTML = '';
+    const totalPages = Math.ceil(allNotices.length / itemsPerPage);
+    if (totalPages <= 1) return;
+
+    for (let i = 1; i <= totalPages; i++) {
+      const btn = document.createElement('button');
+      btn.innerText = i;
+      btn.style.cssText = `
+          padding: 6px 12px;
+          border: 1px solid var(--border);
+          background: ${i === currentPage ? 'var(--accent-blue)' : '#fff'};
+          color: ${i === currentPage ? '#fff' : 'var(--text-primary)'};
+          border-radius: 6px;
+          cursor: pointer;
+          font-weight: 500;
+        `;
+      btn.onclick = () => renderNoticePage(i);
+      pgBox.appendChild(btn);
+    }
+  }
+
+  window.__openNoticeDetail = function (itemStrEncoded) {
+    const item = JSON.parse(decodeURIComponent(itemStrEncoded));
+    const t = item.type || 'NOTICE';
+    let typeText = t === 'UPDATE' ? '업데이트' : (t === 'REPORT' ? '리포트' : '공지');
+    let typeColor = t === 'UPDATE' ? '#00b894' : (t === 'REPORT' ? '#6c5ce7' : 'var(--accent-blue)');
+
+    const i18nTitleMap = typeof item.title_i18n === 'string' ? JSON.parse(item.title_i18n || '{}') : (item.title_i18n || {});
+    const i18nContentMap = typeof item.content_i18n === 'string' ? JSON.parse(item.content_i18n || '{}') : (item.content_i18n || {});
+
+    const displayTitle = i18nTitleMap[currentLang] || item.title;
+    const displayContent = i18nContentMap[currentLang] || item.content;
+    const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString() : '';
+
+    document.getElementById('ndBadge').innerText = typeText;
+    document.getElementById('ndBadge').style.background = typeColor + '20';
+    document.getElementById('ndBadge').style.color = typeColor;
+
+    document.getElementById('ndDate').innerText = dateStr;
+    document.getElementById('ndTitle').innerText = displayTitle;
+    document.getElementById('ndBody').innerHTML = (displayContent || '').replace(/\n/g, '<br>');
+
+    document.getElementById('noticeDetailOverlay').style.display = 'flex';
+  };
+
+  window.__closeNoticeDetail = function () {
+    document.getElementById('noticeDetailOverlay').style.display = 'none';
+  };
+
+  function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return String(unsafe).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+  }
+
+  // Initialize
+  document.addEventListener("DOMContentLoaded", async () => {
+    const langInterval = setInterval(() => {
+      const newLang = localStorage.getItem('appLang') || 'ko';
+      if (newLang !== currentLang) {
+        currentLang = newLang;
+        renderNoticePage(currentPage); // Re-render if lang changes
+      }
+    }, 500);
+    loadNotices();
+  });
+</script>
 </body>
 
 </html>
