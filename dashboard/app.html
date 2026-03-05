@@ -379,21 +379,23 @@
           <div class="src-field-label" data-i18n="sourcing.field_url">상품 URL</div>
           <div class="src-field-hint" data-i18n="sourcing.field_url_hint">올리브영, 무신사, 네이버쇼핑, 기타 쇼핑몰 링크 모두 가능해요.</div>
           <div id="srcUrlList">
-            <div class="src-url-row">
-              <input type="url" class="src-url-input" placeholder="https://www.oliveyoung.co.kr/..."
-                oninput="window.__validateSnsInput(this)">
-              <button class="src-btn-add-url" onclick="window.__srcAddUrl()" data-i18n="sourcing.btn_add_url">+ URL
-                추가</button>
-            </div>
-          </div>
-          <div class="src-row-pair" style="margin-top:14px;">
-            <div class="src-field-group" style="flex:0 0 140px;">
-              <div class="src-field-label" data-i18n="sourcing.field_qty">수량</div>
-              <input type="number" id="srcDirectQty" class="src-input-sm" value="1" min="1">
-            </div>
-            <div class="src-field-group" style="flex:1;">
-              <div class="src-field-label" data-i18n="sourcing.field_memo">추가 요청사항 (선택)</div>
-              <input type="text" id="srcDirectMemo" class="src-input-sm" placeholder="예: 벌크 구매 시 단가 협의 가능한지 확인 부탁드려요.">
+            <div class="src-url-row-block">
+              <div class="src-url-row">
+                <input type="url" class="src-url-input" data-i18n="sourcing.field_url_placeholder"
+                  placeholder="https://www.oliveyoung.co.kr/..." oninput="window.__validateSnsInput(this)">
+                <button class="src-btn-add-url" onclick="window.__srcAddUrl()" data-i18n="sourcing.btn_add_url">+ URL
+                  추가</button>
+              </div>
+              <div class="src-row-pair" style="margin-top:8px;">
+                <div class="src-field-group" style="flex:0 0 100px;">
+                  <input type="number" class="src-input-sm src-url-qty" value="1" min="1" data-i18n="sourcing.field_qty"
+                    placeholder="1">
+                </div>
+                <div class="src-field-group" style="flex:1;">
+                  <input type="text" class="src-input-sm src-url-memo" data-i18n="sourcing.field_memo_placeholder"
+                    placeholder="예: 벌크 구매 시 단가 협의 가능한지 확인 부탁드려요.">
+                </div>
+              </div>
             </div>
           </div>
         </div>

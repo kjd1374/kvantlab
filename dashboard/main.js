@@ -4319,24 +4319,6 @@ if (typeof _origApply === 'function') {
 
 window.submitQuoteRequest = async function () {
   const btn = document.getElementById('btnSubmitQuote');
-  const msgInput = document.getElementById('quoteMessage');
-  let message = msgInput ? msgInput.value.trim() : '';
-
-  // Collect and validate SNS links
-  const snsLinks = [];
-  let hasInvalidLink = false;
-  document.querySelectorAll('.quote-sns-input').forEach(input => {
-    const v = input.value.trim();
-    if (v) {
-      const valid = window.__validateSnsInput(input);
-      if (!valid) hasInvalidLink = true;
-      else snsLinks.push(v);
-    }
-  });
-  if (hasInvalidLink) {
-    alert('⚠️ 올바른 URL 형식이 아닌 링크가 있습니다. 확인 후 다시 시도해주세요.');
-    return;
-  }
 
   if (btn) {
     btn.disabled = true;
@@ -4347,58 +4329,112 @@ window.submitQuoteRequest = async function () {
     const session = getSession();
     if (!session) throw new Error(window.t('sourcing.alert_login'));
 
-    // Image Uploading Disabled by User Request
-    const imageUrls = [];
-    /*
-    if (__quoteImageFiles.length > 0) {
-      const { createClient: mkClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
-      const _sb = mkClient('...', '...'); 
-      for (const file of __quoteImageFiles) {
-        const ext = file.name.split('.').pop();
-        const path = `quotes/${session.user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: upErr } = await _sb.storage.from('search-request-images').upload(path, file, { upsert: true });
-        if (upErr) console.warn('Image upload warning:', upErr.message);
-        else {
-          const { data: { publicUrl } } = _sb.storage.from('search-request-images').getPublicUrl(path);
-          imageUrls.push(publicUrl);
-        }
-      }
-    }
-    */
-
-    // SNS links and image URLs are sent as separate fields (not appended to message)
-
-    // Use global items
-    const items = window.__currentQuoteItems || [];
-    // Map qty to quantity for legacy support
-    items.forEach(item => {
-      if (item.qty && !item.quantity) item.quantity = item.qty;
+    // Collect items from cart
+    const cartItems = (window.__srcCartItems || []).map(item => {
+      const card = document.querySelector(`.src-cart-card[data-product-id="${item.product_id}"]`);
+      const qtyInput = card?.querySelector('.src-cart-qty');
+      const memoInput = card?.querySelector('.src-cart-memo');
+      return {
+        product_id: item.product_id,
+        name: item.name,
+        brand: item.brand || '',
+        image_url: item.image_url || '',
+        quantity: parseInt(qtyInput?.value) || item.qty || 1,
+        memo: memoInput?.value?.trim() || ''
+      };
     });
 
-    if (items.length === 0) throw new Error(window.t('sourcing.alert_empty_cart'));
+    // Collect per-row URL data
+    const snsLinks = [];
+    const urlItems = [];
+    let hasInvalidLink = false;
+    document.querySelectorAll('#srcUrlList .src-url-row-block').forEach(block => {
+      const urlInput = block.querySelector('.src-url-input');
+      const qtyInput = block.querySelector('.src-url-qty');
+      const memoInput = block.querySelector('.src-url-memo');
+      const url = urlInput?.value?.trim();
+      if (url) {
+        const valid = window.__validateSnsInput(urlInput);
+        if (!valid) { hasInvalidLink = true; return; }
+        snsLinks.push(url);
+        urlItems.push({
+          name: url,
+          quantity: parseInt(qtyInput?.value) || 1,
+          memo: memoInput?.value?.trim() || ''
+        });
+      }
+    });
+
+    if (hasInvalidLink) {
+      alert(window.t('sourcing.alert_invalid_url') || '⚠️ 올바른 URL 형식이 아닌 링크가 있습니다.');
+      return;
+    }
+
+    // Collect image tab data
+    const imageUrls = [];
+    const imageQty = document.getElementById('srcImageQty')?.value || 1;
+    const imageMemo = document.getElementById('srcImageMemo')?.value?.trim() || '';
+
+    // Merge all items
+    const items = [...cartItems];
+    urlItems.forEach(u => items.push(u));
+
+    // Build user message from url memos and image memo
+    let userMessage = '';
+    if (imageMemo) userMessage += imageMemo;
+
+    if (items.length === 0 && snsLinks.length === 0) {
+      throw new Error(window.t('sourcing.alert_empty_cart'));
+    }
 
     const res = await fetch('/api/sourcing/request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: session.user.id, user_email: session.user.email, items, user_message: message, sns_links: snsLinks, image_urls: imageUrls })
+      body: JSON.stringify({
+        user_id: session.user.id,
+        user_email: session.user.email,
+        items,
+        user_message: userMessage,
+        sns_links: snsLinks,
+        image_urls: imageUrls
+      })
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error || window.t('sourcing.alert_fail'));
 
     alert(window.t('sourcing.alert_success'));
-    closeQuoteModal();
-    if (msgInput) msgInput.value = '';
-    // Reset SNS inputs
-    const container = document.getElementById('quoteSnsLinksContainer');
-    if (container) {
-      container.innerHTML = `<div class="sns-link-row" style="display: flex; gap: 6px; align-items: center;">
-        <input type="url" class="form-input quote-sns-input" placeholder="${window.t('sourcing.modal_sns_placeholder') || ''}"
-          style="flex:1; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;">
-        <button type="button" onclick="window.__addSnsInput()" style="padding: 8px 11px; border-radius: 8px; border: 1px solid var(--accent-blue); background: transparent; color: var(--accent-blue); font-size: 16px; cursor: pointer; font-weight: 700; line-height: 1;">+</button>
-      </div>`;
+
+    // Reset form
+    window.__srcCartItems = [];
+    if (window.__srcRenderCart) window.__srcRenderCart([]);
+    // Reset URL rows
+    const urlList = document.getElementById('srcUrlList');
+    if (urlList) {
+      urlList.innerHTML = `
+        <div class="src-url-row-block">
+          <div class="src-url-row">
+            <input type="url" class="src-url-input" placeholder="${window.t('sourcing.field_url_placeholder')}" oninput="window.__validateSnsInput(this)">
+            <button class="src-btn-add-url" onclick="window.__srcAddUrl()" data-i18n="sourcing.btn_add_url">+ URL 추가</button>
+          </div>
+          <div class="src-row-pair" style="margin-top:8px;">
+            <div class="src-field-group" style="flex:0 0 100px;">
+              <input type="number" class="src-input-sm src-url-qty" value="1" min="1" placeholder="1">
+            </div>
+            <div class="src-field-group" style="flex:1;">
+              <input type="text" class="src-input-sm src-url-memo" placeholder="${window.t('sourcing.field_memo_placeholder')}">
+            </div>
+          </div>
+        </div>
+      `;
     }
-    __quoteImageFiles = [];
-    renderQuoteImagePreviews();
+    // Reset image tab
+    const imgQty = document.getElementById('srcImageQty');
+    const imgMemo = document.getElementById('srcImageMemo');
+    if (imgQty) imgQty.value = 1;
+    if (imgMemo) imgMemo.value = '';
+
+    // Reload history
+    if (window.renderSourcingHistory) window.renderSourcingHistory();
   } catch (e) {
     console.error('Quote Submit Error:', e);
     alert('❌ Error: ' + e.message);
@@ -4570,19 +4606,29 @@ window.__srcSwitchTab = function (tabId) {
   if (tabContent) tabContent.classList.add('active');
 };
 
-// Add URL row
+// Add URL row (per-row qty + comment)
 window.__srcAddUrl = function () {
   const list = document.getElementById('srcUrlList');
   if (!list) return;
-  const rows = list.querySelectorAll('.src-url-row');
-  if (rows.length >= 5) { alert(window.t('sourcing.max_url_alert')); return; }
-  const row = document.createElement('div');
-  row.className = 'src-url-row';
-  row.innerHTML = `
-    <input type="url" class="src-url-input" placeholder="https://..." oninput="window.__validateSnsInput(this)">
-    <button class="src-btn-remove-url" onclick="this.parentElement.remove()">✕</button>
+  const blocks = list.querySelectorAll('.src-url-row-block');
+  if (blocks.length >= 5) { alert(window.t('sourcing.max_url_alert')); return; }
+  const block = document.createElement('div');
+  block.className = 'src-url-row-block';
+  block.innerHTML = `
+    <div class="src-url-row">
+      <input type="url" class="src-url-input" placeholder="${window.t('sourcing.field_url_placeholder')}" oninput="window.__validateSnsInput(this)">
+      <button class="src-btn-remove-url" onclick="this.closest('.src-url-row-block').remove()">✕</button>
+    </div>
+    <div class="src-row-pair" style="margin-top:8px;">
+      <div class="src-field-group" style="flex:0 0 100px;">
+        <input type="number" class="src-input-sm src-url-qty" value="1" min="1" placeholder="1">
+      </div>
+      <div class="src-field-group" style="flex:1;">
+        <input type="text" class="src-input-sm src-url-memo" placeholder="${window.t('sourcing.field_memo_placeholder')}">
+      </div>
+    </div>
   `;
-  list.appendChild(row);
+  list.appendChild(block);
 };
 
 // History filter
@@ -4679,7 +4725,7 @@ window.__srcRenderCart = function (items) {
   if (emptyEl) emptyEl.style.display = 'none';
 
   const cardsHtml = items.map((item, i) => `
-    <div class="src-cart-card" data-index="${i}">
+    <div class="src-cart-card" data-index="${i}" data-product-id="${item.product_id || item.id || ''}">
       <img class="src-thumb" src="${item.image_url || ''}" alt="" onerror="this.style.display='none'">
       <div class="src-info">
         <div class="src-brand">${escapeHtml(item.brand || '')}</div>
@@ -4829,8 +4875,30 @@ window.__sourcingRequestFromModal = async function (productId) {
   // Close product modal
   if (modalContent) modalContent.classList.remove('open');
 
-  // Open quote modal with this item only
-  window.openQuoteModal([{ product_id: productId, name: name, brand: brand, qty: 10, quantity: 10, image: image }]);
+  // Build product item for cart
+  const productItem = {
+    product_id: productId,
+    name: name,
+    brand: brand,
+    image_url: image,
+    price: 0,
+    source: '',
+    qty: 1
+  };
+
+  // Add to cart items and navigate to Sourcing tab
+  if (!window.__srcCartItems) window.__srcCartItems = [];
+  // Avoid duplicate
+  const exists = window.__srcCartItems.some(it => String(it.product_id) === String(productId));
+  if (!exists) {
+    window.__srcCartItems.push(productItem);
+  }
+
+  // Switch to sourcing tab and render cart
+  window.switchMainTab('sourcing');
+  if (window.__srcRenderCart) {
+    window.__srcRenderCart(window.__srcCartItems);
+  }
 };
 
 window.toggleSupportView = function (viewName) {

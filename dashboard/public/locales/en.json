@@ -321,6 +321,7 @@
     "service_fee": "Service Fee",
     "alert_login": "Please log in first.",
     "alert_empty_cart": "Please select at least one item.",
+    "alert_invalid_url": "⚠️ Some URLs are not valid. Please check and try again.",
     "alert_fail": "Request failed.",
     "alert_success": "Quote request submitted! We'll notify you soon.",
     "modal_title": "📦 B2B Sourcing Quote Request",

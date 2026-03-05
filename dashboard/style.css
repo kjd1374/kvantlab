@@ -4466,12 +4466,34 @@ body[data-platform="k_trend"] #tab-all {
   margin-bottom: 8px;
 }
 
-/* URL rows */
+/* URL row blocks */
+.src-url-row-block {
+  padding: 12px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  background: #fafafa;
+}
+
+.src-url-row-block .src-row-pair {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.src-url-row-block .src-input-sm {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .src-url-row {
   display: flex;
   gap: 8px;
   align-items: center;
-  margin-bottom: 6px;
 }
 
 .src-url-input {
