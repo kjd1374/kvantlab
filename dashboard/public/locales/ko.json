@@ -267,6 +267,7 @@
     "status_pro_cancelled": "해지됨 ({date}까지 유지)",
     "status_free": "무료 플랜 (제한됨)",
     "status_expired": "만료됨",
+    "after_trial_choose": "트라이얼 만료 후, 플랜을 선택해주세요:",
     "cancel_subscription": "구독 취소",
     "plan_monthly": "Monthly",
     "plan_yearly": "Annual",

@@ -260,6 +260,7 @@
     "status_pro_cancelled": "Cancelled (Active until {date})",
     "status_free": "Free (Limited)",
     "status_expired": "Expired",
+    "after_trial_choose": "After trial, choose your plan:",
     "plan_monthly": "Monthly",
     "plan_yearly": "Annual",
     "price_monthly_val": "$14.9",
