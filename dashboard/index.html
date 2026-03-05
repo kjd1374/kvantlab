@@ -1817,7 +1817,7 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-4R6FM8TDJN"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
+    function gtag() { dataLayer.push(arguments); }
     gtag('js', new Date());
 
     gtag('config', 'G-4R6FM8TDJN');
@@ -2311,7 +2311,7 @@
           <div class="faq-q">What&rsquo;s the difference between Free and Pro?</div>
           <div class="faq-a">Free gives you top 4 rankings and basic product data for 14 days — no credit card needed.
             Pro unlocks full rankings, 30-day trend graphs, AI review analysis, and Trending Now signals, all for just
-            $17.9/month.</div>
+            $14.99/month.</div>
         </div>
         <div class="faq-item reveal">
           <div class="faq-q">Is there an Enterprise or Team plan?</div>
@@ -2415,7 +2415,7 @@
 
     const PRICES = {
       monthly: {
-        eb: { amount: '14.9', period: '/month', note: null, save: 'Early bird rate · Ends Apr 30' },
+        eb: { amount: '14.99', period: '/month', note: null, save: 'Early bird rate · Ends Apr 30' },
         regular: { amount: '19.9', period: '/month', note: null, save: null }
       },
       annual: {
@@ -2467,7 +2467,7 @@
 
       wrap.innerHTML = html;
 
-      cta.textContent = mode === 'annual' ? 'Get Annual Plan' : 'Get Started';
+      cta.textContent = 'Start Free — 14 Days';
     }
 
     renderPrice();
