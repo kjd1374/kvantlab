@@ -3918,7 +3918,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 let paypalButtonsRendered = false;
-let currentSubscriptionPeriod = 'monthly'; // 'monthly' | 'yearly'
+let currentSubscriptionPeriod = 'yearly'; // 'monthly' | 'yearly' - Initial selection is Annual (Active)
 
 function renderPayPalButtons() {
   const ppContainer = document.getElementById('paypal-button-container');
