@@ -89,15 +89,15 @@
             color: #2c7a7b;
         }
     </style>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-4R6FM8TDJN"></script>
-  <script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-4R6FM8TDJN"></script>
+    <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag("js", new Date());
 
     gtag("config", "G-4R6FM8TDJN");
-  </script>
+    </script>
 
 </head>
 
@@ -702,7 +702,7 @@
     <div id="steadySellerModal"
         style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
         <div
-            style="background: white; padding: 30px; border-radius: 16px; width: 500px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;">
+            style="background: white; padding: 30px; border-radius: 16px; width: 600px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;">
             <h3 id="ssModalTitle" style="margin-top: 0; margin-bottom: 20px;">스테디 셀러 상품 등록</h3>
             <input type="hidden" id="ssId">
             <div style="margin-bottom: 15px;">
@@ -716,15 +716,60 @@
                 <input type="text" id="ssBrand" placeholder="예: goodal"
                     style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box;">
             </div>
-            <div style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">노출 순위 (Rank)</label>
-                <input type="number" id="ssRank" value="999"
-                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box;">
+            <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                <div style="flex: 1;">
+                    <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">노출 순위
+                        (Rank)</label>
+                    <input type="number" id="ssRank" value="999"
+                        style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box;">
+                </div>
+                <div style="flex: 1;">
+                    <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">기본 가격 (Price -
+                        원)</label>
+                    <input type="number" id="ssPrice" value="0"
+                        style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box;">
+                </div>
             </div>
-            <div style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">가격 (Price - 원)</label>
-                <input type="number" id="ssPrice" value="0"
-                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box;">
+            <!-- 상품 상세 정보 -->
+            <div
+                style="background: #f8f9fa; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #eee;">
+                <div style="font-size: 13px; font-weight: 600; color: #555; margin-bottom: 12px;">📦 상품 상세 정보</div>
+                <div style="display: flex; gap: 15px; margin-bottom: 10px;">
+                    <div style="flex: 1;">
+                        <label style="display: block; margin-bottom: 4px; font-size: 13px; color: #666;">크기
+                            (Size)</label>
+                        <input type="text" id="ssSize" placeholder="예: 200ml, 50g × 3ea"
+                            style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box; font-size: 13px;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="display: block; margin-bottom: 4px; font-size: 13px; color: #666;">무게/용량
+                            (Weight)</label>
+                        <input type="text" id="ssWeight" placeholder="예: 150g, 1.2kg"
+                            style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box; font-size: 13px;">
+                    </div>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 4px; font-size: 13px; color: #666;">기타 사항
+                        (Notes)</label>
+                    <textarea id="ssNotes" rows="2" placeholder="기타 참고사항 입력 (예: 유통기한 6개월, 냉장보관 필요)"
+                        style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box; resize:vertical; font-family: inherit; font-size: 13px;"></textarea>
+                </div>
+            </div>
+            <!-- 옵션 관리 -->
+            <div
+                style="background: #fff8f0; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #ffe0b2;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div style="font-size: 13px; font-weight: 600; color: #555;">🏷️ 옵션 / 가격 설정</div>
+                    <button type="button" id="ssAddOptionBtn"
+                        style="background: #ff9800; color: white; border: none; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;">+
+                        옵션 추가</button>
+                </div>
+                <div id="ssOptionsContainer" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- 동적으로 옵션 행이 추가됨 -->
+                </div>
+                <div id="ssNoOptionsMsg" style="text-align: center; color: #aaa; font-size: 12px; padding: 10px;">
+                    등록된 옵션이 없습니다. "옵션 추가" 버튼을 눌러 추가하세요.
+                </div>
             </div>
             <div style="margin-bottom: 15px;">
                 <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">상품 이미지 (최대 5장, 각
@@ -744,7 +789,7 @@
             <div style="margin-bottom: 15px;">
                 <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #666;">상품 설명
                     (Description)</label>
-                <textarea id="ssDescription" rows="4" placeholder="상품에 대한 설명을 입력하세요 (선택사항)"
+                <textarea id="ssDescription" rows="3" placeholder="상품에 대한 설명을 입력하세요 (선택사항)"
                     style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box; resize:vertical; font-family: inherit;"></textarea>
             </div>
             <div style="margin-bottom: 25px;">

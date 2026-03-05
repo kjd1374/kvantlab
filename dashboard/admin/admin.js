@@ -794,6 +794,58 @@ async function initAdmin() {
     const ssActiveInput = document.getElementById('ssActive');
     const ssDescriptionInput = document.getElementById('ssDescription');
     const ssModalTitle = document.getElementById('ssModalTitle');
+    const ssSizeInput = document.getElementById('ssSize');
+    const ssWeightInput = document.getElementById('ssWeight');
+    const ssNotesInput = document.getElementById('ssNotes');
+    const ssOptionsContainer = document.getElementById('ssOptionsContainer');
+    const ssNoOptionsMsg = document.getElementById('ssNoOptionsMsg');
+    const ssAddOptionBtn = document.getElementById('ssAddOptionBtn');
+
+    // Options management
+    let ssOptions = [];
+
+    function ssRenderOptions() {
+        ssOptionsContainer.innerHTML = '';
+        if (ssOptions.length === 0) {
+            ssNoOptionsMsg.style.display = 'block';
+            return;
+        }
+        ssNoOptionsMsg.style.display = 'none';
+        ssOptions.forEach((opt, idx) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display: flex; gap: 8px; align-items: center;';
+            row.innerHTML = `
+                <input type="text" value="${opt.name || ''}" placeholder="옵션명 (예: 200ml)"
+                    style="flex: 2; padding: 8px 10px; border-radius: 6px; border: 1px solid #ddd; font-size: 13px; box-sizing:border-box;"
+                    oninput="window.__ssUpdateOption(${idx}, 'name', this.value)">
+                <input type="number" value="${opt.price || 0}" placeholder="가격 (원)"
+                    style="flex: 1; padding: 8px 10px; border-radius: 6px; border: 1px solid #ddd; font-size: 13px; box-sizing:border-box; text-align: right;"
+                    oninput="window.__ssUpdateOption(${idx}, 'price', this.value)">
+                <span style="font-size: 12px; color: #888; white-space: nowrap;">원</span>
+                <button type="button" onclick="window.__ssRemoveOption(${idx})"
+                    style="background: #ffc9c9; border: none; color: #e03131; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-size: 14px; flex-shrink: 0;">✕</button>
+            `;
+            ssOptionsContainer.appendChild(row);
+        });
+    }
+
+    window.__ssUpdateOption = (idx, field, value) => {
+        if (field === 'price') ssOptions[idx].price = parseInt(value) || 0;
+        else ssOptions[idx].name = value;
+    };
+
+    window.__ssRemoveOption = (idx) => {
+        ssOptions.splice(idx, 1);
+        ssRenderOptions();
+    };
+
+    ssAddOptionBtn?.addEventListener('click', () => {
+        ssOptions.push({ name: '', price: 0 });
+        ssRenderOptions();
+        // Focus the new name input
+        const inputs = ssOptionsContainer.querySelectorAll('input[type="text"]');
+        if (inputs.length > 0) inputs[inputs.length - 1].focus();
+    });
 
     // Image upload elements
     const ssImageUploadArea = document.getElementById('ssImageUploadArea');
@@ -962,6 +1014,11 @@ async function initAdmin() {
         ssPriceInput.value = item.price;
         ssActiveInput.checked = item.is_active;
         ssDescriptionInput.value = item.description || '';
+        ssSizeInput.value = item.product_size || '';
+        ssWeightInput.value = item.product_weight || '';
+        ssNotesInput.value = item.notes || '';
+        ssOptions = Array.isArray(item.options) ? [...item.options] : [];
+        ssRenderOptions();
 
         // Load existing images
         ssSelectedFiles = [];
@@ -993,6 +1050,11 @@ async function initAdmin() {
         ssPriceInput.value = '0';
         ssActiveInput.checked = true;
         ssDescriptionInput.value = '';
+        ssSizeInput.value = '';
+        ssWeightInput.value = '';
+        ssNotesInput.value = '';
+        ssOptions = [];
+        ssRenderOptions();
         ssSelectedFiles = [];
         ssExistingUrls = [];
         ssRenderPreviews();
@@ -1034,6 +1096,9 @@ async function initAdmin() {
             // Step 2: Combine existing + newly uploaded URLs
             const finalImageUrls = [...ssExistingUrls, ...newUploadedUrls];
 
+            // Filter out empty options
+            const validOptions = ssOptions.filter(o => o.name && o.name.trim());
+
             const payload = {
                 product_name: ssNameInput.value.trim(),
                 brand: ssBrandInput.value.trim(),
@@ -1041,7 +1106,11 @@ async function initAdmin() {
                 price: parseInt(ssPriceInput.value) || 0,
                 image_urls: finalImageUrls,
                 description: ssDescriptionInput.value.trim(),
-                is_active: ssActiveInput.checked
+                is_active: ssActiveInput.checked,
+                product_size: ssSizeInput.value.trim(),
+                product_weight: ssWeightInput.value.trim(),
+                notes: ssNotesInput.value.trim(),
+                options: validOptions
             };
 
             saveSsBtn.innerText = '저장 중...';

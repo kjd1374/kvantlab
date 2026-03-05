@@ -283,9 +283,10 @@ async def main():
     parser = argparse.ArgumentParser(description="AI Vision Review Collector")
     parser.add_argument("--test", action="store_true", help="Test mode (2 products per platform)")
     parser.add_argument("--platform", type=str, help="Single platform only (oliveyoung/musinsa/ably/ssg)")
+    parser.add_argument("--limit", type=int, default=200, help="Max products per platform (default: 200)")
     args = parser.parse_args()
     
-    limit = 2 if args.test else 100
+    limit = 2 if args.test else args.limit
     platforms = [args.platform] if args.platform else ["oliveyoung", "musinsa", "ably", "ssg"]
     
     log("🚀 AI Vision Review Collector 시작")

@@ -1447,8 +1447,8 @@ app.get('/api/admin/steady-sellers', async (req, res) => {
 // 2. Create Steady Seller
 app.post('/api/admin/steady-sellers', async (req, res) => {
     try {
-        const { product_name, brand, price, image_url, image_urls, description, rank, is_active } = req.body;
-        const insertData = { product_name, brand, price, rank, is_active, description: description || '' };
+        const { product_name, brand, price, image_url, image_urls, description, rank, is_active, product_size, product_weight, notes, options } = req.body;
+        const insertData = { product_name, brand, price, rank, is_active, description: description || '', product_size: product_size || '', product_weight: product_weight || '', notes: notes || '', options: options || [] };
         // Support both image_urls (new) and image_url (legacy)
         if (image_urls && image_urls.length > 0) {
             insertData.image_urls = image_urls;
@@ -1475,8 +1475,8 @@ app.post('/api/admin/steady-sellers', async (req, res) => {
 app.put('/api/admin/steady-sellers/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { product_name, brand, price, image_url, image_urls, description, rank, is_active } = req.body;
-        const updateData = { product_name, brand, price, rank, is_active, description: description || '', updated_at: new Date() };
+        const { product_name, brand, price, image_url, image_urls, description, rank, is_active, product_size, product_weight, notes, options } = req.body;
+        const updateData = { product_name, brand, price, rank, is_active, description: description || '', product_size: product_size || '', product_weight: product_weight || '', notes: notes || '', options: options || [], updated_at: new Date() };
 
         if (image_urls && image_urls.length > 0) {
             updateData.image_urls = image_urls;
