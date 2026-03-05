@@ -274,8 +274,31 @@ async function init() {
     // Set initial URL state (replace)
     updateURL(true);
 
+    // ─── Back-button Guard ───────────────────────
+    // When logged-in user loads app.html, replace history so landing page
+    // isn't behind us, and push a guard entry to prevent accidental exit.
+    const session = getSession();
+    if (session) {
+      // Replace the entry so pressing back won't return to index.html
+      history.replaceState({ guard: true }, '', window.location.href);
+      // Push a duplicate so first "back" press stays on this page
+      history.pushState({ guard: true }, '', window.location.href);
+    }
+
     // Listen to browser Back/Forward navigation
     window.addEventListener('popstate', async (e) => {
+      // Guard: if a logged-in user tries to navigate away from app.html, block it
+      const currentSession = getSession();
+      if (currentSession && !window.location.pathname.includes('app.html')) {
+        history.pushState(null, '', '/app.html');
+        return;
+      }
+      // Guard: re-push guard entry so repeated back presses stay on page
+      if (currentSession && (!e.state || e.state.guard)) {
+        history.pushState({ guard: true }, '', window.location.href);
+        return;
+      }
+
       const sp = new URLSearchParams(window.location.search);
       const plat = sp.get('platform') || 'oliveyoung';
       const tb = sp.get('tab') || 'all';
