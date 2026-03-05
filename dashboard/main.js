@@ -4880,8 +4880,10 @@ window.__sourcingRequestFromModal = async function (productId) {
   const price = parseInt(priceText) || 0;
   const source = state?.currentPlatform || '';
 
-  // Close product modal
+  // Close product modal and restore scrolling
   if (modalContent) modalContent.classList.remove('open');
+  document.body.classList.remove('one-page');
+  document.body.style.overflow = '';
 
   // Build product item for cart
   const productItem = {
