@@ -4372,21 +4372,52 @@ window.submitQuoteRequest = async function () {
     }
 
     // Collect image tab data
-    const imageUrls = [];
+    let imageUrls = [];
     const imageQty = document.getElementById('srcImageQty')?.value || 1;
     const imageMemo = document.getElementById('srcImageMemo')?.value?.trim() || '';
+
+    if (window.__quoteImageFiles && window.__quoteImageFiles.length > 0) {
+      if (btn) btn.innerText = window.t('sourcing.btn_uploading') || '이미지 업로드 중...';
+      const formData = new FormData();
+      window.__quoteImageFiles.forEach(file => {
+        formData.append('images', file);
+      });
+
+      const uploadRes = await fetch('/api/sourcing/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const uploadData = await uploadRes.json();
+      if (!uploadData.success) {
+        throw new Error(uploadData.error || 'Failed to upload images');
+      }
+      imageUrls = uploadData.urls;
+
+      // Optionally treat the "image request" as an item if cart/urls were empty
+      // but the original spec might just group them. Let's add a dummy item for images if everything else is empty
+      // so it shows up neatly in the history product cell.
+      if (cartItems.length === 0 && urlItems.length === 0) {
+        urlItems.push({
+          name: 'Image Request',
+          quantity: parseInt(imageQty) || 1,
+          memo: imageMemo
+        });
+      }
+    }
 
     // Merge all items
     const items = [...cartItems];
     urlItems.forEach(u => items.push(u));
 
-    // Build user message from url memos and image memo
+    // Build user message from url memos and image memo (keeping legacy behavior)
     let userMessage = '';
-    if (imageMemo) userMessage += imageMemo;
+    if (imageMemo && urlItems.length === 0 && cartItems.length === 0) userMessage += imageMemo; // only add if we didn't push as dummy item, or just keep it simple
 
-    if (items.length === 0 && snsLinks.length === 0) {
+    if (items.length === 0 && snsLinks.length === 0 && imageUrls.length === 0) {
       throw new Error(window.t('sourcing.alert_empty_cart'));
     }
+
+    if (btn) btn.innerText = window.t('sourcing.btn_submitting');
 
     const res = await fetch('/api/sourcing/request', {
       method: 'POST',

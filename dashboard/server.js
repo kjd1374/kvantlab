@@ -786,7 +786,43 @@ app.get('/api/admin/logs', async (req, res) => {
 
 // --- Sourcing (B2B) APIs ---
 
-// 1. Submit Sourcing Request (User)
+// 1. Upload Sourcing Images (User)
+app.post('/api/sourcing/upload', upload.array('images', 5), async (req, res) => {
+    try {
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ success: false, error: 'No files uploaded.' });
+        }
+
+        const urls = [];
+        for (const file of req.files) {
+            const fileExt = path.extname(file.originalname);
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}${fileExt}`;
+            const filePath = `sourcing/${fileName}`;
+
+            const { data, error } = await supabase.storage
+                .from('images') // Ensure you have an 'images' bucket configured
+                .upload(filePath, file.buffer, {
+                    contentType: file.mimetype,
+                    upsert: false
+                });
+
+            if (error) throw error;
+
+            const { data: publicUrlData } = supabase.storage
+                .from('images')
+                .getPublicUrl(filePath);
+
+            urls.push(publicUrlData.publicUrl);
+        }
+
+        res.json({ success: true, urls });
+    } catch (error) {
+        console.error("Image upload failed:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 2. Submit Sourcing Request (User)
 app.post('/api/sourcing/request', async (req, res) => {
     const { user_id, user_email, items, user_message, sns_links, image_urls } = req.body;
     try {
