@@ -4056,6 +4056,7 @@ if (renewBtn) {
     const ppContainer = document.getElementById('paypal-button-container');
     const tosContainer = document.getElementById('tos-container');
     const periodToggle = document.getElementById('subscriptionPeriodToggle');
+    const priceDetails = document.getElementById('subscriptionPriceDetails');
 
     if (!ppContainer) return;
 
@@ -4064,6 +4065,7 @@ if (renewBtn) {
       ppContainer.style.display = 'none';
       if (tosContainer) tosContainer.style.display = 'none';
       if (periodToggle) periodToggle.style.display = 'none';
+      if (priceDetails) priceDetails.style.display = 'none';
 
       const siteLang = typeof i18n !== 'undefined' ? i18n.currentLang : 'ko';
       renewBtn.textContent = siteLang === 'ko' ? '🔄 구독 갱신 (Renew)' : '🔄 Renew Subscription';
@@ -4071,6 +4073,7 @@ if (renewBtn) {
     } else {
       if (tosContainer) tosContainer.style.display = 'block';
       if (periodToggle) periodToggle.style.display = 'flex';
+      if (priceDetails) priceDetails.style.display = 'block';
       ppContainer.style.display = 'block';
       ppContainer.style.marginBottom = '16px';
 
@@ -4098,6 +4101,9 @@ const btnYearly = document.getElementById('toggleYearly');
 
 function updateToggleUI() {
   if (!btnMonthly || !btnYearly) return;
+
+  const priceDetails = document.getElementById('subscriptionPriceDetails');
+
   if (currentSubscriptionPeriod === 'monthly') {
     btnMonthly.style.background = '#1e293b';
     btnMonthly.style.color = '#fff';
@@ -4106,6 +4112,11 @@ function updateToggleUI() {
     btnYearly.style.background = 'transparent';
     btnYearly.style.color = '#64748b';
     btnYearly.style.boxShadow = 'none';
+
+    if (priceDetails) {
+      priceDetails.setAttribute('data-i18n', 'mypage.price_desc_monthly');
+      priceDetails.innerHTML = window.t ? window.t('mypage.price_desc_monthly') : '매월 결제 시 <strong>$49/월</strong>';
+    }
   } else {
     btnYearly.style.background = '#1e293b';
     btnYearly.style.color = '#fff';
@@ -4114,6 +4125,11 @@ function updateToggleUI() {
     btnMonthly.style.background = 'transparent';
     btnMonthly.style.color = '#64748b';
     btnMonthly.style.boxShadow = 'none';
+
+    if (priceDetails) {
+      priceDetails.setAttribute('data-i18n', 'mypage.price_desc_yearly');
+      priceDetails.innerHTML = window.t ? window.t('mypage.price_desc_yearly') : '매년 결제 시 <strong>$470/년</strong> (약 $39/월, 20% 할인)';
+    }
   }
 }
 
@@ -4156,6 +4172,7 @@ if (extendBtn) {
     const ppContainer = document.getElementById('paypal-button-container');
     const tosContainer = document.getElementById('tos-container');
     const periodToggle = document.getElementById('subscriptionPeriodToggle');
+    const priceDetails = document.getElementById('subscriptionPriceDetails');
     if (!ppContainer) return;
 
     const isVisible = ppContainer.style.display !== 'none';
@@ -4163,12 +4180,14 @@ if (extendBtn) {
       ppContainer.style.display = 'none';
       if (tosContainer) tosContainer.style.display = 'none';
       if (periodToggle) periodToggle.style.display = 'none';
+      if (priceDetails) priceDetails.style.display = 'none';
 
       const siteLang = typeof i18n !== 'undefined' ? i18n.currentLang : 'ko';
       extendBtn.textContent = siteLang === 'ko' ? '⏳ 구독 연장 (Extend)' : '⏳ Extend Subscription';
     } else {
       if (tosContainer) tosContainer.style.display = 'block';
       if (periodToggle) periodToggle.style.display = 'flex';
+      if (priceDetails) priceDetails.style.display = 'block';
       ppContainer.style.display = 'block';
       ppContainer.style.marginBottom = '16px';
 

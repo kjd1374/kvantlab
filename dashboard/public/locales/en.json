@@ -264,6 +264,8 @@
     "upgrade": "Upgrade Plan",
     "plan_monthly": "Monthly ($49/mo)",
     "plan_yearly": "Yearly (Save 20%)",
+    "price_desc_monthly": "Pay <strong>$49/month</strong>",
+    "price_desc_yearly": "Pay <strong>$470/year</strong> (Approx. $39/mo, Save 20%)",
     "btn_renew_simple": "🔄 Renew Subscription"
   },
   "gt": {

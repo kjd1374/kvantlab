@@ -271,6 +271,8 @@
     "upgrade": "플랜 업그레이드",
     "plan_monthly": "월간 결제 ($49/월)",
     "plan_yearly": "연간 결제 (20% 할인)",
+    "price_desc_monthly": "매월 결제 시 <strong>$49/월</strong>",
+    "price_desc_yearly": "매년 결제 시 <strong>$470/년</strong> (약 $39/월, 20% 할인)",
     "btn_renew_simple": "🔄 구독 갱신"
   },
   "gt": {

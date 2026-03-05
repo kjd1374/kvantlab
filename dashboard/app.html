@@ -594,6 +594,12 @@
             <span style="color: #64748b;" data-i18n="mypage.expires_at">Expiration/Renewal Date</span>
             <span id="myPageExpiresAt" style="font-weight: 600; color: var(--accent-blue);"></span>
           </div>
+
+          <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
+            <button id="cancelSubscriptionBtn"
+              style="display:none; background: none; border: none; color: #94a3b8; font-size: 12px; text-decoration: underline; cursor: pointer; padding: 0;"
+              data-i18n="mypage.cancel_subscription">Cancel Subscription</button>
+          </div>
         </div>
 
         <!-- Subscription Period Toggle (Monthly / Yearly) -->
@@ -605,6 +611,12 @@
           <button id="toggleYearly"
             style="flex: 1; padding: 10px; border: none; background: transparent; border-radius: 8px; font-weight: 600; color: #64748b; cursor: pointer; transition: all 0.2s;"
             data-i18n="mypage.plan_yearly">Yearly (Save 20%)</button>
+        </div>
+
+        <div id="subscriptionPriceDetails"
+          style="text-align: center; margin-bottom: 20px; font-size: 15px; color: #475569;"
+          data-i18n="mypage.price_desc_monthly">
+          매월 결제 시 <strong>$49/월</strong>
         </div>
 
         <div id="tos-container"
@@ -633,11 +645,8 @@
             style="display:none; width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; color: #fff; background: var(--accent-blue, #3b82f6); box-shadow: 0 4px 14px rgba(59,130,246,0.3); transition: all 0.2s;"
             data-i18n="mypage.btn_renew_simple">🔄 Renew Subscription</button>
           <button id="extendSubscriptionBtn" class="btn-primary sub-action-btn sub-extend"
-            style="display:none; width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; color: #fff; background: linear-gradient(135deg, #00b894, #00cec9); box-shadow: 0 44px 14px rgba(0,184,148,0.3); transition: all 0.2s;"
+            style="display:none; width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; color: #fff; background: linear-gradient(135deg, #00b894, #00cec9); box-shadow: 0 4px 14px rgba(0,184,148,0.3); transition: all 0.2s;"
             data-i18n="mypage.btn_extend">⏳ 구독 연장 (Extend)</button>
-          <button id="cancelSubscriptionBtn" class="btn-secondary sub-action-btn sub-cancel"
-            style="display:none; width: 100%; padding: 12px; background: #fff5f5; color: #e03131; border: 1px solid #ffc9c9; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s;"
-            data-i18n="mypage.btn_cancel">🚫 구독 해지 (Cancel)</button>
         </div>
       </div>
 
