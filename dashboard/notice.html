@@ -531,8 +531,8 @@
 
   async function loadNotices() {
     try {
-      const data = await fetchPublishedAnnouncements(100, 0);
-      allNotices = data || [];
+      const result = await fetchPublishedAnnouncements(100, 0);
+      allNotices = result.data || [];
       renderNoticePage(1);
     } catch (err) {
       console.error('Failed to load notices', err);

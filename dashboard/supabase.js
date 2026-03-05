@@ -850,6 +850,7 @@ export async function insertAnnouncement(title, content, type, is_published, ext
 
         const response = await authorizedFetch(`${SUPABASE_URL}/rest/v1/board_announcements`, {
             method: 'POST',
+            headers: { 'Prefer': 'return=representation' },
             body: JSON.stringify(bodyData)
         });
 
