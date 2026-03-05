@@ -876,13 +876,14 @@ async function loadBridgeTab(tabId) {
     timeEl.textContent = '';
     fetchLatestUpdateTime(state.currentPlatform).then(ts => {
       if (ts && timeEl) {
+        // ts is generally returned in UTC string from Supabase (e.g. "2026-03-05T04:14:00Z")
+        // JavaScript Date automatically parses and applies the local timezone (-9h offset for KST)
         const d = new Date(ts);
-        const kst = new Date(d.getTime() + (9 * 60 * 60 * 1000 - d.getTimezoneOffset() * 60 * 1000));
-        const mm = String(kst.getMonth() + 1).padStart(2, '0');
-        const dd = String(kst.getDate()).padStart(2, '0');
-        const hh = String(kst.getHours()).padStart(2, '0');
-        const mi = String(kst.getMinutes()).padStart(2, '0');
-        timeEl.textContent = `🕐 Updated: ${kst.getFullYear()}.${mm}.${dd} ${hh}:${mi} KST`;
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mi = String(d.getMinutes()).padStart(2, '0');
+        timeEl.textContent = `🕐 Updated: ${d.getFullYear()}.${mm}.${dd} ${hh}:${mi} KST`;
       }
     });
   }
@@ -1126,13 +1127,13 @@ function renderTableRow(p, index) {
       <tr class="${isLocked ? 'locked-row' : ''}" 
         onclick="${isLocked ? '' : `window.__openProduct(${JSON.stringify(p).replace(/"/g, '&quot;')})`}" 
         style="cursor:${isLocked ? 'default' : 'pointer'}">
-        <td><span class="rank-num">${rank}</span></td>
-        <td><img class="thumb" src="${p.image_url || ''}" alt="" loading="lazy" onerror="this.style.display='none'" /></td>
+        <td style="text-align:center;"><span class="rank-num">${rank}</span></td>
+        <td style="text-align:center;"><img class="thumb" src="${p.image_url || ''}" alt="" loading="lazy" onerror="this.style.display='none'" /></td>
         <td style="max-width:280px">
           <div class="product-name" data-pid="${p.product_id || p.id}" style="-webkit-line-clamp:1">${name}</div>
         </td>
-        <td><span class="product-brand" data-brand-pid="${p.product_id || p.id}">${brand}</span></td>
-        <td>${formatPrice(p.price || p.price_current)}</td>
+        <td style="text-align:center;"><span class="product-brand" data-brand-pid="${p.product_id || p.id}">${brand}</span></td>
+        <td style="text-align:center;">${formatPrice(p.price || p.price_current)}</td>
         <td style="text-align:center;">${p.review_count > 0 ? formatNumber(p.review_count) : '-'}</td>
         <td style="text-align:center;">${p.review_rating > 5 ? '❤️ ' + formatNumber(p.review_rating) : (p.review_rating > 0 && !isNaN(p.review_rating) ? p.review_rating : '-')}</td>
         <td style="text-align:center;">${rankChangeHtml}</td>
