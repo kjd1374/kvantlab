@@ -3937,9 +3937,9 @@ function renderPayPalButtons() {
   // if we are explicitly re-rendering for a tier change.
   // Actually, to make toggle work seamlessly, we will just clear it if period changed.
 
-  let planId = (import.meta.env.VITE_PAYPAL_PLAN_ID || '').trim();
+  let planId = 'P-4V196281CB810293WNGSW32I'; // Monthly Early-bird
   if (currentSubscriptionPeriod === 'yearly') {
-    planId = (import.meta.env.VITE_PAYPAL_PLAN_ID_YEARLY || import.meta.env.VITE_PAYPAL_PLAN_ID || '').trim();
+    planId = 'P-3GU635895U223945LNGUT0HI'; // Yearly Early-bird
   }
 
   const clientId = (import.meta.env.VITE_PAYPAL_CLIENT_ID || '').trim();
