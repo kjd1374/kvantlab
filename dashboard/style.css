@@ -3094,10 +3094,10 @@ img.lang-flag {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  width: 100%;
-  max-width: 420px;
-  padding: 40px;
-  border-radius: 36px;
+  width: 90%;
+  max-width: 360px;
+  padding: 32px;
+  border-radius: 28px;
   box-shadow:
     0 4px 24px -1px rgba(0, 0, 0, 0.06),
     0 20px 48px -10px rgba(0, 0, 0, 0.12);
@@ -3141,7 +3141,7 @@ img.lang-flag {
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .form-group label {
@@ -3156,11 +3156,11 @@ img.lang-flag {
 .auth-form input,
 .auth-form select {
   width: 100%;
-  padding: 14px 16px;
+  padding: 12px 14px;
   background: rgba(255, 255, 255, 0.8);
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 14px;
-  font-size: 16px;
+  border-radius: 12px;
+  font-size: 15px;
   font-family: inherit;
   transition: all 0.2s ease;
   color: #1d1d1f;
@@ -3177,12 +3177,12 @@ img.lang-flag {
   background: #0071e3;
   color: white;
   border: none;
-  padding: 16px;
-  border-radius: 14px;
-  font-size: 16px;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
-  margin-top: 10px;
+  margin-top: 6px;
   transition: all 0.2s ease;
 }
 
@@ -5004,6 +5004,7 @@ body[data-platform="k_trend"] #tab-all {
   font-size: 13px;
   cursor: pointer;
 }
+
 /* Subscription Plan Cards */
 #subscriptionCards {
   display: flex;
@@ -5026,7 +5027,7 @@ body[data-platform="k_trend"] #tab-all {
 
 .plan-card:hover {
   border-color: #cbd5e1;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .plan-card.active {
