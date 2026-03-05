@@ -268,7 +268,10 @@
     "status_free": "무료 플랜 (제한됨)",
     "status_expired": "만료됨",
     "cancel_subscription": "구독 취소",
-    "upgrade": "플랜 업그레이드"
+    "upgrade": "플랜 업그레이드",
+    "plan_monthly": "월간 결제 ($49/월)",
+    "plan_yearly": "연간 결제 (20% 할인)",
+    "btn_renew_simple": "🔄 구독 갱신"
   },
   "gt": {
     "gt_collected": "수집 제품",

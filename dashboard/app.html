@@ -328,9 +328,9 @@
                 <th class="sortable" data-sort="name" data-i18n="table.name">상품명</th>
                 <th class="sortable" data-sort="brand" data-i18n="table.brand">브랜드</th>
                 <th class="sortable" data-sort="price" data-i18n="table.price">가격</th>
-                <th data-i18n="table.review">리뷰</th>
-                <th data-i18n="table.rating">평점</th>
-                <th data-i18n="table.rank_change">변동</th>
+                <th style="text-align: center;" data-i18n="table.review">리뷰</th>
+                <th style="text-align: center;" data-i18n="table.rating">평점</th>
+                <th style="text-align: center;" data-i18n="table.rank_change">변동</th>
               </tr>
             </thead>
             <tbody id="allProductsBody">
@@ -570,21 +570,41 @@
 
       <div class="my-page-content" id="myPageBillingTab" style="display:none;">
         <div class="billing-card">
-          <div class="billing-header">
-            <h3 data-i18n="mypage.current_plan">현재 구독 플랜</h3>
-            <span class="plan-badge" id="myPagePlanBadge">Free</span>
+          <!-- Card Header & Badge -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #1e293b;" data-i18n="mypage.current_plan">
+              Current Plan</h3>
+            <span class="plan-badge" id="myPagePlanBadge"
+              style="background: var(--accent-orange, #ff7a00); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700;">Pro</span>
           </div>
-          <p class="billing-desc" id="myPagePlanDesc" data-i18n="mypage.status_free">현재 무료 플랜을 이용 중입니다. (일일 상세 조회 10회
-            제한)</p>
 
-          <div class="billing-info-row">
-            <span class="info-label" data-i18n="mypage.subscribed_at">가입/체험 시작일</span>
-            <span class="info-value" id="myPageSubscribedAt">-</span>
+          <!-- Trial/Status Message -->
+          <p id="myPagePlanDesc" style="margin: 0 0 16px 0; font-size: 13px; color: #64748b;"
+            data-i18n="mypage.status_free">🎉 2-week Pro trial active! (Until 3/18/2026)</p>
+
+          <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 0 0 16px 0;">
+
+          <!-- Info Rows -->
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px;">
+            <span style="color: #64748b;" data-i18n="mypage.subscribed_at">Trial/Subscription Start</span>
+            <span id="myPageSubscribedAt" style="font-weight: 600; color: #1e293b;">-</span>
           </div>
-          <div class="billing-info-row">
-            <span class="info-label" data-i18n="mypage.expires_at">만료/갱신 예정일</span>
-            <span class="info-value" id="myPageExpiresAt">-</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px;">
+            <span style="color: #64748b;" data-i18n="mypage.expires_at">Expiration/Renewal Date</span>
+            <span id="myPageExpiresAt" style="font-weight: 600; color: var(--accent-blue);"></span>
           </div>
+        </div>
+
+        <!-- Subscription Period Toggle (Monthly / Yearly) -->
+        <div id="subscriptionPeriodToggle"
+          style="display: flex; background: #f1f5f9; padding: 4px; border-radius: 10px; margin: 0 auto 20px auto; max-width: 400px;">
+          <button id="toggleMonthly"
+            style="flex: 1; padding: 10px; border: none; background: #1e293b; border-radius: 8px; font-weight: 600; color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; transition: all 0.2s;"
+            data-i18n="mypage.plan_monthly">Monthly ($49/mo)</button>
+          <button id="toggleYearly"
+            style="flex: 1; padding: 10px; border: none; background: transparent; border-radius: 8px; font-weight: 600; color: #64748b; cursor: pointer; transition: all 0.2s;"
+            data-i18n="mypage.plan_yearly">Yearly (Save 20%)</button>
         </div>
 
         <div id="tos-container"
@@ -610,8 +630,8 @@
         <div class="subscription-btn-group"
           style="display: flex; flex-direction: column; gap: 10px; max-width: 400px; margin: 12px auto 0;">
           <button id="renewSubscriptionBtn" class="btn-primary sub-action-btn sub-renew"
-            style="display:none; width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; color: #fff; background: linear-gradient(135deg, var(--accent-blue), #6c5ce7); box-shadow: 0 4px 14px rgba(59,130,246,0.3); transition: all 0.2s;"
-            data-i18n="mypage.btn_renew">🔄 구독 갱신 (Renew)</button>
+            style="display:none; width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; color: #fff; background: var(--accent-blue, #3b82f6); box-shadow: 0 4px 14px rgba(59,130,246,0.3); transition: all 0.2s;"
+            data-i18n="mypage.btn_renew_simple">🔄 Renew Subscription</button>
           <button id="extendSubscriptionBtn" class="btn-primary sub-action-btn sub-extend"
             style="display:none; width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; color: #fff; background: linear-gradient(135deg, #00b894, #00cec9); box-shadow: 0 44px 14px rgba(0,184,148,0.3); transition: all 0.2s;"
             data-i18n="mypage.btn_extend">⏳ 구독 연장 (Extend)</button>

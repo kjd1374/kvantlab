@@ -261,7 +261,10 @@
     "status_free": "Free (Limited)",
     "status_expired": "Expired",
     "cancel_subscription": "Cancel Subscription",
-    "upgrade": "Upgrade Plan"
+    "upgrade": "Upgrade Plan",
+    "plan_monthly": "Monthly ($49/mo)",
+    "plan_yearly": "Yearly (Save 20%)",
+    "btn_renew_simple": "🔄 Renew Subscription"
   },
   "gt": {
     "gt_collected": "Products",

@@ -1180,8 +1180,8 @@ async function loadSemanticResults() {
             <td>${name}</td>
             <td>${brand}</td>
             <td>${price}</td>
-            <td>${p.review_count > 0 ? formatNumber(p.review_count) : '-'}</td>
-            <td>${p.review_rating > 5 ? '❤️ ' + formatNumber(p.review_rating) : (p.review_rating > 0 && !isNaN(p.review_rating) ? p.review_rating : '-')}</td>
+            <td style="text-align:center;">${p.review_count > 0 ? formatNumber(p.review_count) : '-'}</td>
+            <td style="text-align:center;">${p.review_rating > 5 ? '❤️ ' + formatNumber(p.review_rating) : (p.review_rating > 0 && !isNaN(p.review_rating) ? p.review_rating : '-')}</td>
             <td style="text-align:center;"><span style="color:#999;">—</span></td>
           </tr>
         `;
@@ -3917,6 +3917,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 let paypalButtonsRendered = false;
+let currentSubscriptionPeriod = 'monthly'; // 'monthly' | 'yearly'
+
 function renderPayPalButtons() {
   const ppContainer = document.getElementById('paypal-button-container');
   console.log('[PayPal Debug] renderPayPalButtons called. Container:', ppContainer ? 'Found' : 'NOT Found');
@@ -3929,15 +3931,18 @@ function renderPayPalButtons() {
     paypalButtonsRendered = false;
   }
 
-  // If already rendered AND the container still has children, don't re-render
-  if (paypalButtonsRendered && ppContainer.children.length > 0) {
-    console.log('[PayPal Debug] Already rendered and container not empty, skipping.');
-    return;
+  // Always re-render if period changed, so clear out children manually here in upcoming step
+  // But wait, the previous code had a short circuit. Let's remove the short circuit
+  // if we are explicitly re-rendering for a tier change.
+  // Actually, to make toggle work seamlessly, we will just clear it if period changed.
+
+  let planId = (import.meta.env.VITE_PAYPAL_PLAN_ID || '').trim();
+  if (currentSubscriptionPeriod === 'yearly') {
+    planId = (import.meta.env.VITE_PAYPAL_PLAN_ID_YEARLY || import.meta.env.VITE_PAYPAL_PLAN_ID || '').trim();
   }
 
-  const planId = (import.meta.env.VITE_PAYPAL_PLAN_ID || '').trim();
   const clientId = (import.meta.env.VITE_PAYPAL_CLIENT_ID || '').trim();
-  console.log('[PayPal Debug] Starting render with PlanID:', planId, 'ClientID:', clientId);
+  console.log('[PayPal Debug] Starting render with PlanID:', planId, 'ClientID:', clientId, 'Period:', currentSubscriptionPeriod);
 
   if (!planId || !clientId) {
     console.error('[PayPal Debug] PayPal Plan ID or Client ID is missing');
@@ -4050,15 +4055,22 @@ if (renewBtn) {
   renewBtn.addEventListener('click', () => {
     const ppContainer = document.getElementById('paypal-button-container');
     const tosContainer = document.getElementById('tos-container');
+    const periodToggle = document.getElementById('subscriptionPeriodToggle');
+
     if (!ppContainer) return;
 
     const isVisible = ppContainer.style.display !== 'none';
     if (isVisible) {
       ppContainer.style.display = 'none';
       if (tosContainer) tosContainer.style.display = 'none';
-      renewBtn.textContent = window.t('mypage.btn_renew') || '🔄 구독 갱신 (Renew)';
+      if (periodToggle) periodToggle.style.display = 'none';
+
+      const siteLang = typeof i18n !== 'undefined' ? i18n.currentLang : 'ko';
+      renewBtn.textContent = siteLang === 'ko' ? '🔄 구독 갱신 (Renew)' : '🔄 Renew Subscription';
+      renewBtn.style.background = 'var(--accent-blue, #3b82f6)';
     } else {
       if (tosContainer) tosContainer.style.display = 'block';
+      if (periodToggle) periodToggle.style.display = 'flex';
       ppContainer.style.display = 'block';
       ppContainer.style.marginBottom = '16px';
 
@@ -4068,9 +4080,71 @@ if (renewBtn) {
         blocker.style.display = tosCheck.checked ? 'none' : 'block';
       }
 
+      ppContainer.innerHTML = ''; // Force clear for re-render
+      paypalButtonsRendered = false;
       renderPayPalButtons(); // Render PayPal buttons
+
       ppContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      renewBtn.textContent = i18n.currentLang === 'ko' ? '✕ 결제창 닫기' : '✕ Close Payment';
+      const siteLang = typeof i18n !== 'undefined' ? i18n.currentLang : 'ko';
+      renewBtn.textContent = siteLang === 'ko' ? '✕ 결제창 닫기' : '✕ Close Payment';
+      renewBtn.style.background = '#64748b'; // generic gray to indicate close
+    }
+  });
+}
+
+// Subscription Period Toggle Handlers
+const btnMonthly = document.getElementById('toggleMonthly');
+const btnYearly = document.getElementById('toggleYearly');
+
+function updateToggleUI() {
+  if (!btnMonthly || !btnYearly) return;
+  if (currentSubscriptionPeriod === 'monthly') {
+    btnMonthly.style.background = '#1e293b';
+    btnMonthly.style.color = '#fff';
+    btnMonthly.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+
+    btnYearly.style.background = 'transparent';
+    btnYearly.style.color = '#64748b';
+    btnYearly.style.boxShadow = 'none';
+  } else {
+    btnYearly.style.background = '#1e293b';
+    btnYearly.style.color = '#fff';
+    btnYearly.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+
+    btnMonthly.style.background = 'transparent';
+    btnMonthly.style.color = '#64748b';
+    btnMonthly.style.boxShadow = 'none';
+  }
+}
+
+if (btnMonthly) {
+  btnMonthly.addEventListener('click', () => {
+    if (currentSubscriptionPeriod === 'monthly') return;
+    currentSubscriptionPeriod = 'monthly';
+    updateToggleUI();
+
+    // Re-render paypal buttons if visible
+    const pp = document.getElementById('paypal-button-container');
+    if (pp && pp.style.display !== 'none') {
+      pp.innerHTML = '';
+      paypalButtonsRendered = false;
+      renderPayPalButtons();
+    }
+  });
+}
+
+if (btnYearly) {
+  btnYearly.addEventListener('click', () => {
+    if (currentSubscriptionPeriod === 'yearly') return;
+    currentSubscriptionPeriod = 'yearly';
+    updateToggleUI();
+
+    // Re-render paypal buttons if visible
+    const pp = document.getElementById('paypal-button-container');
+    if (pp && pp.style.display !== 'none') {
+      pp.innerHTML = '';
+      paypalButtonsRendered = false;
+      renderPayPalButtons();
     }
   });
 }
@@ -4081,15 +4155,20 @@ if (extendBtn) {
   extendBtn.addEventListener('click', () => {
     const ppContainer = document.getElementById('paypal-button-container');
     const tosContainer = document.getElementById('tos-container');
+    const periodToggle = document.getElementById('subscriptionPeriodToggle');
     if (!ppContainer) return;
 
     const isVisible = ppContainer.style.display !== 'none';
     if (isVisible) {
       ppContainer.style.display = 'none';
       if (tosContainer) tosContainer.style.display = 'none';
-      extendBtn.textContent = window.t('mypage.btn_extend') || '⏳ 구독 연장 (Extend)';
+      if (periodToggle) periodToggle.style.display = 'none';
+
+      const siteLang = typeof i18n !== 'undefined' ? i18n.currentLang : 'ko';
+      extendBtn.textContent = siteLang === 'ko' ? '⏳ 구독 연장 (Extend)' : '⏳ Extend Subscription';
     } else {
       if (tosContainer) tosContainer.style.display = 'block';
+      if (periodToggle) periodToggle.style.display = 'flex';
       ppContainer.style.display = 'block';
       ppContainer.style.marginBottom = '16px';
 
@@ -4099,9 +4178,13 @@ if (extendBtn) {
         blocker.style.display = tosCheck.checked ? 'none' : 'block';
       }
 
+      ppContainer.innerHTML = ''; // Force clear for re-render
+      paypalButtonsRendered = false;
       renderPayPalButtons(); // Render PayPal buttons
+
       ppContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      extendBtn.textContent = i18n.currentLang === 'ko' ? '✕ 결제창 닫기' : '✕ Close Payment';
+      const siteLang = typeof i18n !== 'undefined' ? i18n.currentLang : 'ko';
+      extendBtn.textContent = siteLang === 'ko' ? '✕ 결제창 닫기' : '✕ Close Payment';
     }
   });
 }
