@@ -1754,15 +1754,15 @@ function renderProductCard(p, mode = 'normal', isGlobalTrend = false, isWishlist
 
   // B2B Sourcing Quantity Control (Only in Wishlist Tab)
   const qtyHtml = isWishlistTab ? `
-    <div class="sourcing-qty-control" onclick="event.stopPropagation();" style="display:flex; align-items:center; justify-content:center; gap:15px; margin-top:10px; padding-top:10px; border-top:1px solid var(--border);">
-      <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-        <input type="checkbox" class="sourcing-item-checkbox" checked style="width:16px; height:16px; accent-color:var(--accent-blue);">
-        <span style="font-size:12px; color:var(--text-muted); font-weight:500;">📦 ${window.t('sourcing.qty_label')}</span>
-      </label>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <button type="button" class="btn-qty" onclick="event.stopPropagation(); window.__updateSourcingQty(this, -5)">-</button>
-        <input type="number" class="sourcing-qty-input" data-product-id="${productId}" value="10" min="10" step="5" style="width:50px; text-align:center; border:1px solid var(--border); border-radius:4px; font-size:12px; padding:2px; background:var(--background); color:var(--text);" onclick="event.stopPropagation();">
-        <button type="button" class="btn-qty" onclick="event.stopPropagation(); window.__updateSourcingQty(this, 5)">+</button>
+      <div class="sourcing-qty-control" onclick="event.stopPropagation();" style="display:flex; align-items:center; justify-content:center; gap:15px; margin-top:10px; padding-top:10px; border-top:1px solid var(--border);">
+        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+          <input type="checkbox" class="sourcing-item-checkbox" checked style="width:16px; height:16px; accent-color:var(--accent-blue);">
+          <span style="font-size:12px; color:var(--text-muted); font-weight:500;">📦 ${window.t('sourcing.qty_label')}</span>
+        </label>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" class="btn-qty" onclick="event.stopPropagation(); window.__updateSourcingQty(this, -5)">-</button>
+          <input type="number" class="sourcing-qty-input" data-product-id="${productId}" value="5" min="5" step="5" style="width:50px; text-align:center; border:1px solid var(--border); border-radius:4px; font-size:12px; padding:2px; background:var(--background); color:var(--text);" onclick="event.stopPropagation();">
+          <button type="button" class="btn-qty" onclick="event.stopPropagation(); window.__updateSourcingQty(this, 5)">+</button>
       </div>
     </div>
   ` : '';
@@ -4143,7 +4143,19 @@ window.openQuoteModal = function (directItems = null) {
 
         const pid = input.getAttribute('data-product-id');
         const img = card ? (card.querySelector('img')?.src || '') : '';
-        items.push({ product_id: pid, name, brand, qty: qty, quantity: qty, image: img });
+        const priceText = card ? (card.querySelector('.product-price')?.innerText?.replace(/[^\d]/g, '') || '0') : '0';
+        const price = parseInt(priceText) || 0;
+        const source = card ? (card.querySelector('.product-source')?.innerText || 'Wishlist') : 'Wishlist';
+        items.push({
+          product_id: pid,
+          name,
+          brand,
+          qty: qty,
+          quantity: qty,
+          image_url: img,
+          price: price,
+          source: source
+        });
       }
     });
   }
@@ -4153,34 +4165,20 @@ window.openQuoteModal = function (directItems = null) {
     return;
   }
 
-  let listHtml = '';
-  items.forEach(item => {
-    listHtml += `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid rgba(0,0,0,0.05);">
-        <div style="flex:1; padding-right:10px; overflow:hidden;">
-          <div style="font-size:12px; font-weight:700; color:var(--accent-blue); margin-bottom:2px;">${item.brand}</div>
-          <div style="font-size:14px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.name}</div>
-        </div>
-        <div style="font-weight:700; font-size:14px; color:var(--text); background:#fff; padding:6px 12px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1); white-space:nowrap;">
-          ${item.qty}개
-        </div>
-      </div>
-    `;
+  // Add items to the global Sourcing cart
+  if (!window.__srcCartItems) window.__srcCartItems = [];
+  items.forEach(newItem => {
+    const exists = window.__srcCartItems.some(it => String(it.product_id) === String(newItem.product_id));
+    if (!exists) {
+      window.__srcCartItems.push(newItem);
+    }
   });
 
-  const listContainer = document.getElementById('quoteProductList');
-  if (listContainer) {
-    listContainer.innerHTML = listHtml;
-    // Remove last border bottom
-    if (listContainer.lastElementChild) {
-      listContainer.lastElementChild.style.borderBottom = 'none';
-    }
+  // Navigate to Sourcing tab and render
+  window.switchMainTab('sourcing');
+  if (window.__srcRenderCart) {
+    window.__srcRenderCart(window.__srcCartItems);
   }
-
-  window.__currentQuoteItems = items;
-
-  const overlay = document.getElementById('quoteModalOverlay');
-  if (overlay) overlay.classList.add('open');
 
   // Ensure placeholders are loaded
   if (typeof applyI18nPlaceholders === 'function') applyI18nPlaceholders();
@@ -4196,7 +4194,7 @@ window.__updateSourcingQty = function (btn, delta) {
   if (input) {
     let val = parseInt(input.value) || 0;
     val += delta;
-    if (val < 10) val = 10;
+    if (val < 5) val = 5;
     input.value = val;
   }
 };
