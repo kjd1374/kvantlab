@@ -595,28 +595,31 @@
             <span id="myPageExpiresAt" style="font-weight: 600; color: var(--accent-blue);"></span>
           </div>
 
-          <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
-            <button id="cancelSubscriptionBtn"
-              style="display:none; background: none; border: none; color: #94a3b8; font-size: 12px; text-decoration: underline; cursor: pointer; padding: 0;"
-              data-i18n="mypage.cancel_subscription">Cancel Subscription</button>
+        </div>
+
+        <!-- Subscription Plan Selection Cards -->
+        <h4 style="text-align: center; color: #64748b; font-weight: 500; margin-bottom: 12px; font-size: 15px;"
+          data-i18n="mypage.after_trial_choose">After trial, choose your plan:</h4>
+
+        <div id="subscriptionCards" style="display: flex; gap: 12px; max-width: 400px; margin: 0 auto 20px auto;">
+          <!-- Monthly Card -->
+          <div id="cardMonthly" class="plan-card">
+            <div class="plan-card-title" data-i18n="mypage.plan_monthly">Monthly</div>
+            <div class="plan-card-price" data-i18n="mypage.price_monthly_val">$14.9</div>
+            <div class="plan-card-desc" data-i18n="mypage.per_month">per month</div>
+            <div class="plan-card-highlight" style="color: #f59e0b;" data-i18n="mypage.early_bird">Early Bird</div>
           </div>
-        </div>
 
-        <!-- Subscription Period Toggle (Monthly / Yearly) -->
-        <div id="subscriptionPeriodToggle"
-          style="display: flex; background: #f1f5f9; padding: 4px; border-radius: 10px; margin: 0 auto 20px auto; max-width: 400px;">
-          <button id="toggleMonthly"
-            style="flex: 1; padding: 10px; border: none; background: #1e293b; border-radius: 8px; font-weight: 600; color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; transition: all 0.2s;"
-            data-i18n="mypage.plan_monthly">Monthly ($49/mo)</button>
-          <button id="toggleYearly"
-            style="flex: 1; padding: 10px; border: none; background: transparent; border-radius: 8px; font-weight: 600; color: #64748b; cursor: pointer; transition: all 0.2s;"
-            data-i18n="mypage.plan_yearly">Yearly (Save 20%)</button>
-        </div>
-
-        <div id="subscriptionPriceDetails"
-          style="text-align: center; margin-bottom: 20px; font-size: 15px; color: #475569;"
-          data-i18n="mypage.price_desc_monthly">
-          매월 결제 시 <strong>$49/월</strong>
+          <!-- Annual Card -->
+          <div id="cardYearly" class="plan-card active">
+            <div class="best-value-badge" data-i18n="mypage.best_value">BEST VALUE</div>
+            <div class="plan-card-title" data-i18n="mypage.plan_yearly">Annual</div>
+            <div class="plan-card-price" style="color: #6366f1;" data-i18n="mypage.price_yearly_val">$9.9</div>
+            <div class="plan-card-desc" data-i18n="mypage.per_month">per month</div>
+            <div class="plan-card-sub" data-i18n="mypage.billed_yearly">$119 billed yearly</div>
+            <div class="plan-card-highlight" style="color: #10b981; font-weight: 700;" data-i18n="mypage.save_34">Save
+              34%</div>
+          </div>
         </div>
 
         <div id="tos-container"
@@ -642,11 +645,15 @@
         <div class="subscription-btn-group"
           style="display: flex; flex-direction: column; gap: 10px; max-width: 400px; margin: 12px auto 0;">
           <button id="renewSubscriptionBtn" class="btn-primary sub-action-btn sub-renew"
-            style="display:none; width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; color: #fff; background: var(--accent-blue, #3b82f6); box-shadow: 0 4px 14px rgba(59,130,246,0.3); transition: all 0.2s;"
-            data-i18n="mypage.btn_renew_simple">🔄 Renew Subscription</button>
+            style="display:none; width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 18px; font-weight: 700; cursor: pointer; color: #fff; background: #4351b6; box-shadow: 0 4px 14px rgba(67, 81, 182, 0.3); transition: all 0.2s; letter-spacing: 0.5px;"
+            data-i18n="mypage.btn_renew_simple">구독 시작하기</button>
           <button id="extendSubscriptionBtn" class="btn-primary sub-action-btn sub-extend"
             style="display:none; width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; color: #fff; background: linear-gradient(135deg, #00b894, #00cec9); box-shadow: 0 4px 14px rgba(0,184,148,0.3); transition: all 0.2s;"
             data-i18n="mypage.btn_extend">⏳ 구독 연장 (Extend)</button>
+
+          <button id="cancelSubscriptionBtn"
+            style="display:none; background: none; border: none; color: #9ca3af; font-size: 14px; line-height: 1.5; cursor: pointer; padding: 8px; text-align: center; width: 100%; margin-top: 4px; transition: color 0.2s;"
+            data-i18n="mypage.cancel_anytime_desc">트라이얼 만료 전 언제든 선택 가능<br>Cancel anytime · Secure via PayPal</button>
         </div>
       </div>
 

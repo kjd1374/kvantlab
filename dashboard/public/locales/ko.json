@@ -268,12 +268,17 @@
     "status_free": "무료 플랜 (제한됨)",
     "status_expired": "만료됨",
     "cancel_subscription": "구독 취소",
-    "upgrade": "플랜 업그레이드",
-    "plan_monthly": "월간 결제 ($49/월)",
-    "plan_yearly": "연간 결제 (20% 할인)",
-    "price_desc_monthly": "매월 결제 시 <strong>$49/월</strong>",
-    "price_desc_yearly": "매년 결제 시 <strong>$470/년</strong> (약 $39/월, 20% 할인)",
-    "btn_renew_simple": "🔄 구독 갱신"
+    "plan_monthly": "Monthly",
+    "plan_yearly": "Annual",
+    "price_monthly_val": "$14.9",
+    "price_yearly_val": "$9.9",
+    "per_month": "per month",
+    "early_bird": "Early Bird",
+    "billed_yearly": "$119 billed yearly",
+    "save_34": "Save 34%",
+    "best_value": "BEST VALUE",
+    "btn_renew_simple": "구독 시작하기",
+    "cancel_anytime_desc": "트라이얼 만료 전 언제든 선택 가능<br>Cancel anytime · Secure via PayPal"
   },
   "gt": {
     "gt_collected": "수집 제품",
