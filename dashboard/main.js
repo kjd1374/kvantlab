@@ -3937,9 +3937,13 @@ function renderPayPalButtons() {
   // if we are explicitly re-rendering for a tier change.
   // Actually, to make toggle work seamlessly, we will just clear it if period changed.
 
-  let planId = (import.meta.env.VITE_PAYPAL_PLAN_ID || '').trim();
+  // Typo check: Handle both VITE_PAYPAL_PLAN_ID_YEARLY and VITE_PAYPAY_PLAN_ID_YEARLY
+  const VITE_PAYPAL_PLAN_ID = (import.meta.env.VITE_PAYPAL_PLAN_ID || '').trim();
+  const VITE_PAYPAL_PLAN_ID_YEARLY = (import.meta.env.VITE_PAYPAL_PLAN_ID_YEARLY || import.meta.env.VITE_PAYPAY_PLAN_ID_YEARLY || '').trim();
+
+  let planId = VITE_PAYPAL_PLAN_ID;
   if (currentSubscriptionPeriod === 'yearly') {
-    planId = (import.meta.env.VITE_PAYPAL_PLAN_ID_YEARLY || import.meta.env.VITE_PAYPAL_PLAN_ID || '').trim();
+    planId = VITE_PAYPAL_PLAN_ID_YEARLY || VITE_PAYPAL_PLAN_ID;
   }
 
   const clientId = (import.meta.env.VITE_PAYPAL_CLIENT_ID || '').trim();
@@ -3976,8 +3980,15 @@ function renderPayPalButtons() {
     return;
   }
 
-  // Clear container before rendering fresh buttons
-  ppContainer.innerHTML = '';
+  // Clear container and show loading state
+  ppContainer.innerHTML = '<div id="paypal-loading" style="text-align:center; padding:20px; color:#64748b; font-size:14px;"><span class="spinner" style="display:inline-block; width:16px; height:16px; border:2px solid #e2e8f0; border-top-color:#4351b6; border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle;"></span>결제 버튼 로딩 중...</div>';
+
+  if (!document.getElementById('paypal-spin-style')) {
+    const style = document.createElement('style');
+    style.id = 'paypal-spin-style';
+    style.innerHTML = '@keyframes spin { to { transform: rotate(360deg); } }';
+    document.head.appendChild(style);
+  }
 
   // Check eligibility for subscriptions
   const buttons = paypal.Buttons({
@@ -4041,7 +4052,10 @@ function renderPayPalButtons() {
 
   if (buttons.isEligible()) {
     console.log('[PayPal Debug] Buttons are eligible, rendering now...');
-    buttons.render('#paypal-button-container').catch(err => {
+    buttons.render('#paypal-button-container').then(() => {
+      const loader = document.getElementById('paypal-loading');
+      if (loader) loader.remove();
+    }).catch(err => {
       console.error('[PayPal Debug] Render failed:', err);
     });
     paypalButtonsRendered = true;
@@ -4115,12 +4129,14 @@ if (cardMonthly) {
     currentSubscriptionPeriod = 'monthly';
     updateToggleUI();
 
-    // Re-render paypal buttons if visible
+    // Re-render paypal buttons if visible - DEFERRED to fix UI lag
     const pp = document.getElementById('paypal-button-container');
     if (pp && pp.style.display !== 'none') {
-      pp.innerHTML = '';
-      paypalButtonsRendered = false;
-      renderPayPalButtons();
+      pp.innerHTML = '<div style="text-align:center; padding:20px; color:#64748b;">...</div>'; // Quick placeholder
+      setTimeout(() => {
+        paypalButtonsRendered = false;
+        renderPayPalButtons();
+      }, 10);
     }
   });
 }
@@ -4131,12 +4147,14 @@ if (cardYearly) {
     currentSubscriptionPeriod = 'yearly';
     updateToggleUI();
 
-    // Re-render paypal buttons if visible
+    // Re-render paypal buttons if visible - DEFERRED to fix UI lag
     const pp = document.getElementById('paypal-button-container');
     if (pp && pp.style.display !== 'none') {
-      pp.innerHTML = '';
-      paypalButtonsRendered = false;
-      renderPayPalButtons();
+      pp.innerHTML = '<div style="text-align:center; padding:20px; color:#64748b;">...</div>'; // Quick placeholder
+      setTimeout(() => {
+        paypalButtonsRendered = false;
+        renderPayPalButtons();
+      }, 10);
     }
   });
 }
