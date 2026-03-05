@@ -393,9 +393,9 @@ export async function fetchRankedProducts({ page = 1, perPage = 20, search = '',
     if (latestDate) {
         // Fetch all rankings for the date, ordered by created_at DESC to get latest intraday data first
         let rankParams = `select=product_id,rank,category_code,created_at&source=eq.${platform}&date=eq.${latestDate}&order=created_at.desc`;
-        if (categoryCode && categoryCode !== 'all') {
-            rankParams += `&category_code=eq.${categoryCode}`;
-        }
+        // Always filter by category_code — 'all' maps to the actual 'all' category in daily_rankings_v2
+        const effectiveCategoryCode = (categoryCode && categoryCode !== 'all') ? categoryCode : 'all';
+        rankParams += `&category_code=eq.${effectiveCategoryCode}`;
 
         const rankResult = await query('daily_rankings_v2', rankParams);
         const allRows = rankResult.data || [];
@@ -443,9 +443,7 @@ export async function fetchRankedProducts({ page = 1, perPage = 20, search = '',
                 const prevDate = prevDateRes.data?.[0]?.date;
                 if (prevDate) {
                     let prevRankParams = `select=product_id,rank&source=eq.${platform}&date=eq.${prevDate}`;
-                    if (categoryCode && categoryCode !== 'all') {
-                        prevRankParams += `&category_code=eq.${categoryCode}`;
-                    }
+                    prevRankParams += `&category_code=eq.${effectiveCategoryCode}`;
                     const prevRankResult = await query('daily_rankings_v2', prevRankParams);
                     const prevRankMap = {};
                     (prevRankResult.data || []).forEach(r => { prevRankMap[r.product_id] = r.rank; });
