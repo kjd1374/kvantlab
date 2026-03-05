@@ -170,6 +170,9 @@ window.switchMainTab = function (mainTabId) {
 
     // Reload sourcing history if the user is authenticated and function exists
     if (window.renderSourcingHistory) window.renderSourcingHistory();
+
+    // Scroll to top
+    window.scrollTo(0, 0);
   }
 };
 
@@ -4720,6 +4723,8 @@ window.__srcRenderCart = function (items) {
   if (!items || items.length === 0) {
     if (countEl) countEl.textContent = '0';
     if (emptyEl) emptyEl.style.display = '';
+    // Fix: clear the container so the last item is actually removed from the DOM
+    container.innerHTML = emptyEl ? emptyEl.outerHTML : '';
     return;
   }
   if (countEl) countEl.textContent = items.length;
