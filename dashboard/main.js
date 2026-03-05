@@ -4517,13 +4517,154 @@ window.loadSearchRequests = async function () {
 };
 
 // ─── Sourcing History (Table View for Main Tab) ────────────────
+// ─── New Sourcing Page Functions ────────────────
+
+// Tab switching (URL / Image)
+window.__srcSwitchTab = function (tabId) {
+  document.querySelectorAll('.src-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.src-tab-content').forEach(c => c.classList.remove('active'));
+  const tabBtn = document.querySelector(`.src-tab[data-src-tab="${tabId}"]`);
+  const tabContent = document.getElementById(tabId === 'url' ? 'srcTabUrl' : 'srcTabImage');
+  if (tabBtn) tabBtn.classList.add('active');
+  if (tabContent) tabContent.classList.add('active');
+};
+
+// Add URL row
+window.__srcAddUrl = function () {
+  const list = document.getElementById('srcUrlList');
+  if (!list) return;
+  const rows = list.querySelectorAll('.src-url-row');
+  if (rows.length >= 5) { alert('최대 5개까지 추가할 수 있습니다.'); return; }
+  const row = document.createElement('div');
+  row.className = 'src-url-row';
+  row.innerHTML = `
+    <input type="url" class="src-url-input" placeholder="https://..." oninput="window.__validateSnsInput(this)">
+    <button class="src-btn-remove-url" onclick="this.parentElement.remove()">✕</button>
+  `;
+  list.appendChild(row);
+};
+
+// History filter
+window.__srcSetFilter = function (btn) {
+  document.querySelectorAll('.src-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  window.__srcFilterHistory();
+};
+window.__srcFilterHistory = function () {
+  const activeFilter = document.querySelector('.src-filter-btn.active');
+  const status = activeFilter ? activeFilter.dataset.status : 'all';
+  const search = (document.getElementById('srcHistorySearch')?.value || '').toLowerCase();
+  document.querySelectorAll('#srcHistoryTbody tr[data-status]').forEach(row => {
+    const matchStatus = status === 'all' || row.dataset.status === status;
+    const matchSearch = !search || row.textContent.toLowerCase().includes(search);
+    row.style.display = (matchStatus && matchSearch) ? '' : 'none';
+  });
+};
+
+// Detail Modal
+window.__srcOpenDetail = function (reqId) {
+  const overlay = document.getElementById('srcDetailOverlay');
+  const content = document.getElementById('srcDetailContent');
+  if (!overlay || !content) return;
+  const req = window.__srcHistoryData?.find(r => r.id == reqId);
+  if (!req) return;
+
+  const steps = ['접수', '검토', '견적완료', '주문확정'];
+  const statusMap = { pending: 1, quoted: 2, confirmed: 3 };
+  const currentStep = statusMap[req.status] || 0;
+
+  let stepperHtml = '<div class="src-stepper">';
+  steps.forEach((label, i) => {
+    const isActive = i <= currentStep;
+    if (i > 0) stepperHtml += `<div class="src-step-line ${isActive ? '' : 'inactive'}"></div>`;
+    stepperHtml += `
+      <div class="src-step">
+        <div class="src-step-circle ${isActive ? '' : 'inactive'}">${i + 1}</div>
+        <div class="src-step-label ${isActive ? 'active' : 'inactive'}">${label}</div>
+      </div>`;
+  });
+  stepperHtml += '</div>';
+
+  const itemName = req.items?.[0]?.name || '직접 요청 건';
+  const dateStr = new Date(req.created_at).toLocaleDateString('ko-KR');
+  const totalQty = req.items?.reduce((s, it) => s + (it.qty || 1), 0) || 1;
+
+  let quoteHtml = '';
+  if (req.status === 'quoted' && req.estimated_cost > 0) {
+    quoteHtml = `
+      <div class="src-quote-box">
+        <div class="src-quote-title">관리자 견적 답변</div>
+        <div class="src-quote-detail">총 견적: ₩${req.estimated_cost.toLocaleString()}</div>
+        ${req.admin_reply ? `<div class="src-quote-note">${req.admin_reply}</div>` : ''}
+      </div>`;
+  }
+
+  content.innerHTML = `
+    <h3 style="font-size:16px; font-weight:700; margin:0 0 4px;">${escapeHtml(itemName)}</h3>
+    <p style="font-size:12px; color:#888; margin:0 0 16px;">요청일: ${dateStr}  ·  수량: ${totalQty}개</p>
+    <div style="font-size:12px; font-weight:600; color:#555; margin-bottom:4px;">진행 상태</div>
+    ${stepperHtml}
+    ${quoteHtml}
+    <div class="src-modal-actions">
+      ${req.status === 'quoted' ? '<button class="src-btn-confirm" onclick="alert(\'주문 확정 기능은 곧 오픈됩니다!\')">주문 확정하기</button>' : ''}
+      <button class="src-btn-close" onclick="window.__srcCloseDetail()">닫기</button>
+    </div>
+  `;
+  overlay.classList.add('active');
+};
+window.__srcCloseDetail = function () {
+  document.getElementById('srcDetailOverlay')?.classList.remove('active');
+};
+
+// Cart rendering
+window.__srcRenderCart = function (items) {
+  const container = document.getElementById('srcCartProducts');
+  const countEl = document.getElementById('srcCartCount');
+  const emptyEl = document.getElementById('srcEmptyCart');
+  if (!container) return;
+
+  if (!items || items.length === 0) {
+    if (countEl) countEl.textContent = '0';
+    if (emptyEl) emptyEl.style.display = '';
+    return;
+  }
+  if (countEl) countEl.textContent = items.length;
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  const cardsHtml = items.map((item, i) => `
+    <div class="src-cart-card" data-index="${i}">
+      <img class="src-thumb" src="${item.image_url || ''}" alt="" onerror="this.style.display='none'">
+      <div class="src-info">
+        <div class="src-brand">${escapeHtml(item.brand || '')}</div>
+        <div class="src-name">${escapeHtml(item.name || '')}</div>
+        <div class="src-meta">₩${(item.price || 0).toLocaleString()}  ·  ${item.source || ''}</div>
+      </div>
+      <div class="src-card-fields">
+        <div><label>수량</label><input type="number" class="src-cart-qty" value="${item.qty || 1}" min="1" data-index="${i}"></div>
+        <div><label>메모 (선택)</label><input type="text" class="src-cart-memo" placeholder="예: 색상, 옵션 등" data-index="${i}"></div>
+      </div>
+      <button class="src-btn-remove" onclick="window.__srcRemoveCartItem(${i})">✕</button>
+    </div>
+  `).join('');
+  container.innerHTML = (emptyEl ? emptyEl.outerHTML : '') + cardsHtml;
+};
+
+window.__srcRemoveCartItem = function (index) {
+  if (window.__srcCartItems) {
+    window.__srcCartItems.splice(index, 1);
+    window.__srcRenderCart(window.__srcCartItems);
+  }
+};
+
+// History rendering (redesigned)
+window.__srcHistoryData = [];
 window.renderSourcingHistory = async function () {
-  const tbody = document.getElementById('sourcingHistoryTbody');
+  const tbody = document.getElementById('srcHistoryTbody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 30px;"><div class="loading-skeleton" style="height:40px;"></div></td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px;"><div class="loading-skeleton" style="height:40px;"></div></td></tr>';
   const session = getSession();
   if (!session) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);">로그인이 필요합니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#999;">로그인이 필요합니다.</td></tr>`;
     return;
   }
 
@@ -4533,74 +4674,68 @@ window.renderSourcingHistory = async function () {
     if (!data.success) throw new Error(data.error);
 
     if (!data.requests || data.requests.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);">${window.t('sourcing.history_empty') || '소싱 견적 내역이 없습니다.'}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#999;">소싱 견적 내역이 없습니다.</td></tr>`;
       return;
     }
 
+    window.__srcHistoryData = data.requests;
+
     tbody.innerHTML = data.requests.map(req => {
-      const dateStr = new Date(req.created_at).toLocaleString(i18n.currentLang === 'ko' ? 'ko-KR' : 'en-US', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-      const itemCount = (req.items && Array.isArray(req.items)) ? req.items.length : 0;
+      const dateStr = new Date(req.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const totalQty = req.items?.reduce((s, it) => s + (it.qty || 1), 0) || '-';
       const totalCost = req.estimated_cost || 0;
-      const uid = btoa(req.created_at || Math.random()).replace(/[^a-z0-9]/gi, '').slice(0, 8);
 
       // Status badge
-      let statusColor = '#e2e3e5'; let statusText = req.status; let statusTxt = '#383d41';
-      if (req.status === 'pending') { statusColor = '#fff3cd'; statusTxt = '#856404'; statusText = window.t('sourcing.status_pending') || '접수/검토중'; }
-      else if (req.status === 'quoted') { statusColor = '#d4edda'; statusTxt = '#155724'; statusText = window.t('sourcing.status_quoted') || '견적완료'; }
-      else if (req.status === 'canceled') { statusColor = '#f8d7da'; statusTxt = '#721c24'; statusText = window.t('sourcing.status_canceled') || '취소/반려'; }
-      const statusBadge = `<span style="background:${statusColor}; color:${statusTxt}; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; white-space:nowrap; display:inline-block;">${statusText}</span>`;
+      let badgeClass = 'src-badge--received';
+      let statusLabel = req.status;
+      if (req.status === 'pending') { badgeClass = 'src-badge--pending'; statusLabel = '검토 중'; }
+      else if (req.status === 'quoted') { badgeClass = 'src-badge--quoted'; statusLabel = '견적 완료'; }
+      else if (req.status === 'confirmed') { badgeClass = 'src-badge--confirmed'; statusLabel = '주문 확정'; }
+      else if (req.status === 'canceled') { badgeClass = 'src-badge--cancelled'; statusLabel = '취소'; }
 
-      // Item summary
-      let itemSummary = '';
-      if (req.items && req.items.length > 0) {
-        itemSummary = `<div style="font-weight:600; color:var(--text); margin-bottom:4px;">${escapeHtml(req.items[0].name)} ${(req.items.length > 1 ? `외 ${req.items.length - 1}건` : '')}</div>`;
-      }
-      if (req.sns_links && req.sns_links.length > 0) {
-        itemSummary += `<div style="font-size:12px; color:var(--accent-blue); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">🔗 링크 ${req.sns_links.length}개 포함</div>`;
-      }
-      if (req.note) {
-        itemSummary += `<div style="font-size:12px; color:var(--text-muted); margin-top:4px; max-height:40px; overflow:hidden; text-overflow:ellipsis;">📝 ${escapeHtml(req.note)}</div>`;
-      }
-
-      // Estimate / Reply
-      let estimateHtml = '-';
-      if (req.status === 'quoted' && totalCost > 0) {
-        estimateHtml = `<div style="font-weight:700; color:var(--text); font-size:14px;">₩${totalCost.toLocaleString()}</div>`;
-        if (req.admin_reply) {
-          estimateHtml += `<div style="font-size:11px; color:#0071e3; margin-top:4px; cursor:pointer;" onclick="alert('${escapeHtml(req.admin_reply)}')">[관리자 코멘트 확인]</div>`;
-        }
-      } else if (req.status === 'pending') {
-        estimateHtml = `<span style="color:var(--text-muted); font-size:12px;">견적 산출 중</span>`;
+      // Product cell
+      const firstItem = req.items?.[0];
+      let productCellHtml = '';
+      if (firstItem) {
+        const imgHtml = firstItem.image_url ? `<img src="${firstItem.image_url}" alt="" onerror="this.style.display='none'">` : '<div style="width:40px;height:40px;background:#eee;border-radius:4px;"></div>';
+        const sub = req.items.length > 1 ? `외 ${req.items.length - 1}건` : (req.sns_links?.length ? `🔗 링크 ${req.sns_links.length}개` : '');
+        productCellHtml = `
+          <div class="src-product-cell">
+            ${imgHtml}
+            <div class="src-product-info">
+              <span class="src-product-name">${escapeHtml(firstItem.name || '직접 요청')}</span>
+              ${sub ? `<span class="src-product-sub">${sub}</span>` : ''}
+            </div>
+          </div>`;
+      } else if (req.sns_links?.length) {
+        productCellHtml = `<div class="src-product-cell"><div class="src-product-info"><span class="src-product-name">URL 요청</span><span class="src-product-sub">🔗 링크 ${req.sns_links.length}개</span></div></div>`;
+      } else {
+        productCellHtml = `<span style="color:#aaa;">—</span>`;
       }
 
-      // Action / Update
-      let actionHtml = '-';
-      if (req.status === 'quoted' && totalCost > 0) {
-        actionHtml = `<button onclick="alert('결제 기능은 곧 오픈됩니다!')" style="padding:6px 12px; border-radius:6px; border:none; background:var(--accent-blue); color:#fff; font-size:12px; font-weight:600; cursor:pointer;">결제하기</button>`;
-      }
+      // Quote price
+      const priceHtml = (req.status === 'quoted' && totalCost > 0)
+        ? `<span style="font-weight:700; color:#3949ab;">₩${totalCost.toLocaleString()}</span>`
+        : '<span style="color:#bbb;">—</span>';
+
+      // Action
+      const actionHtml = (req.status === 'quoted' || req.status === 'confirmed')
+        ? `<button class="src-btn-detail" onclick="window.__srcOpenDetail(${req.id})">상세보기</button>`
+        : `<button class="src-btn-detail disabled">대기중</button>`;
 
       return `
-        <tr style="border-bottom: 1px solid var(--border);">
-          <td style="padding: 16px;">
-            <div style="font-size:12px; color:var(--text); font-weight:500;">${dateStr}</div>
-          </td>
-          <td style="padding: 16px; vertical-align: middle;">
-            ${statusBadge}
-          </td>
-          <td style="padding: 16px; vertical-align: middle; max-width: 300px;">
-            ${itemSummary}
-          </td>
-          <td style="padding: 16px; vertical-align: middle;">
-            ${estimateHtml}
-          </td>
-          <td style="padding: 16px; vertical-align: middle; text-align: center;">
-            ${actionHtml}
-          </td>
+        <tr data-status="${req.status}" data-req-id="${req.id}">
+          <td>${dateStr}</td>
+          <td>${productCellHtml}</td>
+          <td style="text-align:center">${totalQty}</td>
+          <td style="text-align:center"><span class="src-badge ${badgeClass}">${statusLabel}</span></td>
+          <td style="text-align:center">${priceHtml}</td>
+          <td style="text-align:center">${actionHtml}</td>
         </tr>
       `;
     }).join('');
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:15px; color:#e03131; font-size:13px;">${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px; color:#e03131; font-size:13px;">${e.message}</td></tr>`;
   }
 };
 
