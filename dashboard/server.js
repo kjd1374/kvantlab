@@ -702,7 +702,55 @@ app.post('/api/paypal/cancel', async (req, res) => {
     }
 });
 
+// --- Announcement Notification Broadcast ---
+
+app.post('/api/admin/announcements/notify', async (req, res) => {
+    const { title } = req.body;
+    if (!title) {
+        return res.status(400).json({ success: false, error: 'Missing announcement title' });
+    }
+
+    try {
+        // Fetch all user IDs from profiles
+        const { data: profiles, error: fetchError } = await supabase
+            .from('profiles')
+            .select('id');
+
+        if (fetchError) throw fetchError;
+        if (!profiles || profiles.length === 0) {
+            return res.json({ success: true, message: 'No users to notify', notified: 0 });
+        }
+
+        // Build notification records for every user
+        const notifications = profiles.map(p => ({
+            user_id: p.id,
+            type: 'system',
+            title: `📢 ${title}`,
+            message: '새로운 공지사항이 등록되었습니다. 공지사항 페이지에서 확인해주세요.',
+            link: 'notice',
+            is_read: false
+        }));
+
+        // Batch insert (Supabase handles arrays)
+        const { error: insertError } = await supabase
+            .from('user_notifications')
+            .insert(notifications);
+
+        if (insertError) {
+            console.error('[Announcement Notify] Insert error:', insertError.message);
+            throw insertError;
+        }
+
+        console.log(`[Announcement Notify] ✅ Notified ${profiles.length} users about: ${title}`);
+        res.json({ success: true, notified: profiles.length });
+    } catch (error) {
+        console.error('[Announcement Notify] Error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // --- Existing APIs ---
+
 
 // 1. AI Report Generation
 app.post('/api/admin/reports/generate', async (req, res) => {

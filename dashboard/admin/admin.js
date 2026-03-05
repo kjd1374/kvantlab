@@ -433,7 +433,28 @@ async function initAdmin() {
                 // Create new
                 const { error } = await insertAnnouncement(title, content, type, isPublished, extraLangs);
                 if (error) throw new Error(error.message || JSON.stringify(error));
-                alert('등록 성공');
+
+                // Send notification to all users if published
+                if (isPublished) {
+                    try {
+                        const notifyRes = await fetch('/api/admin/announcements/notify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ title })
+                        });
+                        const notifyResult = await notifyRes.json();
+                        if (notifyResult.success) {
+                            alert(`등록 성공 ✅\n${notifyResult.notified}명의 사용자에게 알림을 전송했습니다.`);
+                        } else {
+                            alert('등록 성공 (알림 전송 실패: ' + (notifyResult.error || 'unknown') + ')');
+                        }
+                    } catch (notifyErr) {
+                        console.error('Notification broadcast error:', notifyErr);
+                        alert('등록 성공 (알림 전송 중 오류 발생)');
+                    }
+                } else {
+                    alert('등록 성공 (비공개 상태이므로 알림 미전송)');
+                }
             }
             announcementModal.style.display = 'none';
             loadAnnouncements();
