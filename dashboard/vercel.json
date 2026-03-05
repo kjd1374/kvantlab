@@ -24,6 +24,10 @@
             "destination": "/app.html"
         },
         {
+            "source": "/notice",
+            "destination": "/notice.html"
+        },
+        {
             "source": "/(.*)",
             "destination": "/index.html"
         }

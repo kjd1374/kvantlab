@@ -45,6 +45,7 @@ export default defineConfig({
                 main: 'index.html',
                 admin: 'admin/index.html',
                 app: 'app.html',
+                notice: 'notice.html',
                 privacy: 'privacy.html',
                 privacy_en: 'privacy_en.html',
                 terms: 'terms.html',
