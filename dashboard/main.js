@@ -4820,7 +4820,7 @@ window.renderSourcingHistory = async function () {
 
       // Action
       const actionHtml = (req.status === 'quoted' || req.status === 'confirmed')
-        ? `<button class="src-btn-detail" onclick="window.__srcOpenDetail(${req.id})">${window.t('sourcing.btn_details')}</button>`
+        ? `<button class="src-btn-detail" onclick="window.__srcOpenDetail('${req.id}')">${window.t('sourcing.btn_details')}</button>`
         : `<button class="src-btn-detail disabled">${window.t('sourcing.btn_waiting')}</button>`;
 
       return `
