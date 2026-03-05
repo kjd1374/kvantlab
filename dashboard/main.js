@@ -4404,6 +4404,9 @@ window.submitQuoteRequest = async function () {
 
     alert(window.t('sourcing.alert_success'));
 
+    // Fix: Remove 'one-page' class if it was left over from a product modal
+    document.body.classList.remove('one-page');
+
     // Reset form
     window.__srcCartItems = [];
     if (window.__srcRenderCart) window.__srcRenderCart([]);
