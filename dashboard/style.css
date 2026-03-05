@@ -4388,12 +4388,12 @@ body[data-platform="k_trend"] #tab-all {
 }
 
 .src-cart-card .src-card-fields input[type="number"] {
-  width: 70px;
+  width: 80px;
   text-align: center;
 }
 
 .src-cart-card .src-card-fields input[type="text"] {
-  width: 160px;
+  width: 240px;
 }
 
 .src-cart-card .src-btn-remove {

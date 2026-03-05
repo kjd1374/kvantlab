@@ -4417,8 +4417,8 @@ window.submitQuoteRequest = async function () {
             <button class="src-btn-add-url" onclick="window.__srcAddUrl()" data-i18n="sourcing.btn_add_url">+ URL 추가</button>
           </div>
           <div class="src-row-pair" style="margin-top:8px;">
-            <div class="src-field-group" style="flex:0 0 100px;">
-              <input type="number" class="src-input-sm src-url-qty" value="1" min="1" placeholder="1">
+            <div class="src-field-group" style="flex:0 0 80px;">
+              <input type="number" class="src-input-sm src-url-qty" value="5" min="5" placeholder="5">
             </div>
             <div class="src-field-group" style="flex:1;">
               <input type="text" class="src-input-sm src-url-memo" placeholder="${window.t('sourcing.field_memo_placeholder')}">
@@ -4620,8 +4620,8 @@ window.__srcAddUrl = function () {
       <button class="src-btn-remove-url" onclick="this.closest('.src-url-row-block').remove()">✕</button>
     </div>
     <div class="src-row-pair" style="margin-top:8px;">
-      <div class="src-field-group" style="flex:0 0 100px;">
-        <input type="number" class="src-input-sm src-url-qty" value="1" min="1" placeholder="1">
+      <div class="src-field-group" style="flex:0 0 80px;">
+        <input type="number" class="src-input-sm src-url-qty" value="5" min="5" placeholder="5">
       </div>
       <div class="src-field-group" style="flex:1;">
         <input type="text" class="src-input-sm src-url-memo" placeholder="${window.t('sourcing.field_memo_placeholder')}">
@@ -4733,8 +4733,8 @@ window.__srcRenderCart = function (items) {
         <div class="src-meta">₩${(item.price || 0).toLocaleString()}  ·  ${item.source || ''}</div>
       </div>
       <div class="src-card-fields">
-        <div><label>${window.t('sourcing.field_qty')}</label><input type="number" class="src-cart-qty" value="${item.qty || 1}" min="1" data-index="${i}"></div>
-        <div><label>${window.t('sourcing.field_memo')}</label><input type="text" class="src-cart-memo" placeholder="" data-index="${i}"></div>
+        <div style="flex:0 0 80px;"><label>${window.t('sourcing.field_qty')}</label><input type="number" class="src-cart-qty" value="${Math.max(item.qty || 5, 5)}" min="5" data-index="${i}"></div>
+        <div style="flex:1;"><label>${window.t('sourcing.field_memo')}</label><input type="text" class="src-cart-memo" placeholder="${window.t('sourcing.field_memo_placeholder')}" data-index="${i}"></div>
       </div>
       <button class="src-btn-remove" onclick="window.__srcRemoveCartItem(${i})">✕</button>
     </div>
@@ -4867,10 +4867,15 @@ window.__sourcingRequestFromModal = async function (productId) {
   const nameEl = modalContent ? modalContent.querySelector('.modal-title-premium, .modal-title') : null;
   const brandEl = modalContent ? modalContent.querySelector('.modal-brand-premium, .modal-brand') : null;
   const imgEl = modalContent ? modalContent.querySelector('.modal-img-premium, .modal-main-image') : null;
+  const priceEl = modalContent ? modalContent.querySelector('.price-val') : null;
 
   const name = nameEl ? nameEl.innerText : 'Unknown';
   const brand = brandEl ? brandEl.innerText : '';
   const image = imgEl ? imgEl.src : '';
+  // Parse price: remove ₩, commas, and 'Won' text
+  const priceText = priceEl ? priceEl.innerText.replace(/[^\d]/g, '') : '0';
+  const price = parseInt(priceText) || 0;
+  const source = state?.currentPlatform || '';
 
   // Close product modal
   if (modalContent) modalContent.classList.remove('open');
@@ -4881,9 +4886,9 @@ window.__sourcingRequestFromModal = async function (productId) {
     name: name,
     brand: brand,
     image_url: image,
-    price: 0,
-    source: '',
-    qty: 1
+    price: price,
+    source: source,
+    qty: 5
   };
 
   // Add to cart items and navigate to Sourcing tab
