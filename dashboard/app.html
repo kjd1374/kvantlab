@@ -307,7 +307,11 @@
       </div>
       <div class="tab-content active" id="tab-all">
         <div class="section-header">
-          <h2 id="rankingTitle" data-i18n="sections.all">카테고리별 랭킹</h2>
+          <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+            <h2 id="rankingTitle" data-i18n="sections.all">카테고리별 랭킹</h2>
+            <span id="rankingUpdateTime"
+              style="font-size:12px; color:#999; font-weight:400; white-space:nowrap;"></span>
+          </div>
           <p id="rankingDesc" class="section-desc" data-i18n="sections.all_desc">올리브영 카테고리별 순위 기반 상품 목록</p>
         </div>
         <div class="table-container">

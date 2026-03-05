@@ -509,6 +509,20 @@ export async function fetchRankedProducts({ page = 1, perPage = 20, search = '',
 
 
 /**
+ * Fetch the latest data update time for a given platform
+ * Returns the most recent created_at from daily_rankings_v2
+ */
+export async function fetchLatestUpdateTime(platform = 'oliveyoung') {
+    try {
+        const res = await query('daily_rankings_v2', `select=created_at&source=eq.${platform}&order=created_at.desc&limit=1`);
+        return res.data?.[0]?.created_at || null;
+    } catch (e) {
+        console.error('fetchLatestUpdateTime error:', e);
+        return null;
+    }
+}
+
+/**
  * Fetch categories
  */
 export async function fetchCategories(platform = 'oliveyoung') {

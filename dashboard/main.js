@@ -34,7 +34,8 @@ import {
   fetchFaqs,
   fetchUserInquiries,
   submitInquiry,
-  toggleWishlistStatus
+  toggleWishlistStatus,
+  fetchLatestUpdateTime
 } from './supabase.js?v=4';
 import { setupAuthUI } from './src/auth.js?v=12';
 import { i18n } from './src/i18n.js?v=7';
@@ -864,6 +865,23 @@ async function loadBridgeTab(tabId) {
     } else {
       descEl.textContent = (window.t('common.desc_platform') || '{platform} 플랫폼 데이터 분석 결과').replace('{platform}', state.activeBridge.name);
     }
+  }
+
+  // Update timestamp
+  const timeEl = document.getElementById('rankingUpdateTime');
+  if (timeEl) {
+    timeEl.textContent = '';
+    fetchLatestUpdateTime(state.currentPlatform).then(ts => {
+      if (ts && timeEl) {
+        const d = new Date(ts);
+        const kst = new Date(d.getTime() + (9 * 60 * 60 * 1000 - d.getTimezoneOffset() * 60 * 1000));
+        const mm = String(kst.getMonth() + 1).padStart(2, '0');
+        const dd = String(kst.getDate()).padStart(2, '0');
+        const hh = String(kst.getHours()).padStart(2, '0');
+        const mi = String(kst.getMinutes()).padStart(2, '0');
+        timeEl.textContent = `🕐 Updated: ${kst.getFullYear()}.${mm}.${dd} ${hh}:${mi} KST`;
+      }
+    });
   }
 
   try {
