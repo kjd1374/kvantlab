@@ -48,6 +48,7 @@
   },
   "notifications": {
     "title": "Notifikasi",
+    "view_all": "Lihat Semua Pengumuman",
     "clear_all": "Hapus Semua",
     "empty": "Tidak ada notifikasi baru.",
     "price_drop": "📉 Perubahan Harga",

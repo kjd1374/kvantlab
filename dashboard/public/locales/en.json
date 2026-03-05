@@ -73,10 +73,10 @@
   },
   "notifications": {
     "title": "Notifications",
-    "clear_all": "Clear All",
-    "empty": "No new notifications.",
-    "price_drop": "📉 Price Change",
-    "rank_up": "🚀 Rank Jump"
+    "view_all": "View All Notices",
+    "none": "No new notifications.",
+    "mark_all_read": "Mark all as read",
+    "clear_all": "Clear all"
   },
   "charts": {
     "rank": "Rank",

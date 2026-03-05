@@ -76,8 +76,10 @@
   },
   "notifications": {
     "title": "알림",
-    "clear_all": "모두 지우기",
-    "empty": "새로운 알림이 없습니다.",
+    "view_all": "전체 공지보기",
+    "none": "새로운 알림이 없습니다.",
+    "mark_all_read": "모두 읽음표시",
+    "clear_all": "전체삭제",
     "price_drop": "📉 가격 변동",
     "rank_up": "🚀 순위 급상승",
     "other": "기타"

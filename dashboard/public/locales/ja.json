@@ -46,6 +46,7 @@
   },
   "notifications": {
     "title": "通知",
+    "view_all": "すべてのお知らせを見る",
     "clear_all": "すべて削除",
     "empty": "新しい通知はありません。",
     "price_drop": "📉 価格変動",

@@ -48,6 +48,7 @@
   },
   "notifications": {
     "title": "Thông báo",
+    "view_all": "Xem tất cả thông báo",
     "clear_all": "Xóa tất cả",
     "empty": "Không có thông báo mới.",
     "price_drop": "📉 Thay đổi giá",
