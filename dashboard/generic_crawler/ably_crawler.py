@@ -33,16 +33,12 @@ HEADERS = {
     "Prefer": "return=representation,resolution=merge-duplicates"
 }
 
-# 에이블리 메인 카테고리 (이름 기반 네비게이션)
+# 에이블리 메인 카테고리 (직접 URL 접근 방식)
 TARGET_CATEGORIES = [
-    {"name": "상의", "code": "WOMEN"},
-    {"name": "아우터", "code": "WOMEN"},
-    {"name": "원피스", "code": "WOMEN"},
-    {"name": "바지", "code": "WOMEN"},
-    {"name": "스커트", "code": "WOMEN"},
-    {"name": "가방", "code": "BAG"},
-    {"name": "신발", "code": "SHOES"},
-    {"name": "뷰티", "code": "BEAUTY"}
+    {"name": "여성패션", "code": "WOMEN", "url": "https://m.a-bly.com/displays/37"},
+    {"name": "뷰티", "code": "BEAUTY", "url": "https://m.a-bly.com/displays/38"},
+    {"name": "신발", "code": "SHOES", "url": "https://m.a-bly.com/displays/169"},
+    {"name": "가방", "code": "BAG", "url": "https://m.a-bly.com/displays/170"},
 ]
 
 def log_crawl(status, metadata=None):
@@ -100,6 +96,12 @@ def save_product_and_rank(item, rank, category_code, category_name):
             "updated_at": datetime.now().isoformat()
         }
 
+        # Include review data if available from API
+        if item.get('review_count') and int(item['review_count']) > 0:
+            product_record['review_count'] = int(item['review_count'])
+        if item.get('review_rating') and float(item['review_rating']) > 0:
+            product_record['review_rating'] = float(item['review_rating'])
+
         res = requests.post(
             f"{SUPABASE_URL}/rest/v1/products_master",
             headers=HEADERS,
@@ -146,7 +148,7 @@ def save_product_and_rank(item, rank, category_code, category_name):
 
 
 async def crawl_ably_category(page, category):
-    print(f"\n--- [{category['name']}] 크롤링 시작 (메뉴 탐색) ---")
+    print(f"\n--- [{category['name']}] 크롤링 시작 (직접 URL 접근) ---")
     
     # API 응답 캡처를 위한 변수
     api_responses = []
@@ -162,116 +164,28 @@ async def crawl_ably_category(page, category):
                         "url": response.url,
                         "data": data
                     })
-                    # print(f"  🔍 API 응답 캡처: {response.url[:60]}...")
             except:
                 pass
 
     page.on("response", handle_response)
 
-    # 메인 페이지 이동
+    # 카테고리 URL로 직접 이동
+    target_url = category.get('url', 'https://m.a-bly.com/')
     try:
-        # wait_until="commit" 으로 로딩 방식을 완화하여 무한 로딩/타임아웃을 방지
-        await page.goto("https://m.a-bly.com/", wait_until="commit", timeout=30000)
+        await page.goto(target_url, wait_until="commit", timeout=30000)
         await page.wait_for_load_state("domcontentloaded")
-        print(f"  🚩 메인 접근: {await page.title()}")
+        print(f"  🚩 페이지 접근: {await page.title()}")
     except Exception as e:
-        print(f"  ❌ 메인 페이지 로드 실패: {e}")
+        print(f"  ❌ 페이지 로드 실패: {e}")
         return 0
 
-    await asyncio.sleep(4)
+    await asyncio.sleep(5)
     
-    # 홈 페이지 HTML 디버깅
-    # await debug_page_structure(page, "home_main")
-
-    # 카테고리 탭 클릭 (하단 네비게이션)
-    category_clicked = False
-    try:
-        # 하단 탭바: '전체보기' 가 카테고리 메뉴임 (햄버거 아이콘)
-        # 1. 텍스트 '전체보기' 로 시도
-        cat_btn = page.locator("text=전체보기").first
-        
-        if await cat_btn.count() > 0 and await cat_btn.is_visible():
-            await cat_btn.click()
-            category_clicked = True
-            print("  ✅ '전체보기(카테고리)' 탭 클릭")
-        else:
-            # 2. 아이콘(SVG)으로 시도 - path d 속성 일부 매칭
-            # 햄버거 메뉴 path: M2 6a.9.9...
-            cat_svg_btn = page.locator("path[d^='M2 6a.9.9']").first
-            if await cat_svg_btn.count() > 0:
-                await cat_svg_btn.click()
-                category_clicked = True
-                print("  ✅ '카테고리' 아이콘 클릭")
-            else:
-                 # 3. 하단 네비게이션의 2번째 아이템 가정 (홈, 전체보기, 검색, 마이페이지)
-                 nav_items = page.locator(".sc-f21a85fc-1") # 클래스명은 변할 수 있지만 구조상 시도
-                 if await nav_items.count() >= 2:
-                     await nav_items.nth(1).click()
-                     category_clicked = True
-                     print("  ✅ 하단 네비게이션 2번째 아이템 클릭")
-                     
-    except Exception as e:
-        print(f"  ⚠️ 카테고리 버튼 클릭 에러: {e}")
-
-    await asyncio.sleep(1)
-
-    if not category_clicked:
-         print("  ⚠️ 카테고리 진입 실패, 검색으로 대체 시도")
-         return 0
-
-    # 상세 카테고리 클릭 (Overview 페이지 대응)
-    try:
-        # 타겟 카테고리 (예: 상의) 텍스트 찾기
-        cat_name = category['name']
-        print(f"  👉 '{cat_name}' 카테고리 진입 시도...")
-
-        # 리액트 트리가 렌더링될 수 있도록 충~분히 기다려줍니다 (핵심)
-        await asyncio.sleep(4)
-
-        # 1. 텍스트로 요소 찾기 (헤더일 가능성 높음)
-        cat_header = page.locator(f"text={cat_name}").last 
-        
-        if await cat_header.count() > 0:
-            await cat_header.scroll_into_view_if_needed()
-            await cat_header.click()
-            await asyncio.sleep(3) # 확장 애니메이션 대기
-            
-            # 현재 페이지가 overview라면 서브카테고리를 클릭해야 상품 리스트로 감
-            current_url = page.url
-            if "overview" in current_url:
-                print("  ℹ️ 카테고리 Overview 페이지 감지. 첫번째 서브카테고리 클릭 시도.")
-                # 헤더의 부모(혹은 조상)의 형제 요소를 찾아야 함.
-                
-                # XPath: 텍스트가 정확히 일치하는 p태그의 부모 div의 바로 다음 형제 div
-                sub_cat_container_xpath = f"//p[text()='{cat_name}']/ancestor::div[1]/following-sibling::div[1]"
-                
-                # 그 내부의 첫번째 이미지(서브카테고리 아이콘)을 클릭
-                sub_cat_first_item = page.locator(f"xpath={sub_cat_container_xpath}//img").first
-                
-                if await sub_cat_first_item.count() > 0:
-                     print("  ✅ 첫번째 서브카테고리 발견, 클릭합니다.")
-                     await sub_cat_first_item.click(force=True)
-                     await asyncio.sleep(4) # 페이지 이동 대기
-                else:
-                    print(f"  ⚠️ 서브카테고리를 찾을 수 없습니다. (XPath: {sub_cat_container_xpath})")
-            else:
-                 print("  info: Overview 페이지가 아닙니다 (바로 리스트 진입 가능성).")
-        else:
-            print(f"  ❌ '{cat_name}' 텍스트 요소를 찾을 수 없습니다.")
-            return 0
-            
-    except Exception as e:
-         print(f"  ⚠️ 카테고리 선택 중 에러: {e}")
-         return 0
-    await asyncio.sleep(1)
-    current_url = page.url
-    print(f"  🚩 현재 URL: {current_url}")
-    
-    # 상품 리스트 페이지인지 확인 (goods 혹은 list 패턴)
-    # Overview에 머물러 있다면 실패로 간주
-    if "overview" in current_url:
-        print("  ❌ 상품 리스트 진입 실패 (여전히 Overview 페이지)")
-        return 0
+    # 보안 체크 페이지 감지
+    title = await page.title()
+    if any(kw in title.lower() for kw in ["잠시만", "확인", "보안", "cloudflare", "checking"]):
+        print(f"  ⚠️ 보안 확인 페이지 감지, 10초 대기...")
+        await asyncio.sleep(10)
 
     # 상품 리스트 로딩 대기
     try:
@@ -279,13 +193,10 @@ async def crawl_ably_category(page, category):
     except:
          print("  ⚠️ 상품 리스트 로딩 시간 초과 혹은 상품 없음")
 
-    # 4. 상품 랭킹 수집 (무한 스크롤)
-    products = []
-    scroll_count = 0
-    # 스크롤 다운 (더 많이)
-    for _ in range(5):
+    # 스크롤 다운으로 더 많은 상품 로드
+    for _ in range(8):
         await page.mouse.wheel(0, 3000)
-        await asyncio.sleep(1)
+        await asyncio.sleep(1.5)
 
     # 4. API 응답 분석 및 상품 추출
     print(f"  🔍 캡처된 API 응답 수: {len(api_responses)}")

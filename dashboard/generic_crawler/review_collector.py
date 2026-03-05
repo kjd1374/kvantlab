@@ -285,7 +285,7 @@ async def main():
     parser.add_argument("--platform", type=str, help="Single platform only (oliveyoung/musinsa/ably/ssg)")
     args = parser.parse_args()
     
-    limit = 2 if args.test else 30
+    limit = 2 if args.test else 100
     platforms = [args.platform] if args.platform else ["oliveyoung", "musinsa", "ably", "ssg"]
     
     log("🚀 AI Vision Review Collector 시작")

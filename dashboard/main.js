@@ -959,9 +959,9 @@ function ensureDefaultTableStructure() {
             <th class="sortable" data-sort="name" data-i18n="table.name">상품명</th>
             <th class="sortable" data-sort="brand" data-i18n="table.brand">브랜드</th>
             <th class="sortable" data-sort="price" data-i18n="table.price">가격</th>
-            <th data-i18n="table.review">리뷰</th>
-            <th data-i18n="table.rating">평점</th>
-            <th data-i18n="table.rank_change">변동</th>
+            <th data-i18n="table.review" style="text-align:center">리뷰</th>
+            <th data-i18n="table.rating" style="text-align:center">평점</th>
+            <th data-i18n="table.rank_change" style="text-align:center">변동</th>
           </tr>
         </thead>
         <tbody id="allProductsBody">
@@ -1089,8 +1089,8 @@ function renderTableRow(p, index) {
         </td>
         <td><span class="product-brand" data-brand-pid="${p.product_id || p.id}">${brand}</span></td>
         <td>${formatPrice(p.price || p.price_current)}</td>
-        <td>${p.review_count > 0 ? formatNumber(p.review_count) : '-'}</td>
-        <td>${p.review_rating > 5 ? '❤️ ' + formatNumber(p.review_rating) : (p.review_rating > 0 && !isNaN(p.review_rating) ? p.review_rating : '-')}</td>
+        <td style="text-align:center;">${p.review_count > 0 ? formatNumber(p.review_count) : '-'}</td>
+        <td style="text-align:center;">${p.review_rating > 5 ? '❤️ ' + formatNumber(p.review_rating) : (p.review_rating > 0 && !isNaN(p.review_rating) ? p.review_rating : '-')}</td>
         <td style="text-align:center;">${rankChangeHtml}</td>
       </tr>
     `;
