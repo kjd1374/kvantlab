@@ -4534,7 +4534,7 @@ window.__srcAddUrl = function () {
   const list = document.getElementById('srcUrlList');
   if (!list) return;
   const rows = list.querySelectorAll('.src-url-row');
-  if (rows.length >= 5) { alert('최대 5개까지 추가할 수 있습니다.'); return; }
+  if (rows.length >= 5) { alert(window.t('sourcing.max_url_alert')); return; }
   const row = document.createElement('div');
   row.className = 'src-url-row';
   row.innerHTML = `
@@ -4569,7 +4569,12 @@ window.__srcOpenDetail = function (reqId) {
   const req = window.__srcHistoryData?.find(r => r.id == reqId);
   if (!req) return;
 
-  const steps = ['접수', '검토', '견적완료', '주문확정'];
+  const steps = [
+    window.t('sourcing.step_received'),
+    window.t('sourcing.step_review'),
+    window.t('sourcing.step_quoted'),
+    window.t('sourcing.step_confirmed')
+  ];
   const statusMap = { pending: 1, quoted: 2, confirmed: 3 };
   const currentStep = statusMap[req.status] || 0;
 
@@ -4585,29 +4590,30 @@ window.__srcOpenDetail = function (reqId) {
   });
   stepperHtml += '</div>';
 
-  const itemName = req.items?.[0]?.name || '직접 요청 건';
-  const dateStr = new Date(req.created_at).toLocaleDateString('ko-KR');
+  const itemName = req.items?.[0]?.name || 'Direct Request';
+  const locale = i18n.currentLang === 'ko' ? 'ko-KR' : 'en-US';
+  const dateStr = new Date(req.created_at).toLocaleDateString(locale);
   const totalQty = req.items?.reduce((s, it) => s + (it.qty || 1), 0) || 1;
 
   let quoteHtml = '';
   if (req.status === 'quoted' && req.estimated_cost > 0) {
     quoteHtml = `
       <div class="src-quote-box">
-        <div class="src-quote-title">관리자 견적 답변</div>
-        <div class="src-quote-detail">총 견적: ₩${req.estimated_cost.toLocaleString()}</div>
+        <div class="src-quote-title">${window.t('sourcing.admin_quote_reply')}</div>
+        <div class="src-quote-detail">${window.t('sourcing.total_quote')} ₩${req.estimated_cost.toLocaleString()}</div>
         ${req.admin_reply ? `<div class="src-quote-note">${req.admin_reply}</div>` : ''}
       </div>`;
   }
 
   content.innerHTML = `
     <h3 style="font-size:16px; font-weight:700; margin:0 0 4px;">${escapeHtml(itemName)}</h3>
-    <p style="font-size:12px; color:#888; margin:0 0 16px;">요청일: ${dateStr}  ·  수량: ${totalQty}개</p>
-    <div style="font-size:12px; font-weight:600; color:#555; margin-bottom:4px;">진행 상태</div>
+    <p style="font-size:12px; color:#888; margin:0 0 16px;">${dateStr}  ·  ${totalQty}</p>
+    <div style="font-size:12px; font-weight:600; color:#555; margin-bottom:4px;">${window.t('sourcing.detail_title')}</div>
     ${stepperHtml}
     ${quoteHtml}
     <div class="src-modal-actions">
-      ${req.status === 'quoted' ? '<button class="src-btn-confirm" onclick="alert(\'주문 확정 기능은 곧 오픈됩니다!\')">주문 확정하기</button>' : ''}
-      <button class="src-btn-close" onclick="window.__srcCloseDetail()">닫기</button>
+      ${req.status === 'quoted' ? `<button class="src-btn-confirm" onclick="alert('Coming soon!')">${window.t('sourcing.btn_confirm_order')}</button>` : ''}
+      <button class="src-btn-close" onclick="window.__srcCloseDetail()">${window.t('sourcing.btn_close')}</button>
     </div>
   `;
   overlay.classList.add('active');
@@ -4640,8 +4646,8 @@ window.__srcRenderCart = function (items) {
         <div class="src-meta">₩${(item.price || 0).toLocaleString()}  ·  ${item.source || ''}</div>
       </div>
       <div class="src-card-fields">
-        <div><label>수량</label><input type="number" class="src-cart-qty" value="${item.qty || 1}" min="1" data-index="${i}"></div>
-        <div><label>메모 (선택)</label><input type="text" class="src-cart-memo" placeholder="예: 색상, 옵션 등" data-index="${i}"></div>
+        <div><label>${window.t('sourcing.field_qty')}</label><input type="number" class="src-cart-qty" value="${item.qty || 1}" min="1" data-index="${i}"></div>
+        <div><label>${window.t('sourcing.field_memo')}</label><input type="text" class="src-cart-memo" placeholder="" data-index="${i}"></div>
       </div>
       <button class="src-btn-remove" onclick="window.__srcRemoveCartItem(${i})">✕</button>
     </div>
@@ -4664,7 +4670,7 @@ window.renderSourcingHistory = async function () {
   tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px;"><div class="loading-skeleton" style="height:40px;"></div></td></tr>';
   const session = getSession();
   if (!session) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#999;">로그인이 필요합니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#999;">${window.t('sourcing.login_required')}</td></tr>`;
     return;
   }
 
@@ -4674,24 +4680,25 @@ window.renderSourcingHistory = async function () {
     if (!data.success) throw new Error(data.error);
 
     if (!data.requests || data.requests.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#999;">소싱 견적 내역이 없습니다.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#999;">${window.t('sourcing.history_empty')}</td></tr>`;
       return;
     }
 
     window.__srcHistoryData = data.requests;
 
     tbody.innerHTML = data.requests.map(req => {
-      const dateStr = new Date(req.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const locale = i18n.currentLang === 'ko' ? 'ko-KR' : 'en-US';
+      const dateStr = new Date(req.created_at).toLocaleString(locale, { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
       const totalQty = req.items?.reduce((s, it) => s + (it.qty || 1), 0) || '-';
       const totalCost = req.estimated_cost || 0;
 
       // Status badge
       let badgeClass = 'src-badge--received';
       let statusLabel = req.status;
-      if (req.status === 'pending') { badgeClass = 'src-badge--pending'; statusLabel = '검토 중'; }
-      else if (req.status === 'quoted') { badgeClass = 'src-badge--quoted'; statusLabel = '견적 완료'; }
-      else if (req.status === 'confirmed') { badgeClass = 'src-badge--confirmed'; statusLabel = '주문 확정'; }
-      else if (req.status === 'canceled') { badgeClass = 'src-badge--cancelled'; statusLabel = '취소'; }
+      if (req.status === 'pending') { badgeClass = 'src-badge--pending'; statusLabel = window.t('sourcing.status_reviewing'); }
+      else if (req.status === 'quoted') { badgeClass = 'src-badge--quoted'; statusLabel = window.t('sourcing.status_quote_done'); }
+      else if (req.status === 'confirmed') { badgeClass = 'src-badge--confirmed'; statusLabel = window.t('sourcing.status_order_confirmed'); }
+      else if (req.status === 'canceled') { badgeClass = 'src-badge--cancelled'; statusLabel = window.t('sourcing.status_cancel'); }
 
       // Product cell
       const firstItem = req.items?.[0];
@@ -4708,7 +4715,7 @@ window.renderSourcingHistory = async function () {
             </div>
           </div>`;
       } else if (req.sns_links?.length) {
-        productCellHtml = `<div class="src-product-cell"><div class="src-product-info"><span class="src-product-name">URL 요청</span><span class="src-product-sub">🔗 링크 ${req.sns_links.length}개</span></div></div>`;
+        productCellHtml = `<div class="src-product-cell"><div class="src-product-info"><span class="src-product-name">URL Request</span><span class="src-product-sub">🔗 ${req.sns_links.length} links</span></div></div>`;
       } else {
         productCellHtml = `<span style="color:#aaa;">—</span>`;
       }
@@ -4720,8 +4727,8 @@ window.renderSourcingHistory = async function () {
 
       // Action
       const actionHtml = (req.status === 'quoted' || req.status === 'confirmed')
-        ? `<button class="src-btn-detail" onclick="window.__srcOpenDetail(${req.id})">상세보기</button>`
-        : `<button class="src-btn-detail disabled">대기중</button>`;
+        ? `<button class="src-btn-detail" onclick="window.__srcOpenDetail(${req.id})">${window.t('sourcing.btn_details')}</button>`
+        : `<button class="src-btn-detail disabled">${window.t('sourcing.btn_waiting')}</button>`;
 
       return `
         <tr data-status="${req.status}" data-req-id="${req.id}">
