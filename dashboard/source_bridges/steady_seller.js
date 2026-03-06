@@ -65,7 +65,11 @@ export const SteadySellerBridge = {
             current_rank: item.rank,
             special_price: item.price,
             original_price: item.price,
-            source: 'steady_sellers'
+            source: 'steady_sellers',
+            product_size: item.product_size || '',
+            product_weight: item.product_weight || '',
+            notes: item.notes || '',
+            options: item.options || []
         }));
 
         return { data: formattedData, count: formattedData.length };
