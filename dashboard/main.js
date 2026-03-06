@@ -2175,19 +2175,43 @@ window.__openProduct = async function (product) {
         </div>
       ` : '';
 
-      // Build options section - dropdown format
+      // Provide a global function for calculating total price based on option and quantity
+      window.__calcSsTotal = function () {
+        const sel = document.getElementById('ssOptionSelect');
+        const qty = document.getElementById('ssOptionQty');
+        const res = document.getElementById('ssOptionPrice');
+        const row = document.getElementById('ssOptionPriceRow');
+        if (sel && qty && res && row) {
+          const selectedOpt = sel.options[sel.selectedIndex];
+          const p = selectedOpt ? selectedOpt.dataset.price : '';
+          if (p) {
+            const total = Number(p) * Math.max(1, parseInt(qty.value) || 1);
+            res.textContent = '₩' + total.toLocaleString();
+            row.style.display = 'flex';
+          } else {
+            row.style.display = 'none';
+          }
+        }
+      };
+
+      // Build options section - dropdown format with quantity
       const optionsHtml = pOptions.length > 0 ? `
         <div style="margin-bottom:14px;">
           <div style="font-size:12px; font-weight:600; color:#555; margin-bottom:8px;">🏷️ ${window.t('modal.options')}</div>
-          <div style="display:flex; gap:10px; align-items:center;">
-            <select id="ssOptionSelect" onchange="(function(sel){var p=sel.options[sel.selectedIndex].dataset.price;document.getElementById('ssOptionPrice').textContent=p?('₩'+Number(p).toLocaleString()):'';document.getElementById('ssOptionPriceRow').style.display=p?'flex':'none';})(this)"
-              style="flex:1; padding:10px 12px; border-radius:8px; border:1px solid #ffe0b2; background:#fff8f0; font-size:13px; color:#333; cursor:pointer; appearance:auto;">
+          <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px;">
+            <select id="ssOptionSelect" onchange="window.__calcSsTotal()"
+              style="flex:3; padding:10px 12px; border-radius:8px; border:1px solid #ffe0b2; background:#fff8f0; font-size:13px; color:#333; cursor:pointer; appearance:auto; min-width:0;">
               <option value="" data-price="">${window.t('modal.select_option')}</option>
               ${pOptions.map(opt => `<option value="${escapeHtml(opt.name || '')}" data-price="${opt.price || 0}">${escapeHtml(opt.name || '')} — ₩${new Intl.NumberFormat().format(opt.price || 0)}</option>`).join('')}
             </select>
+            <div style="flex:1; display:flex; align-items:center; background:#fff8f0; border:1px solid #ffe0b2; border-radius:8px; overflow:hidden;">
+              <span style="font-size:12px; color:#888; padding-left:10px; white-space:nowrap;">${window.t('modal.quantity')}</span>
+              <input type="number" id="ssOptionQty" value="1" min="1" oninput="window.__calcSsTotal()"
+                style="width:100%; border:none; background:transparent; padding:10px 8px; text-align:right; font-size:13px; color:#333; outline:none;">
+            </div>
           </div>
-          <div id="ssOptionPriceRow" style="display:none; justify-content:flex-end; align-items:center; margin-top:8px; padding:8px 12px; background:#fff3e0; border-radius:8px;">
-            <span style="font-size:13px; color:#888; margin-right:8px;">${window.t('modal.select_option')}:</span>
+          <div id="ssOptionPriceRow" style="display:none; justify-content:flex-end; align-items:center; padding:8px 12px; background:#fff3e0; border-radius:8px;">
+            <span style="font-size:13px; color:#888; margin-right:8px;">${window.t('modal.estimated_price')}:</span>
             <span id="ssOptionPrice" style="font-size:18px; font-weight:700; color:#e65100;"></span>
           </div>
         </div>

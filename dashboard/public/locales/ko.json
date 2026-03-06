@@ -129,7 +129,9 @@
     "weight": "무게/용량",
     "notes": "기타 사항",
     "options": "옵션 / 가격",
-    "select_option": "옵션을 선택하세요"
+    "select_option": "옵션을 선택하세요",
+    "quantity": "수량",
+    "estimated_price": "예상 금액"
   },
   "sections": {
     "all": "카테고리별 랭킹",

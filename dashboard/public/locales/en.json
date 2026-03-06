@@ -123,7 +123,9 @@
     "weight": "Weight / Volume",
     "notes": "Notes",
     "options": "Options / Pricing",
-    "select_option": "Select an option"
+    "select_option": "Select an option",
+    "quantity": "Qty",
+    "estimated_price": "Estimated Price"
   },
   "sections": {
     "all": "Category Rankings",
