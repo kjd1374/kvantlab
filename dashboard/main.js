@@ -3563,12 +3563,21 @@ window.handleNotiClick = async function (id, link) {
 
   // Navigate Action based on link target
   if (link === 'sourcing') {
-    if (typeof window.openMyPageModal === 'function') {
-      window.openMyPageModal();
+    if (typeof window.switchMainTab === 'function') {
+      // 1. Switch to Sourcing main tab
+      window.switchMainTab('sourcing');
+
+      // 2. Close notification dropdown if it's open
+      const dropdown = document.getElementById('notifDropdown');
+      if (dropdown) dropdown.classList.remove('show');
+
+      // 3. Scroll down slightly after a brief delay so they see the history
       setTimeout(() => {
-        const tab = document.querySelector('.auth-tab[data-mypage-tab="sourcing"]');
-        if (tab) tab.click();
-      }, 100);
+        const historyTable = document.querySelector('.src-history-table-wrap');
+        if (historyTable) {
+          historyTable.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
     }
   }
 };
