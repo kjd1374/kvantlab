@@ -521,7 +521,7 @@ function setupEventListeners() {
 
   if (tutorialOverlay && tutorialCarousel) {
     let currentSlide = 0;
-    const totalSlides = 4;
+    const totalSlides = 3;
 
     function updateTutorialUI() {
       // Move carousel
