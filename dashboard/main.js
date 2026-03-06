@@ -54,31 +54,15 @@ const bridges = {
   shinsegae: ShinsegaeBridge, // Keep key for UI mapping but ID is ssg
   ssg: ShinsegaeBridge,
   k_trend: KoreaTrendBridge,
-  naver_best_prod: {
+  naver_trend: {
     ...KoreaTrendBridge,
-    id: 'naver_best_prod',
-    name: 'Naver Best Products',
-    tabs: [{ id: 'naver_best', icon: '🛍️', label: 'tabs.naver_best_prod' }],
+    id: 'naver_trend',
+    name: 'Naver Trends',
+    tabs: [{ id: 'naver_best', icon: '🇰🇷', label: 'platforms.naver_trend' }],
     async fetchData(tabId, state) {
-      KoreaTrendBridge._nb.activeTab = 'prod';
       return KoreaTrendBridge.fetchData('naver_best', state);
     },
     renderTabContent(tabId, result, state) {
-      KoreaTrendBridge._nb.activeTab = 'prod';
-      return KoreaTrendBridge.renderTabContent('naver_best', result, state);
-    }
-  },
-  naver_best_brand: {
-    ...KoreaTrendBridge,
-    id: 'naver_best_brand',
-    name: 'Naver Best Brands',
-    tabs: [{ id: 'naver_best', icon: '🏢', label: 'tabs.naver_best_brand' }],
-    async fetchData(tabId, state) {
-      KoreaTrendBridge._nb.activeTab = 'brand';
-      return KoreaTrendBridge.fetchData('naver_best', state);
-    },
-    renderTabContent(tabId, result, state) {
-      KoreaTrendBridge._nb.activeTab = 'brand';
       return KoreaTrendBridge.renderTabContent('naver_best', result, state);
     }
   },
@@ -166,7 +150,7 @@ window.switchMainTab = function (mainTabId) {
     if (switcher) switcher.dataset.activeGroup = 'ranking';
 
     // Default to oliveyoung if current platform is trend
-    if (state.currentPlatform === 'k_trend' || state.currentPlatform.startsWith('naver_best')) {
+    if (state.currentPlatform === 'k_trend' || state.currentPlatform === 'naver_trend') {
       const btn = document.querySelector('.platform-btn[data-platform="oliveyoung"]');
       if (btn) btn.click();
     }
@@ -186,7 +170,7 @@ window.switchMainTab = function (mainTabId) {
     if (switcher) switcher.dataset.activeGroup = 'trend';
 
     // Default to k_trend
-    if (state.currentPlatform !== 'k_trend' && !state.currentPlatform.startsWith('naver_best')) {
+    if (state.currentPlatform !== 'k_trend' && state.currentPlatform !== 'naver_trend') {
       const btn = document.querySelector('.platform-btn[data-platform="k_trend"]');
       if (btn) btn.click();
     }
@@ -822,7 +806,7 @@ async function loadCategories() {
       if (firstChip) firstChip.classList.add('active');
     }
     // k_trend platform handles its own tab loading in setPlatform — skip here to avoid race condition
-    if (state.currentPlatform !== 'k_trend' && !state.currentPlatform.startsWith('naver_best')) {
+    if (state.currentPlatform !== 'k_trend' && state.currentPlatform !== 'naver_trend') {
       await loadTab(state.activeTab);
     }
   } catch (err) {
@@ -855,7 +839,7 @@ async function loadTab(tab) {
 
 async function loadBridgeTab(tabId) {
   // ─── K-Trend: 전용 리스트 뷰 분기 ───
-  if (state.currentPlatform === 'k_trend' || state.currentPlatform.startsWith('naver_best')) {
+  if (state.currentPlatform === 'k_trend' || state.currentPlatform === 'naver_trend') {
     return await loadKTrendView(tabId);
   }
 
@@ -2879,7 +2863,7 @@ let charts = {
 
 async function loadInsights() {
   // K-Trend 플랫폼이면 전용 뷰로 분기
-  if (state.currentPlatform === 'k_trend' || state.currentPlatform.startsWith('naver_best')) {
+  if (state.currentPlatform === 'k_trend' || state.currentPlatform === 'naver_trend') {
     return await loadKTrendInsights();
   }
 

@@ -235,8 +235,7 @@
     "k_trend": "Korea Trends",
     "steady_sellers": "Steady Sellers",
     "modernhouse": "Modern House",
-    "naver_best_prod": "Korea Trends (Products)",
-    "naver_best_brand": "Korea Trends (Brands)"
+    "naver_trend": "Naver Trends"
   },
   "membership": {
     "limit_reached": "Daily Limit Reached",
