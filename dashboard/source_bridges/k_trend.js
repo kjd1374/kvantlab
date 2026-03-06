@@ -460,8 +460,8 @@ export const KoreaTrendBridge = {
     },
 
     renderCustomHeader(state) {
-        // Hide filters when naver_best (Korea Best) tab is active
-        if (state.activeTab === 'naver_best') return '';
+        // Hide filters when naver_best (Korea Best) tab is active or using the naver_trend platform
+        if (state.activeTab === 'naver_best' || state.currentPlatform === 'naver_trend') return '';
 
         return `
     <div class="k-trend-filters" style="display:flex; gap:10px; padding:10px 0; overflow-x:auto; align-items:center;">
