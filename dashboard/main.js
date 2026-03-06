@@ -2155,6 +2155,48 @@ window.__openProduct = async function (product) {
       const mainImg = imgUrls[0] || '';
       const desc = product.description || '';
       const formattedPrice = new Intl.NumberFormat().format(displayPrice || 0);
+      const pSize = product.product_size || '';
+      const pWeight = product.product_weight || '';
+      const pNotes = product.notes || '';
+      const pOptions = Array.isArray(product.options) ? product.options : [];
+
+      // Build specs section
+      const hasSpecs = pSize || pWeight;
+      const specsHtml = hasSpecs ? `
+        <div style="display:flex; gap:12px; margin-bottom:12px;">
+          ${pSize ? `<div style="flex:1; background:#f8f9fa; border-radius:8px; padding:10px 12px;">
+            <div style="font-size:11px; color:#888; margin-bottom:3px;">📐 ${window.t('modal.size') || '크기'}</div>
+            <div style="font-size:14px; font-weight:600; color:#333;">${escapeHtml(pSize)}</div>
+          </div>` : ''}
+          ${pWeight ? `<div style="flex:1; background:#f8f9fa; border-radius:8px; padding:10px 12px;">
+            <div style="font-size:11px; color:#888; margin-bottom:3px;">⚖️ ${window.t('modal.weight') || '무게/용량'}</div>
+            <div style="font-size:14px; font-weight:600; color:#333;">${escapeHtml(pWeight)}</div>
+          </div>` : ''}
+        </div>
+      ` : '';
+
+      // Build options section
+      const optionsHtml = pOptions.length > 0 ? `
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12px; font-weight:600; color:#555; margin-bottom:8px;">🏷️ ${window.t('modal.options') || '옵션 / 가격'}</div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            ${pOptions.map(opt => `
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:#fff8f0; border-radius:8px; border:1px solid #ffe0b2;">
+                <span style="font-size:13px; color:#333; font-weight:500;">${escapeHtml(opt.name || '')}</span>
+                <span style="font-size:14px; font-weight:700; color:#e65100;">₩${new Intl.NumberFormat().format(opt.price || 0)}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : '';
+
+      // Build notes section
+      const notesHtml = pNotes ? `
+        <div style="margin-bottom:14px; padding:10px 12px; background:#f0f4ff; border-radius:8px; border:1px solid #d0d8f0;">
+          <div style="font-size:11px; color:#6b7db3; margin-bottom:3px;">📝 ${window.t('modal.notes') || '기타 사항'}</div>
+          <div style="font-size:13px; color:#333; line-height:1.5;">${escapeHtml(pNotes)}</div>
+        </div>
+      ` : '';
 
       modalContent = `
         <div class="modal-upper ss-detail-upper">
@@ -2178,12 +2220,15 @@ window.__openProduct = async function (product) {
               <span class="ss-price-currency">₩</span>
               <span class="ss-price-amount">${formattedPrice}</span>
             </div>
+            ${specsHtml}
             ${desc ? `
               <div class="ss-description">
-                <div class="ss-desc-label">${window.t('modal.product_info') || 'Product Info'}</div>
+                <div class="ss-desc-label">${window.t('modal.product_info') || 'PRODUCT INFORMATION'}</div>
                 <p class="ss-desc-text">${escapeHtml(desc)}</p>
               </div>
             ` : ''}
+            ${notesHtml}
+            ${optionsHtml}
             <button class="btn-store-link ss-sourcing-btn" onclick="window.__openSourcingFromSteady && window.__openSourcingFromSteady(${JSON.stringify({ name: product.name, brand: product.brand, price: displayPrice, image_url: mainImg }).replace(/"/g, '&quot;')})">
               📦 ${window.t('sourcing.request_quote') || 'Request Sourcing Quote'}
             </button>
