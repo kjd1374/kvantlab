@@ -31,8 +31,7 @@ export const KoreaTrendBridge = {
     id: 'k_trend',
     name: 'Korea Trends',
     tabs: [
-        { id: 'global_trends', icon: '🌏', label: 'tabs.global_trends' },
-        { id: 'naver_best', icon: '🇰🇷', label: 'tabs.naver_best' }
+        { id: 'global_trends', icon: '🌏', label: 'tabs.global_trends' }
     ],
 
     // Naver Best internal state
