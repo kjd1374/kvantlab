@@ -240,7 +240,9 @@
     "ssg": "신세계",
     "k_trend": "코리아 트렌드",
     "steady_sellers": "스테디 셀러",
-    "modernhouse": "모던하우스"
+    "modernhouse": "모던하우스",
+    "naver_best_prod": "에이블리/무신사/네이버 트렌드",
+    "naver_best_brand": "베스트 브랜드 트렌드"
   },
   "membership": {
     "limit_reached": "일일 조회 제한 도달",
