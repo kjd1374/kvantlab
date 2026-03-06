@@ -340,6 +340,7 @@
     "btn_request_quote": "📦 B2B 견적 요청하기",
     "btn_submit": "견적 요청하기",
     "btn_submitting": "요청 중...",
+    "btn_uploading": "이미지 업로드 중...",
     "total_items": "{count}종 상품",
     "status_pending": "대기 중",
     "status_quoted": "견적 완료",

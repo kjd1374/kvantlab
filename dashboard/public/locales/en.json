@@ -332,6 +332,7 @@
     "btn_request_quote": "📦 Request B2B Quote",
     "btn_submit": "Submit Quote Request",
     "btn_submitting": "Submitting...",
+    "btn_uploading": "Uploading Images...",
     "total_items": "{count} items",
     "status_pending": "Pending",
     "status_quoted": "Quoted",
