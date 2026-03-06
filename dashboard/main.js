@@ -2175,17 +2175,20 @@ window.__openProduct = async function (product) {
         </div>
       ` : '';
 
-      // Build options section
+      // Build options section - dropdown format
       const optionsHtml = pOptions.length > 0 ? `
         <div style="margin-bottom:14px;">
-          <div style="font-size:12px; font-weight:600; color:#555; margin-bottom:8px;">🏷️ ${window.t('modal.options') || '옵션 / 가격'}</div>
-          <div style="display:flex; flex-direction:column; gap:6px;">
-            ${pOptions.map(opt => `
-              <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:#fff8f0; border-radius:8px; border:1px solid #ffe0b2;">
-                <span style="font-size:13px; color:#333; font-weight:500;">${escapeHtml(opt.name || '')}</span>
-                <span style="font-size:14px; font-weight:700; color:#e65100;">₩${new Intl.NumberFormat().format(opt.price || 0)}</span>
-              </div>
-            `).join('')}
+          <div style="font-size:12px; font-weight:600; color:#555; margin-bottom:8px;">🏷️ ${window.t('modal.options')}</div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <select id="ssOptionSelect" onchange="(function(sel){var p=sel.options[sel.selectedIndex].dataset.price;document.getElementById('ssOptionPrice').textContent=p?('₩'+Number(p).toLocaleString()):'';document.getElementById('ssOptionPriceRow').style.display=p?'flex':'none';})(this)"
+              style="flex:1; padding:10px 12px; border-radius:8px; border:1px solid #ffe0b2; background:#fff8f0; font-size:13px; color:#333; cursor:pointer; appearance:auto;">
+              <option value="" data-price="">${window.t('modal.select_option')}</option>
+              ${pOptions.map(opt => `<option value="${escapeHtml(opt.name || '')}" data-price="${opt.price || 0}">${escapeHtml(opt.name || '')} — ₩${new Intl.NumberFormat().format(opt.price || 0)}</option>`).join('')}
+            </select>
+          </div>
+          <div id="ssOptionPriceRow" style="display:none; justify-content:flex-end; align-items:center; margin-top:8px; padding:8px 12px; background:#fff3e0; border-radius:8px;">
+            <span style="font-size:13px; color:#888; margin-right:8px;">${window.t('modal.select_option')}:</span>
+            <span id="ssOptionPrice" style="font-size:18px; font-weight:700; color:#e65100;"></span>
           </div>
         </div>
       ` : '';
@@ -2193,7 +2196,7 @@ window.__openProduct = async function (product) {
       // Build notes section
       const notesHtml = pNotes ? `
         <div style="margin-bottom:14px; padding:10px 12px; background:#f0f4ff; border-radius:8px; border:1px solid #d0d8f0;">
-          <div style="font-size:11px; color:#6b7db3; margin-bottom:3px;">📝 ${window.t('modal.notes') || '기타 사항'}</div>
+          <div style="font-size:11px; color:#6b7db3; margin-bottom:3px;">📝 ${window.t('modal.notes')}</div>
           <div style="font-size:13px; color:#333; line-height:1.5;">${escapeHtml(pNotes)}</div>
         </div>
       ` : '';

@@ -805,7 +805,8 @@ export async function authorizedFetch(url, options = {}) {
                 ...options.headers,
                 'apikey': SUPABASE_KEY,
                 'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Prefer': 'count=exact'
             }
         });
     };

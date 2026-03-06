@@ -118,7 +118,12 @@
     "view_in": "🔗 View on {platform}",
     "rank_category": "Category Rank",
     "rank_value": "#{rank}",
-    "product_info": "Product Information"
+    "product_info": "Product Information",
+    "size": "Size",
+    "weight": "Weight / Volume",
+    "notes": "Notes",
+    "options": "Options / Pricing",
+    "select_option": "Select an option"
   },
   "sections": {
     "all": "Category Rankings",
