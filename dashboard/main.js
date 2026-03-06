@@ -2180,16 +2180,14 @@ window.__openProduct = async function (product) {
         const sel = document.getElementById('ssOptionSelect');
         const qty = document.getElementById('ssOptionQty');
         const res = document.getElementById('ssOptionPrice');
-        const row = document.getElementById('ssOptionPriceRow');
-        if (sel && qty && res && row) {
+        if (sel && qty && res) {
           const selectedOpt = sel.options[sel.selectedIndex];
           const p = selectedOpt ? selectedOpt.dataset.price : '';
           if (p) {
             const total = Number(p) * Math.max(1, parseInt(qty.value) || 1);
             res.textContent = '₩' + total.toLocaleString();
-            row.style.display = 'flex';
           } else {
-            row.style.display = 'none';
+            res.textContent = '₩0';
           }
         }
       };
@@ -2210,9 +2208,9 @@ window.__openProduct = async function (product) {
                 style="width:100%; border:none; background:transparent; padding:10px 8px; text-align:right; font-size:13px; color:#333; outline:none;">
             </div>
           </div>
-          <div id="ssOptionPriceRow" style="display:none; justify-content:flex-end; align-items:center; padding:8px 12px; background:#fff3e0; border-radius:8px;">
+          <div id="ssOptionPriceRow" style="display:flex; justify-content:flex-end; align-items:center; padding:8px 12px; background:#fff3e0; border-radius:8px;">
             <span style="font-size:13px; color:#888; margin-right:8px;">${window.t('modal.estimated_price')}:</span>
-            <span id="ssOptionPrice" style="font-size:18px; font-weight:700; color:#e65100;"></span>
+            <span id="ssOptionPrice" style="font-size:18px; font-weight:700; color:#e65100;">₩0</span>
           </div>
         </div>
       ` : '';
