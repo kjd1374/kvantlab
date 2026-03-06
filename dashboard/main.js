@@ -2851,7 +2851,7 @@ let charts = {
 
 async function loadInsights() {
   // K-Trend 플랫폼이면 전용 뷰로 분기
-  if (state.currentPlatform === 'k_trend') {
+  if (state.currentPlatform === 'k_trend' || state.currentPlatform.startsWith('naver_best')) {
     return await loadKTrendInsights();
   }
 

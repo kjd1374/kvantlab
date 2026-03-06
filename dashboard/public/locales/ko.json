@@ -54,6 +54,9 @@
     "crawl_logs": "수집 로그",
     "musinsa_ranking": "무신사 랭킹",
     "global_trends": "글로벌 트렌드",
+    "naver_best": "🇰🇷 네이버 베스트 상품",
+    "naver_best_prod": "🛍️ 베스트 상품 순위",
+    "naver_best_brand": "🏢 베스트 브랜드 순위",
     "apply": "적용",
     "ranking": "랭킹",
     "trend": "트렌드"
