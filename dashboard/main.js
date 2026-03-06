@@ -4551,10 +4551,10 @@ window.submitQuoteRequest = async function () {
     const imageQty = document.getElementById('srcImageQty')?.value || 1;
     const imageMemo = document.getElementById('srcImageMemo')?.value?.trim() || '';
 
-    if (window.__quoteImageFiles && window.__quoteImageFiles.length > 0) {
+    if (__quoteImageFiles && __quoteImageFiles.length > 0) {
       if (btn) btn.innerText = window.t('sourcing.btn_uploading') || '이미지 업로드 중...';
       const formData = new FormData();
-      window.__quoteImageFiles.forEach(file => {
+      __quoteImageFiles.forEach(file => {
         formData.append('images', file);
       });
 
@@ -4617,6 +4617,14 @@ window.submitQuoteRequest = async function () {
     // Reset form
     window.__srcCartItems = [];
     if (window.__srcRenderCart) window.__srcRenderCart([]);
+    __quoteImageFiles = []; // Clear image selection
+    const imgPreviews = document.getElementById('quoteImagePreviews');
+    if (imgPreviews) imgPreviews.innerHTML = '';
+    const srcImgMemo = document.getElementById('srcImageMemo');
+    if (srcImgMemo) srcImgMemo.value = '';
+    const srcImgQty = document.getElementById('srcImageQty');
+    if (srcImgQty) srcImgQty.value = '1';
+
     // Reset URL rows
     const urlList = document.getElementById('srcUrlList');
     if (urlList) {
