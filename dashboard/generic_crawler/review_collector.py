@@ -16,6 +16,7 @@ import asyncio
 import argparse
 import requests
 import re
+from playwright_stealth import Stealth
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -178,8 +179,8 @@ def call_vision_llm(screenshot_base64):
         return None
 
 
-async def take_screenshot(page, url, source):
-    """상품 페이지 스크린샷 촬영"""
+async def take_screenshot(page, url, source, max_retries=3):
+    """상품 페이지 스크린샷 촬영 (봇 탐지 시 재시도)"""
     try:
         # Ably needs mobile viewport
         if source == "ably":
@@ -187,20 +188,38 @@ async def take_screenshot(page, url, source):
         else:
             await page.set_viewport_size({"width": 1280, "height": 900})
         
-        await page.goto(url, wait_until="domcontentloaded", timeout=30000)
-        
-        # Wait for content to load
-        await asyncio.sleep(3)
-        
-        # Scroll down a bit to load review section
-        await page.evaluate("window.scrollBy(0, 400)")
-        await asyncio.sleep(1)
-        
-        # Handle Cloudflare/bot detection pages
-        title = await page.title()
-        if any(kw in title for kw in ["잠시만", "확인", "보안", "Cloudflare"]):
-            log(f"    ⚠️ Bot detection page detected, waiting...")
-            await asyncio.sleep(5)
+        for attempt in range(max_retries):
+            await page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            
+            # Wait for content to load (longer for Ably)
+            wait_time = random.uniform(3, 5) if source == "ably" else 3
+            await asyncio.sleep(wait_time)
+            
+            # Scroll down a bit to load review section
+            await page.evaluate("window.scrollBy(0, 400)")
+            await asyncio.sleep(1)
+            
+            # Handle Cloudflare/bot detection pages
+            title = await page.title()
+            page_content = await page.content()
+            is_bot_page = (
+                any(kw in title for kw in ["잠시만", "확인", "보안", "Cloudflare", "Just a moment"])
+                or "challenge" in page_content[:500].lower()
+                or "turnstile" in page_content[:2000].lower()
+            )
+            
+            if is_bot_page:
+                if attempt < max_retries - 1:
+                    wait_secs = random.uniform(8, 15) * (attempt + 1)
+                    log(f"    ⚠️ Bot detection (attempt {attempt+1}/{max_retries}), waiting {wait_secs:.0f}s...")
+                    await asyncio.sleep(wait_secs)
+                    continue
+                else:
+                    log(f"    ❌ Bot detection persisted after {max_retries} retries, skipping")
+                    return None
+            
+            # No bot detection, take screenshot
+            break
         
         # Take screenshot
         screenshot_bytes = await page.screenshot(full_page=False)
@@ -230,10 +249,15 @@ async def process_platform(browser, source, limit):
         return 0
     
     context = await browser.new_context(
-        user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        locale="ko-KR"
+        user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1" if source == "ably" else "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        locale="ko-KR",
+        viewport={"width": 375, "height": 812} if source == "ably" else {"width": 1280, "height": 900},
     )
     page = await context.new_page()
+    
+    # Apply stealth to avoid bot detection (especially for Ably)
+    stealth = Stealth()
+    await stealth.apply_stealth_async(page)
     
     success_count = 0
     
@@ -270,8 +294,8 @@ async def process_platform(browser, source, limit):
         else:
             log(f"    ℹ️ 리뷰 데이터 없음 (신규 상품?)")
         
-        # Random delay between requests
-        delay = random.uniform(3, 8)
+        # Random delay between requests (longer for Ably to avoid rate limits)
+        delay = random.uniform(5, 12) if source == "ably" else random.uniform(3, 8)
         await asyncio.sleep(delay)
     
     await context.close()

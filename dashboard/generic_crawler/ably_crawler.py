@@ -279,8 +279,17 @@ async def crawl_ably_category(page, category):
                             p_image = product_data.get('image')
                             
                             # 리뷰 데이터 추출 (API 응답에 있을 경우)
-                            p_review_count = product_data.get('review_count', 0) or product_data.get('comment_count', 0) or 0
-                            p_satisfaction = product_data.get('satisfaction', 0) or product_data.get('review_score', 0) or 0
+                            # Note: Ably API uses UPPERCASE field names (REVIEW_COUNT, REVIEW_RATING, LIKES_COUNT)
+                            p_review_count = (
+                                product_data.get('REVIEW_COUNT', 0) or 
+                                product_data.get('review_count', 0) or 
+                                product_data.get('comment_count', 0) or 0
+                            )
+                            p_satisfaction = (
+                                product_data.get('REVIEW_RATING', 0) or
+                                product_data.get('satisfaction', 0) or 
+                                product_data.get('review_score', 0) or 0
+                            )
                             p_review_rating = 0.0
                             try:
                                 if p_satisfaction and int(p_satisfaction) > 0:
