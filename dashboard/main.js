@@ -4914,7 +4914,7 @@ window.__srcOpenDetail = function (reqId) {
     quoteHtml = `
       <div class="src-quote-box">
         <div class="src-quote-title">${window.t('sourcing.admin_quote_reply')}</div>
-        <div class="src-quote-detail">${window.t('sourcing.total_quote')} ₩${req.estimated_cost.toLocaleString()}</div>
+        <div class="src-quote-detail">${window.t('sourcing.total_quote')} $${req.estimated_cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         ${req.admin_reply ? `<div class="src-quote-note">${req.admin_reply}</div>` : ''}
       </div>`;
   }
@@ -5105,7 +5105,7 @@ window.renderSourcingHistory = async function () {
 
       // Quote price
       const priceHtml = (req.status === 'quoted' && totalCost > 0)
-        ? `<span style="font-weight:700; color:#3949ab;">₩${totalCost.toLocaleString()}</span>`
+        ? `<span style="font-weight:700; color:#3949ab;">$${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>`
         : '<span style="color:#bbb;">—</span>';
 
       // Action

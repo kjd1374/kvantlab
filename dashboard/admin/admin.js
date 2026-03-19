@@ -668,8 +668,8 @@ async function initAdmin() {
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <strong style="color:var(--admin-primary)">${item.quantity}개</strong>
                     <div style="display:flex; align-items:center; gap:5px;">
-                        <label style="font-size:12px; color:#666;">단가(₩):</label>
-                        <input type="number" class="calc-unit-price" data-idx="${idx}" data-qty="${item.quantity}" value="${unitPrice}" style="width:80px; padding:4px; font-size:12px; text-align:right;">
+                        <label style="font-size:12px; color:#666;">단가($):</label>
+                        <input type="number" step="0.01" class="calc-unit-price" data-idx="${idx}" data-qty="${item.quantity}" value="${unitPrice}" style="width:80px; padding:4px; font-size:12px; text-align:right;">
                     </div>
                 </div>
             </div>`;
@@ -684,15 +684,15 @@ async function initAdmin() {
             let sum = 0;
             document.querySelectorAll('.calc-unit-price').forEach(input => {
                 const qty = parseInt(input.dataset.qty) || 0;
-                const up = parseInt(input.value) || 0;
+                const up = parseFloat(input.value) || 0;
                 sum += (up * qty);
             });
-            const sFee = parseInt(document.getElementById('shippingFee').value) || 0;
-            const svFee = parseInt(document.getElementById('serviceFee').value) || 0;
+            const sFee = parseFloat(document.getElementById('shippingFee').value) || 0;
+            const svFee = parseFloat(document.getElementById('serviceFee').value) || 0;
             const finalTotal = sum + sFee + svFee;
 
-            document.getElementById('sourcingCost').value = finalTotal;
-            document.getElementById('totalCostDisplay').innerText = finalTotal.toLocaleString();
+            document.getElementById('sourcingCost').value = finalTotal.toFixed(2);
+            document.getElementById('totalCostDisplay').innerText = finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         };
 
         // Trigger initial calculation
@@ -742,15 +742,15 @@ async function initAdmin() {
         document.querySelectorAll('.calc-unit-price').forEach(input => {
             const idx = parseInt(input.dataset.idx);
             const qty = parseInt(input.dataset.qty) || 0;
-            const up = parseInt(input.value) || 0;
+            const up = parseFloat(input.value) || 0;
             if (finalItems[idx]) {
                 finalItems[idx].unit_price = up;
             }
             sum += (up * qty);
         });
 
-        const shipping_fee = parseInt(document.getElementById('shippingFee').value) || 0;
-        const service_fee = parseInt(document.getElementById('serviceFee').value) || 0;
+        const shipping_fee = parseFloat(document.getElementById('shippingFee').value) || 0;
+        const service_fee = parseFloat(document.getElementById('serviceFee').value) || 0;
         const estimated_cost = sum + shipping_fee + service_fee;
 
         try {
