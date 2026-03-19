@@ -4053,7 +4053,7 @@ function renderPayPalButtons() {
       console.log('[PayPal Debug] Injecting PayPal SDK script dynamically...');
       const script = document.createElement('script');
       script.id = 'paypal-sdk-script';
-      script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&vault=true&currency=USD`;
+      script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&vault=true&currency=USD&locale=en_US`;
       script.setAttribute('data-sdk-integration-source', 'button-factory');
       script.onload = () => {
         console.log('[PayPal Debug] PayPal SDK loaded directly, re-calling render...');
@@ -4952,7 +4952,7 @@ window.__renderSourcingPayPal = function(reqId) {
         const clientId = (import.meta.env.VITE_PAYPAL_CLIENT_ID || '').trim();
         const script = document.createElement('script');
         script.id = 'paypal-sdk-script';
-        script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&vault=true&currency=USD`;
+        script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&vault=true&currency=USD&locale=en_US`;
         script.onload = () => window.__renderSourcingPayPal(reqId);
         document.head.appendChild(script);
         return;
