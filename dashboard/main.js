@@ -2231,7 +2231,7 @@ window.__openProduct = async function (product) {
       const notesHtml = pNotes ? `
         <div style="margin-bottom:14px; padding:10px 12px; background:#f0f4ff; border-radius:8px; border:1px solid #d0d8f0;">
           <div style="font-size:11px; color:#6b7db3; margin-bottom:3px;">📝 ${window.t('modal.notes')}</div>
-          <div style="font-size:13px; color:#333; line-height:1.5;">${escapeHtml(pNotes)}</div>
+          <div style="font-size:13px; color:#333; line-height:1.5; white-space:pre-wrap;">${escapeHtml(pNotes)}</div>
         </div>
       ` : '';
 
@@ -4053,7 +4053,7 @@ function renderPayPalButtons() {
       console.log('[PayPal Debug] Injecting PayPal SDK script dynamically...');
       const script = document.createElement('script');
       script.id = 'paypal-sdk-script';
-      script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&vault=true&intent=subscription&currency=USD`;
+      script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&vault=true&currency=USD`;
       script.setAttribute('data-sdk-integration-source', 'button-factory');
       script.onload = () => {
         console.log('[PayPal Debug] PayPal SDK loaded directly, re-calling render...');
@@ -4926,14 +4926,78 @@ window.__srcOpenDetail = function (reqId) {
     ${stepperHtml}
     ${quoteHtml}
     <div class="src-modal-actions">
-      ${req.status === 'quoted' ? `<button class="src-btn-confirm" onclick="alert('Coming soon!')">${window.t('sourcing.btn_confirm_order')}</button>` : ''}
+      ${req.status === 'quoted' ? `<div id="sourcing-paypal-container-${req.id}" style="width: 100%; margin-top: 10px; margin-bottom: 20px;"></div>` : ''}
       <button class="src-btn-close" onclick="window.__srcCloseDetail()">${window.t('sourcing.btn_close')}</button>
     </div>
   `;
   overlay.classList.add('active');
+
+  // Trigger PayPal JS explicitly for Orders API if status is quoted
+  if (req.status === 'quoted') {
+      setTimeout(() => window.__renderSourcingPayPal(req.id), 200);
+  }
 };
 window.__srcCloseDetail = function () {
   document.getElementById('srcDetailOverlay')?.classList.remove('active');
+};
+
+// Render PayPal Buttons for Sourcing Checkout
+window.__renderSourcingPayPal = function(reqId) {
+    const containerId = `sourcing-paypal-container-${reqId}`;
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // Dynamically load PayPal SDK if not already loaded globally
+    if (typeof paypal === 'undefined') {
+        const clientId = (import.meta.env.VITE_PAYPAL_CLIENT_ID || '').trim();
+        const script = document.createElement('script');
+        script.id = 'paypal-sdk-script';
+        script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&vault=true&currency=USD`;
+        script.onload = () => window.__renderSourcingPayPal(reqId);
+        document.head.appendChild(script);
+        return;
+    }
+
+    container.innerHTML = ''; // clear
+
+    paypal.Buttons({
+        style: { shape: 'rect', color: 'gold', layout: 'vertical', label: 'pay' },
+        createOrder: async function(data, actions) {
+            const res = await fetch('/api/paypal/orders/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sourcing_request_id: reqId })
+            });
+            const resData = await res.json();
+            if (!resData.success) {
+                alert('결제 준비 중 오류가 발생했습니다: ' + (resData.error || 'Unknown Error'));
+                throw new Error(resData.error);
+            }
+            return resData.id;
+        },
+        onApprove: async function(data, actions) {
+            const res = await fetch('/api/paypal/orders/capture', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    orderID: data.orderID,
+                    sourcing_request_id: reqId
+                })
+            });
+            const resData = await res.json();
+            if (resData.success) {
+                alert(window.t('sourcing.alert_payment_success') || '결제가 완료되었습니다. 상품 준비 및 배송이 시작됩니다!');
+                window.__srcCloseDetail();
+                if (window.renderSourcingHistory) window.renderSourcingHistory();
+            } else {
+                alert('결제 처리 중 오류가 발생했습니다: ' + (resData.error || 'Unknown Error'));
+            }
+        },
+        onError: function(err) {
+            console.error('PayPal Order Error:', err);
+            alert('페이팔 결제 중 오류가 발생했습니다.');
+        }
+    }).render(`#${containerId}`);
 };
 
 // Cart rendering
@@ -5013,7 +5077,10 @@ window.renderSourcingHistory = async function () {
       let statusLabel = req.status;
       if (req.status === 'pending') { badgeClass = 'src-badge--pending'; statusLabel = window.t('sourcing.status_reviewing'); }
       else if (req.status === 'quoted') { badgeClass = 'src-badge--quoted'; statusLabel = window.t('sourcing.status_quote_done'); }
-      else if (req.status === 'confirmed') { badgeClass = 'src-badge--confirmed'; statusLabel = window.t('sourcing.status_order_confirmed'); }
+      else if (req.status === 'paid') { badgeClass = 'src-badge--confirmed'; statusLabel = window.t('sourcing.status_payment_done') || '결제 완료'; }
+      else if (req.status === 'shipped') { badgeClass = 'src-badge--confirmed'; statusLabel = window.t('sourcing.status_shipped') || '배송 중'; }
+      else if (req.status === 'completed') { badgeClass = 'src-badge--confirmed'; statusLabel = window.t('sourcing.status_order_confirmed') || '완료'; }
+      else if (req.status === 'confirmed') { badgeClass = 'src-badge--confirmed'; statusLabel = window.t('sourcing.status_order_confirmed') || '주문 확인됨'; }
       else if (req.status === 'canceled') { badgeClass = 'src-badge--cancelled'; statusLabel = window.t('sourcing.status_cancel'); }
 
       // Product cell
@@ -5042,7 +5109,7 @@ window.renderSourcingHistory = async function () {
         : '<span style="color:#bbb;">—</span>';
 
       // Action
-      const actionHtml = (req.status === 'quoted' || req.status === 'confirmed')
+      const actionHtml = (['quoted', 'paid', 'shipped', 'confirmed', 'completed'].includes(req.status))
         ? `<button class="src-btn-detail" onclick="window.__srcOpenDetail('${req.id}')">${window.t('sourcing.btn_details')}</button>`
         : `<button class="src-btn-detail disabled">${window.t('sourcing.btn_waiting')}</button>`;
 

@@ -895,6 +895,127 @@ app.post('/api/sourcing/request', async (req, res) => {
     }
 });
 
+// --- PayPal Checkout (Orders API) for Sourcing ---
+app.post('/api/paypal/orders/create', async (req, res) => {
+    const { sourcing_request_id } = req.body;
+    if (!sourcing_request_id) return res.status(400).json({ success: false, error: 'Missing sourcing_request_id' });
+
+    try {
+        // 1. Fetch exact quote amount from DB
+        const { data: request, error: dbError } = await supabase
+            .from('sourcing_requests')
+            .select('estimated_cost, status')
+            .eq('id', sourcing_request_id)
+            .single();
+
+        if (dbError || !request) throw new Error('Sourcing request not found');
+        if (request.status !== 'quoted') throw new Error('Request is not in quoted status');
+        if (!request.estimated_cost || request.estimated_cost <= 0) throw new Error('Invalid estimated cost');
+
+        // 2. Get PayPal Access Token
+        const accessToken = await getPayPalAccessToken();
+        const environmentUrl = process.env.PAYPAL_MODE === 'live'
+            ? 'https://api-m.paypal.com'
+            : 'https://api-m.sandbox.paypal.com';
+
+        // 3. Create Order
+        const response = await fetch(`${environmentUrl}/v2/checkout/orders`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({
+                intent: 'CAPTURE',
+                purchase_units: [{
+                    reference_id: sourcing_request_id,
+                    amount: {
+                        currency_code: 'USD',
+                        value: parseFloat(request.estimated_cost).toFixed(2)
+                    },
+                    description: `Sourcing Quote Payment - #${sourcing_request_id.substring(0, 8)}`
+                }]
+            })
+        });
+
+        const orderData = await response.json();
+        if (!response.ok) {
+            throw new Error(`PayPal API error: ${orderData.message || response.statusText}`);
+        }
+
+        res.json({ success: true, id: orderData.id });
+    } catch (error) {
+        console.error('PayPal Order create error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/paypal/orders/capture', async (req, res) => {
+    const { orderID, sourcing_request_id } = req.body;
+    if (!orderID || !sourcing_request_id) return res.status(400).json({ success: false, error: 'Missing orderID or sourcing_request_id' });
+
+    try {
+        const accessToken = await getPayPalAccessToken();
+        const environmentUrl = process.env.PAYPAL_MODE === 'live'
+            ? 'https://api-m.paypal.com'
+            : 'https://api-m.sandbox.paypal.com';
+
+        // 1. Capture Order
+        const response = await fetch(`${environmentUrl}/v2/checkout/orders/${orderID}/capture`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        const captureData = await response.json();
+        if (!response.ok) {
+            throw new Error(`PayPal API error: ${captureData.message || response.statusText}`);
+        }
+
+        // 2. Verify Capture Status
+        if (captureData.status === 'COMPLETED') {
+            // Fetch user ID to notify them
+            const { data: request } = await supabase
+                .from('sourcing_requests')
+                .select('user_id')
+                .eq('id', sourcing_request_id)
+                .single();
+
+            // 3. Update Sourcing Request Status to 'paid'
+            const { error: updateError } = await supabase
+                .from('sourcing_requests')
+                .update({ 
+                    status: 'paid',
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', sourcing_request_id);
+
+            if (updateError) throw updateError;
+
+            // 4. Send Notification
+            if (request && request.user_id) {
+                supabase.from('user_notifications').insert({
+                    user_id: request.user_id,
+                    type: 'sourcing',
+                    title: '💳 결제 완료 안내',
+                    message: `소싱 요청건의 결제가 완료되었습니다. 상품 준비 및 배송이 시작될 예정입니다.`,
+                    link: 'sourcing',
+                    is_read: false
+                }).then(() => {});
+            }
+
+            res.json({ success: true, message: 'Payment captured successfully' });
+        } else {
+            throw new Error(`Payment not completed. Status: ${captureData.status}`);
+        }
+    } catch (error) {
+        console.error('PayPal Order capture error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // 2. Get User's Sourcing History
 app.get('/api/sourcing/history/:userId', async (req, res) => {
     try {
@@ -1261,16 +1382,35 @@ app.post('/api/paypal/capture', async (req, res) => {
         // Active status means the trial started successfully or payment went through.
         if (captureResponse.ok && captureData.status === 'ACTIVE') {
             // 3. Update User Subscription in Supabase
-            // Use PayPal's next_billing_time to set the true expiration date
-            let expiresAt = new Date();
+            // First, fetch the current user profile to check if they have remaining time
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('subscription_tier, subscription_expires_at')
+                .eq('id', userId)
+                .single();
 
-            if (captureData.billing_info && captureData.billing_info.next_billing_time) {
-                // Parse PayPal's ISO string (e.g. "2026-03-12T10:00:00Z")
-                expiresAt = new Date(captureData.billing_info.next_billing_time);
-            } else {
-                // Fallback: 1 month Trial / Cycle
-                expiresAt.setDate(expiresAt.getDate() + 30);
+            let baseDateStr = null;
+
+            // If they are currently 'pro' and not expired yet, use their existing expiration date as the base
+            if (profile && profile.subscription_tier === 'pro' && profile.subscription_expires_at) {
+                const currentExpiry = new Date(profile.subscription_expires_at);
+                const now = new Date();
+                if (currentExpiry > now) {
+                    baseDateStr = profile.subscription_expires_at;
+                }
             }
+
+            // Use PayPal's next_billing_time or current date + 30 days
+            let newCycleDurationMs = 30 * 24 * 60 * 60 * 1000; // fallback roughly 30 days
+            if (captureData.billing_info && captureData.billing_info.next_billing_time) {
+                const paypalNextBilling = new Date(captureData.billing_info.next_billing_time);
+                newCycleDurationMs = paypalNextBilling.getTime() - Date.now();
+            }
+
+            // Calculate the final expiresAt date
+            let expiresAt = baseDateStr ? new Date(baseDateStr) : new Date();
+            // Add the new cycle duration on top of the base date
+            expiresAt = new Date(expiresAt.getTime() + newCycleDurationMs);
 
             const { error: updateError } = await supabase
                 .from('profiles')

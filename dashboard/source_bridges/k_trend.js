@@ -65,7 +65,7 @@ export const KoreaTrendBridge = {
         // ── Naver Best tab ──────────────────────────────────────────
         if (tabId === 'naver_best') {
             const [pRes, bRes] = await Promise.all([
-                fetchNaverBestProducts({ limit: 50, categoryId: this._nb.productCatId }),
+                fetchNaverBestProducts({ limit: 50, categoryId: this._nb.productCatId, periodType: this._nb.productPeriod }),
                 fetchNaverBestBrands({ categoryId: this._nb.brandCatId, periodType: this._nb.brandPeriod, limit: 30 }),
             ]);
             return {

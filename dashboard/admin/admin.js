@@ -548,7 +548,9 @@ async function initAdmin() {
 
                 let badge = '';
                 if (req.status === 'pending') badge = '<span class="status-badge status-offline" style="background:#fff3cd; color:#856404;">Pending</span>';
-                else if (req.status === 'quoted') badge = '<span class="status-badge" style="background:#d4edda; color:#155724;">Quoted</span>';
+                else if (req.status === 'quoted') badge = '<span class="status-badge" style="background:#d1ecf1; color:#0c5460;">Quoted</span>';
+                else if (req.status === 'paid') badge = '<span class="status-badge" style="background:#cce5ff; color:#004085;">Paid</span>';
+                else if (req.status === 'shipped') badge = '<span class="status-badge" style="background:#d4edda; color:#155724;">Shipped</span>';
                 else if (req.status === 'completed') badge = '<span class="status-badge status-online">Completed</span>';
                 else badge = `<span class="status-badge" style="background:#f8d7da; color:#721c24;">${req.status}</span>`;
 

@@ -96,69 +96,74 @@ def fetch_products_by_category() -> int:
     date_str = today[0:10]
     total = 0
     seen_ids = set()
+    
+    PRODUCT_PERIODS = ["DAILY", "WEEKLY"]
 
-    for cat in CATEGORIES:
-        data = naver_get("product/rank", {
-            "sortType": "PRODUCT_BUY",
-            "periodType": "DAILY",
-            "ageType": "ALL",
-            "categoryId": cat["id"],
-        })
-        items = data if isinstance(data, list) else (data.get("products") or [])
-        records = []
-        for rank, item in enumerate(items[:50], 1):
-            pid = str(item.get("productId") or item.get("nvMid") or "")
-            key = f"{cat['id']}_{pid}"
-            if not pid or key in seen_ids or item.get("isAd"):
-                continue
-            seen_ids.add(key)
-
-            price_raw = item.get("salePrice") or item.get("price") or 0
-            try:
-                price = int(str(price_raw).replace(",", ""))
-            except ValueError:
-                price = 0
-
-            records.append({
-                "product_id": f"naver_{pid}",
-                "source": "naver_best",
-                "name": item.get("title") or item.get("productName") or "",
-                "brand": item.get("mallName") or item.get("brandName") or "",
-                "price": price,
-                "image_url": item.get("imageUrl") or "",
-                "url": item.get("linkUrl") or item.get("productUrl") or f"https://smartstore.naver.com/products/{pid}",
-                "category": cat["ko"],
-                "naver_category_id": cat["id"],
-                "current_rank": rank,
-                "rank_change": int(item.get("rankChange") or 0),
-                "created_at": today,
-                "tags": {"sort_type": "PRODUCT_BUY", "period": "DAILY"},
-            })
-
-        saved_items = upsert("products_master", records, on_conflict="source,product_id")
+    for period in PRODUCT_PERIODS:
+        source_name = "naver_best" if period == "DAILY" else "naver_best_weekly"
         
-        if saved_items:
-            # Create a lookup for internal ID by string product_id
-            pid_to_id = {item["product_id"]: item["id"] for item in saved_items if "id" in item}
+        for cat in CATEGORIES:
+            data = naver_get("product/rank", {
+                "sortType": "PRODUCT_BUY",
+                "periodType": period,
+                "ageType": "ALL",
+                "categoryId": cat["id"],
+            })
+            items = data if isinstance(data, list) else (data.get("products") or [])
+            records = []
+            for rank, item in enumerate(items[:50], 1):
+                pid = str(item.get("productId") or item.get("nvMid") or "")
+                key = f"{period}_{cat['id']}_{pid}"
+                if not pid or key in seen_ids or item.get("isAd"):
+                    continue
+                seen_ids.add(key)
+    
+                price_raw = item.get("salePrice") or item.get("price") or 0
+                try:
+                    price = int(str(price_raw).replace(",", ""))
+                except ValueError:
+                    price = 0
+    
+                records.append({
+                    "product_id": f"naver_{pid}",
+                    "source": source_name,
+                    "name": item.get("title") or item.get("productName") or "",
+                    "brand": item.get("mallName") or item.get("brandName") or "",
+                    "price": price,
+                    "image_url": item.get("imageUrl") or "",
+                    "url": item.get("linkUrl") or item.get("productUrl") or f"https://smartstore.naver.com/products/{pid}",
+                    "category": cat["ko"],
+                    "naver_category_id": cat["id"],
+                    "current_rank": rank,
+                    "rank_change": int(item.get("rankChange") or 0),
+                    "created_at": today,
+                    "tags": {"sort_type": "PRODUCT_BUY", "period": period},
+                })
+    
+            saved_items = upsert("products_master", records, on_conflict="source,product_id")
             
-            # Upsert into daily_rankings_v2
-            ranking_records = []
-            for item in records:
-                internal_id = pid_to_id.get(item["product_id"])
-                if internal_id:
-                    ranking_records.append({
-                        "product_id": internal_id,
-                        "rank": item["current_rank"],
-                        "date": date_str,
-                        "category_code": cat["id"],
-                        "source": "naver_best"
-                    })
-            
-            if ranking_records:
-                upsert("daily_rankings_v2", ranking_records, on_conflict="product_id,date,category_code")
+            if saved_items:
+                # Create a lookup for internal ID by string product_id
+                pid_to_id = {item["product_id"]: item["id"] for item in saved_items if "id" in item}
                 
-        print(f"  📦 [{cat['ko']}] {len(records)}개 상품")
-        total += len(records)
+                # Upsert into daily_rankings_v2
+                ranking_records = []
+                for item in records:
+                    internal_id = pid_to_id.get(item["product_id"])
+                    if internal_id:
+                        ranking_records.append({
+                            "product_id": internal_id,
+                            "rank": item["current_rank"],
+                            "date": date_str,
+                            "category_code": cat["id"],
+                            "source": source_name
+                        })
+                
+                if ranking_records:
+                    upsert("daily_rankings_v2", ranking_records, on_conflict="product_id,date,category_code")
+                    
+            print(f"  📦 [{period}][{cat['ko']}] {len(records)}개 상품")
+            total += len(records)
 
     return total
 

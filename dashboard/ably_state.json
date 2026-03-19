@@ -1,0 +1,196 @@
+{
+  "cookies": [
+    {
+      "name": "ably-anonymous-token",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbm9ueW1vdXNfaWQiOiI5NDA4NzQ5NjgiLCJpYXQiOjE3NzI4NzA5MDd9.YTKQqwizWV5S-SaFOIARNjCvy8x8GyeSgkkSxeP5Q3Y",
+      "domain": ".a-bly.com",
+      "path": "/",
+      "expires": 1807430907.182147,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "AMP_MKTG_fe82da2526",
+      "value": "JTdCJTdE",
+      "domain": ".a-bly.com",
+      "path": "/",
+      "expires": 1804406907,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "airbridge_migration_metadata__ably",
+      "value": "%7B%22version%22%3A%221.11.3%22%7D",
+      "domain": ".a-bly.com",
+      "path": "/",
+      "expires": 1807431418.325611,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "ab180ClientId",
+      "value": "5c0ad04d-6d61-403b-9f1d-8221dde0b232",
+      "domain": ".a-bly.com",
+      "path": "/",
+      "expires": 1807431418.326857,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "ab180ClientId",
+      "value": "bf5b65ea-986f-4f38-b4d6-e92132760cfb",
+      "domain": ".abr.ge",
+      "path": "/",
+      "expires": 1807431418.522073,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "_gcl_au",
+      "value": "1.1.511431661.1772870908",
+      "domain": ".a-bly.com",
+      "path": "/",
+      "expires": 1780646908,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_fbp",
+      "value": "fb.1.1772870908440.868404672929216620",
+      "domain": ".a-bly.com",
+      "path": "/",
+      "expires": 1780647418,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_gid",
+      "value": "GA1.2.1169712670.1772870909",
+      "domain": ".a-bly.com",
+      "path": "/",
+      "expires": 1772957818,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ttp",
+      "value": "3Abp1RmUv4oCgGYKqhR8h5XlMJb",
+      "domain": ".tiktok.com",
+      "path": "/",
+      "expires": 1806567418.670363,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "IDE",
+      "value": "AHWqTUmAix09dyZ_VLfqr7BFYXj1mWZMwsXOFU9Jb36SuIXmtfTzzDZFPCpVoY5f",
+      "domain": ".doubleclick.net",
+      "path": "/",
+      "expires": 1807430985.535352,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "ably-redirect-web-to-app",
+      "value": "true",
+      "domain": "m.a-bly.com",
+      "path": "/",
+      "expires": 1772957420,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "__cf_bm",
+      "value": "8ceE3ZPs1u1FQM2BtnfYtckca3Nj2BytgY.kxWP3iJw-1772871384-1.0.1.1-x.yn4qWRp5rqrElkLuKJmtx9RLPJcijMoN.PxKxBuGb5KMhrl4MXlQ9x7tw8adDOpik6GWbOi_aLt0aIWq_2KQ_ItdJjdRXBpt92DCPxHhg",
+      "domain": ".a-bly.com",
+      "path": "/",
+      "expires": 1772873184.181536,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "cf_clearance",
+      "value": "GqNoXE3Aa7a8Tvl7TzoLvZsgv0GQpCKtnlbWqQ2WDcU-1772871385-1.2.1.1-pWnrhUpOXETqgCpWX_uRdImZLLMmkWFEbOSy4pApUZe6DX6bdNbsmt184G15d7dtrnzgvdeJEAUKbhuycsJUpgpoY7Ix8kSUEkKyZrL_lbPBrPA69M3tyF.cGYnI0sgzQuVULLQq1l_GKOpaQm7XyXfDxe30dim2ek3BkGZTOuTvmUvzzGNYLcOvGvn3BWdGXEuYXNXMTGUOkH2CKHqvbwOKqQmP0p6iENNWcLGOEs4",
+      "domain": ".a-bly.com",
+      "path": "/",
+      "expires": 1804407385.099278,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None",
+      "partitionKey": "https://a-bly.com",
+      "_crHasCrossSiteAncestor": false
+    },
+    {
+      "name": "AMP_fe82da2526",
+      "value": "JTdCJTIyZGV2aWNlSWQlMjIlM0ElMjJjMTM0NjVmMy00MDg1LTQ5MmEtYWE3Yy0zOTViZDk1M2JjYzklMjIlMkMlMjJzZXNzaW9uSWQlMjIlM0ExNzcyODcwOTA3Mzg5JTJDJTIyb3B0T3V0JTIyJTNBZmFsc2UlMkMlMjJsYXN0RXZlbnRUaW1lJTIyJTNBMTc3Mjg3MTAyMTQ1NCUyQyUyMmxhc3RFdmVudElkJTIyJTNBMTMlN0Q=",
+      "domain": ".a-bly.com",
+      "path": "/",
+      "expires": 1804407418,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ga_JPWH7MNJH8",
+      "value": "GS2.1.s1772870908$o1$g1$t1772871418$j27$l0$h0",
+      "domain": ".a-bly.com",
+      "path": "/",
+      "expires": 1807431418.364312,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ga_CGXF31TNET",
+      "value": "GS2.1.s1772870985$o1$g1$t1772871418$j27$l0$h0",
+      "domain": ".a-bly.com",
+      "path": "/",
+      "expires": 1807431418.380605,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ga",
+      "value": "GA1.1.318725646.1772870908",
+      "domain": ".a-bly.com",
+      "path": "/",
+      "expires": 1807431418.380741,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "airbridge_session__ably",
+      "value": "%7B%22id%22%3A%225d7ce3d8-8e85-4182-ab69-0580b23c27d1%22%2C%22timeout%22%3A1800000%2C%22start%22%3A1772870908505%2C%22end%22%3A1772871418527%7D",
+      "domain": ".a-bly.com",
+      "path": "/",
+      "expires": 1807431418.527535,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "local_storage": {
+    "device-id": "fd3e17ff-d905-405b-b4c6-b03234eca885",
+    "lastExternalReferrerTime": "1772871418401",
+    "AMP_unsent_fe82da2526": "[]",
+    "lastExternalReferrer": "empty",
+    "ably-webview-pixel-external-id": "74a88802-89ac-4614-bb12-987784deda14",
+    "_gcl_ls": "{\"schema\":\"gcl\",\"version\":1,\"gcl_ctr\":{\"value\":{\"value\":7,\"timeouts\":0,\"errors\":0,\"creationTimeMs\":1772871418393},\"expires\":1780647418393}}"
+  },
+  "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "api_headers": {}
+}

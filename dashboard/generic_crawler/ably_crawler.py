@@ -2,19 +2,23 @@
 Ably (에이블리) Ranking Crawler
 URL: https://m.a-bly.com/
 
-방식: Playwright를 사용해 모바일 뷰로 접속하여 딥링크/카테고리 탐색
-특징: 대분류 -> 중분류(API parameter 확인) -> 랭킹 수집
+방식: Playwright를 사용해 모바일 뷰로 접속하여 Cloudflare를 우회하고
+홈화면에서 각 카테고리 탭("의류", "뷰티", 등)을 클릭한 뒤 페이지를 스크롤.
+스크롤 시 발생하는 백그라운드 API (Server-Driven UI JSON) 응답을 가로채어 파싱.
 """
-import os
+import asyncio
 import json
 import time
 import re
-import asyncio
+import os
 import requests
+from bs4 import BeautifulSoup
+from playwright.async_api import async_playwright
+from playwright_stealth import Stealth
 from datetime import datetime
+from urllib.parse import urlparse, parse_qs
 from translate_helper import get_english_brand
 from dotenv import load_dotenv
-from playwright.async_api import async_playwright
 
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"))
 
@@ -33,12 +37,12 @@ HEADERS = {
     "Prefer": "return=representation,resolution=merge-duplicates"
 }
 
-# 에이블리 메인 카테고리 (직접 URL 접근 방식)
+# 에이블리 메인 카테고리 (홈 화면의 텍스트와 매핑)
 TARGET_CATEGORIES = [
-    {"name": "여성패션", "code": "WOMEN", "url": "https://m.a-bly.com/displays/37"},
-    {"name": "뷰티", "code": "BEAUTY", "url": "https://m.a-bly.com/displays/38"},
-    {"name": "신발", "code": "SHOES", "url": "https://m.a-bly.com/displays/169"},
-    {"name": "가방", "code": "BAG", "url": "https://m.a-bly.com/displays/170"},
+    {"name": "여성패션", "tab_name": "의류", "code": "WOMEN"},
+    {"name": "뷰티", "tab_name": "뷰티", "code": "BEAUTY"},
+    {"name": "신발", "tab_name": "신발", "code": "SHOES"},
+    {"name": "가방", "tab_name": "가방", "code": "BAG"},
 ]
 
 def log_crawl(status, metadata=None):
@@ -53,18 +57,6 @@ def log_crawl(status, metadata=None):
         requests.post(f"{SUPABASE_URL}/rest/v1/crawl_logs", headers=HEADERS, json=log_data, timeout=10)
     except Exception as e:
         print(f"Warning: Could not log crawl status: {e}")
-
-async def debug_page_structure(page, category_name):
-    # 이 함수는 디버깅 목적으로 현재 페이지의 HTML 구조를 파일로 저장합니다.
-    # 실제 크롤링 로직에는 영향을 주지 않습니다.
-    try:
-        html_content = await page.content()
-        filename = f"debug_ably_{category_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(html_content)
-        print(f"  🔍 디버그 HTML 저장: {filename}")
-    except Exception as e:
-        print(f"  ❌ 디버그 HTML 저장 실패: {e}")
 
 def save_product_and_rank(item, rank, category_code, category_name):
     """
@@ -147,200 +139,25 @@ def save_product_and_rank(item, rank, category_code, category_name):
         return False
 
 
-async def crawl_ably_category(page, category):
-    print(f"\n--- [{category['name']}] 크롤링 시작 (직접 URL 접근) ---")
-    
-    # API 응답 캡처를 위한 변수
-    api_responses = []
-
-    async def handle_response(response):
-        if "api.a-bly.com" in response.url and response.status == 200:
-            try:
-                # JSON 응답만 처리
-                content_type = response.headers.get("content-type", "")
-                if "application/json" in content_type:
-                    data = await response.json()
-                    api_responses.append({
-                        "url": response.url,
-                        "data": data
-                    })
-            except:
-                pass
-
-    page.on("response", handle_response)
-
-    # 카테고리 URL로 직접 이동
-    target_url = category.get('url', 'https://m.a-bly.com/')
-    try:
-        await page.goto(target_url, wait_until="commit", timeout=30000)
-        await page.wait_for_load_state("domcontentloaded")
-        print(f"  🚩 페이지 접근: {await page.title()}")
-    except Exception as e:
-        print(f"  ❌ 페이지 로드 실패: {e}")
-        return 0
-
-    await asyncio.sleep(5)
-    
-    # 보안 체크 페이지 감지
-    title = await page.title()
-    if any(kw in title.lower() for kw in ["잠시만", "확인", "보안", "cloudflare", "checking"]):
-        print(f"  ⚠️ 보안 확인 페이지 감지, 10초 대기...")
-        await asyncio.sleep(10)
-
-    # 상품 리스트 로딩 대기
-    try:
-         await page.wait_for_selector("a[href*='/goods/']", timeout=10000)
-    except:
-         print("  ⚠️ 상품 리스트 로딩 시간 초과 혹은 상품 없음")
-
-    # 스크롤 다운으로 더 많은 상품 로드
-    for _ in range(8):
-        await page.mouse.wheel(0, 3000)
-        await asyncio.sleep(1.5)
-
-    # 4. API 응답 분석 및 상품 추출
-    print(f"  🔍 캡처된 API 응답 수: {len(api_responses)}")
-    
-    captured_products = []
-    
-    for res in api_responses:
-        try:
-            data = res['data']
-            components = []
-            
-            # 컴포넌트 리스트 찾기
-            if 'components' in data:
-                components = data['components']
-            
-            if not isinstance(components, list):
-                continue
-                
-            for i, comp in enumerate(components):
-                # 디버깅: 컴포넌트 키 확인
-                print(f"    [Comp {i}] Keys: {list(comp.keys())}")
-                if 'wrapper' in comp: # wrapper 패턴 체크
-                     print(f"      Wrapper Keys: {list(comp['wrapper'].keys())}")
-
-                goods_list = []
-                
-                # 컴포넌트 내부에서 상품 리스트 찾기 (구조 다양성 대응)
-                # 1. comp['data']['goods']
-                if 'data' in comp and isinstance(comp['data'], dict) and 'goods' in comp['data']:
-                    goods_list = comp['data']['goods']
-                    print(f"      ✅ Found in data.goods (Count: {len(goods_list)})")
-                
-                # 2. comp['entity']['goods']
-                elif 'entity' in comp and isinstance(comp['entity'], dict) and 'goods' in comp['entity']:
-                    goods_list = comp['entity']['goods']
-                    print(f"      ✅ Found in entity.goods (Count: {len(goods_list)})")
-
-                # 3. comp['goods']
-                elif 'goods' in comp:
-                    goods_list = comp['goods']
-                    print(f"      ✅ Found in goods (Count: {len(goods_list)})")
-                
-                # 5. comp['entity']['item_list'] (New pattern found)
-                elif 'entity' in comp and 'item_list' in comp['entity']:
-                    item_list = comp['entity']['item_list']
-                    if isinstance(item_list, list):
-                        goods_list = item_list
-                        print(f"      ✅ Found in entity.item_list (Count: {len(goods_list)})")
-                    elif isinstance(item_list, dict) and 'goods' in item_list:
-                        goods_list = item_list['goods']
-                        print(f"      ✅ Found in entity.item_list.goods (Count: {len(goods_list)})")
-
-                # 상품 리스트가 없고 entity/data가 있다면 그 내부 키 출력해보기 (디버깅용)
-                if not goods_list:
-                    sub_keys = []
-                    if 'entity' in comp: sub_keys = list(comp['entity'].keys())
-                    elif 'data' in comp: sub_keys = list(comp['data'].keys())
-                    print(f"      No goods found. Sub-keys: {sub_keys}")
-
-                if goods_list and isinstance(goods_list, list):
-                    for g in goods_list:
-                        # 데이터 소스 결정 (item_entity 래퍼 대응)
-                        product_data = g
-                        if 'item_entity' in g:
-                            product_data = g['item_entity']
-                        
-                        # 필수 필드 추출 (sno가 상품 ID)
-                        # sno가 없으면 item -> sno 구조일 수도 있음
-                        if 'item' in product_data and isinstance(product_data['item'], dict):
-                             product_data = product_data['item']
-                             
-                        p_id = product_data.get('sno')
-                        p_name = product_data.get('name')
-                        
-                        if p_id and p_name:
-                            # 가격 정보: sale_price가 있으면 우선, 없으면 price
-                            price = product_data.get('sale_price') or product_data.get('price') or 0
-                            
-                            # 이미지 URL
-                            p_image = product_data.get('image')
-                            
-                            # 리뷰 데이터 추출 (API 응답에 있을 경우)
-                            # Note: Ably API uses UPPERCASE field names (REVIEW_COUNT, REVIEW_RATING, LIKES_COUNT)
-                            p_review_count = (
-                                product_data.get('REVIEW_COUNT', 0) or 
-                                product_data.get('review_count', 0) or 
-                                product_data.get('comment_count', 0) or 0
-                            )
-                            p_satisfaction = (
-                                product_data.get('REVIEW_RATING', 0) or
-                                product_data.get('satisfaction', 0) or 
-                                product_data.get('review_score', 0) or 0
-                            )
-                            p_review_rating = 0.0
-                            try:
-                                if p_satisfaction and int(p_satisfaction) > 0:
-                                    p_review_rating = round(int(p_satisfaction) / 20.0, 1)
-                            except (ValueError, TypeError):
-                                pass
-                            
-                            item_data = {
-                                'id': str(p_id),
-                                'name': p_name,
-                                'brand_name': product_data.get('market_name', 'Ably'),
-                                'price': price,
-                                'image': p_image,
-                                'url': f"https://m.a-bly.com/goods/{p_id}"
-                            }
-                            if p_review_count and int(p_review_count) > 0:
-                                item_data['review_count'] = int(p_review_count)
-                            if p_review_rating > 0:
-                                item_data['review_rating'] = p_review_rating
-                            
-                            captured_products.append(item_data)
-                            
-        except Exception as e:
-            # print(f"     (Parsing error: {e})")
-            pass
-
-    # 중복 제거
-    unique_products = {p['id']: p for p in captured_products}.values()
-    print(f"  ✅ API 파싱 결과: 총 {len(unique_products)}개 상품 발견")
-
-    saved_count = 0
-    for rank, item in enumerate(unique_products, start=1):
-        if rank > 100: break
-        if save_product_and_rank(item, rank, category["code"], category["name"]):
-            saved_count += 1
-            
-    print(f"  💾 저장 완료: {saved_count}개")
-    return saved_count
-
-
 async def ably_crawl():
     start_time = datetime.now()
     print(f"[{start_time}] 에이블리(Ably) 크롤링 시작...")
-    log_crawl("running", {"message": "Started Ably crawl"})
+    log_crawl("running", {"message": "Started Ably crawl with Playwright Interceptor"})
     
     total_saved = 0
     
     async with async_playwright() as p:
-        # 모바일 뷰포트 설정 (에이블리는 모바일 웹 최적화) 및 봇 차단 우회
-        browser = await p.chromium.launch(
-            headless=True,
+        # Headless=False 와 Persistent Context 를 사용하여 실제 유저의 브라우저 상태를 유지 (Cloudflare 우회 핵심)
+        browser = await p.chromium.launch_persistent_context(
+            user_data_dir="/tmp/ably_chrome_profile",
+            headless=False,
+            user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
+            viewport={"width": 393, "height": 852},
+            device_scale_factor=3,
+            is_mobile=True,
+            has_touch=True,
+            locale="ko-KR",
+            timezone_id="Asia/Seoul",
             args=[
                 '--disable-blink-features=AutomationControlled',
                 '--disable-web-security',
@@ -348,27 +165,151 @@ async def ably_crawl():
                 '--disable-setuid-sandbox'
             ]
         )
-        context = await browser.new_context(
-            user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
-            viewport={"width": 390, "height": 844},
-            device_scale_factor=3,
-            is_mobile=True,
-            has_touch=True,
-            locale="ko-KR",
-            timezone_id="Asia/Seoul",
-        )
         
         # navigator.webdriver 속성을 지워서 봇 탐지 회피
-        await context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+        await browser.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         
-        page = await context.new_page()
+        page = browser.pages[0] if browser.pages else await browser.new_page()
+        stealth = Stealth()
+        await stealth.apply_stealth_async(page)
         
+        # Cloudflare 초기 통과 대기 (첫 로딩 시)
+        print("  ⏳ Cloudflare 봇 탐지 우회를 위한 초기 접속 대기 중...")
+        try:
+            await page.goto("https://m.a-bly.com/", wait_until="domcontentloaded", timeout=20000)
+            await asyncio.sleep(5)
+        except Exception as e:
+            print(f"  ⚠️ 초기 접속 에러: {e}")
+
         for category in TARGET_CATEGORIES:
+            print(f"\\n--- [{category['name']}] 탭 클릭 및 데이터 수집 시작 ---")
+            
+            # API 응답을 동적으로 모으는 큐
+            api_responses = []
+
+            async def handle_response(response):
+                if "api/" in response.url or "v2/screens" in response.url:
+                    try:
+                        if response.status == 200:
+                            content_type = response.headers.get("content-type", "")
+                            if "json" in content_type:
+                                data = await response.json()
+                                api_responses.append(data)
+                    except:
+                        pass
+
+            page.on("response", handle_response)
+            
+            # 홈(메인)으로 다시 강제 회귀
+            await page.goto("https://m.a-bly.com/", wait_until="domcontentloaded", timeout=15000)
+            await asyncio.sleep(3)
+
+            # 카테고리 탭 (의류, 뷰티, 신발, 등)을 클릭
+            tab_name = category['tab_name']
+            
             try:
-                msg = await crawl_ably_category(page, category)
-                total_saved += msg
+                # 탭을 찾아 클릭
+                await page.locator(f"xpath=//p[normalize-space(text())='{tab_name}']").first.click(timeout=5000)
+                print(f"  🚩 '{tab_name}' 탭 클릭 성공. 화면 렌더링 대기...")
             except Exception as e:
-                print(f"  ❌ Error processing {category['name']}: {e}")
+                print(f"  ❌ '{tab_name}' 탭을 클릭할 수 없습니다: {e}")
+                page.remove_listener("response", handle_response)
+                continue
+
+            await asyncio.sleep(5)
+            
+            # 상품 로드 유도를 위해 페이지 스크롤 (랭킹 데이터 수집)
+            print(f"  👇 스크롤하여 {tab_name} 데이터 API 수집...")
+            for scroll_idx in range(5):
+                await page.mouse.wheel(0, 1500)
+                await asyncio.sleep(2)
+
+            page.remove_listener("response", handle_response)
+            
+            with open(f"/tmp/ably_api_dump_{category['code']}.json", "w") as f:
+                json.dump(api_responses, f, ensure_ascii=False, indent=2)
+
+            print(f"  🔍 캡처된 Server-Driven JSON Payload: {len(api_responses)}개")
+            
+            captured_products = []
+            
+            for res_data in api_responses:
+                try:
+                    # 응답 데이터 내 컴포넌트 검사
+                    components = res_data.get('components', [])
+                    for comp in components:
+                        item_list_type = comp.get('type', {}).get('item_list', '')
+                        if not isinstance(item_list_type, str):
+                            continue
+                            
+                        # 상품들을 담고 있는 리스트 추출
+                        goods_list = comp.get('entity', {}).get('item_list', [])
+                        if not isinstance(goods_list, list):
+                            continue
+                        
+                        for p_node in goods_list:
+                            # 1. 일반적인 구조 (바로 item 이 있음)
+                            item_node = p_node.get('item', {})
+                            log_node = p_node.get('logging', {})
+                            
+                            # 2. TWO_COL_CARD_LIST 구조 (item_entity 래퍼 존재)
+                            if not item_node and 'item_entity' in p_node:
+                                item_node = p_node['item_entity'].get('item', {})
+                                log_node = p_node['item_entity'].get('logging', {})
+                                
+                            if not item_node:
+                                continue
+                                
+                            p_id = item_node.get('sno')
+                            p_name = item_node.get('name')
+                            
+                            # 가격: price 우선, sale_price 보조
+                            p_price = item_node.get('price', 0)
+                            if not p_price and 'sale_price' in item_node:
+                                p_price = item_node['sale_price']
+                                
+                            p_image = item_node.get('image', '')
+                            p_market_name = item_node.get('market_name', 'Ably')
+                            
+                            # 리뷰, 만족도 추출
+                            analytics = log_node.get('analytics', {})
+                            review_count = analytics.get('REVIEW_COUNT', 0)
+                            review_rating_raw = analytics.get('REVIEW_RATING', 0)
+                            p_review_rating = 0.0
+                            if review_rating_raw and int(review_rating_raw) > 0:
+                                p_review_rating = round(int(review_rating_raw) / 20.0, 1) # 100점 만점을 5.0 만점으로
+
+                            if p_id and p_name:
+                                item_data = {
+                                    'id': str(p_id),
+                                    'name': p_name,
+                                    'brand_name': p_market_name,
+                                    'price': p_price,
+                                    'image': p_image,
+                                    'url': f"https://m.a-bly.com/goods/{p_id}"
+                                }
+                                if review_count and int(review_count) > 0:
+                                    item_data['review_count'] = int(review_count)
+                                if p_review_rating > 0:
+                                    item_data['review_rating'] = p_review_rating
+                                    
+                                captured_products.append(item_data)
+                except Exception as e:
+                    pass
+
+            # 중복 제거 (상품 id 기준)
+            unique_products = {p['id']: p for p in captured_products}.values()
+            unique_products = list(unique_products)
+            print(f"  ✅ API 파싱 결과: 총 {len(unique_products)}개 정상 상품 발견")
+
+            saved_count = 0
+            for rank, item in enumerate(unique_products, start=1):
+                if rank > 200: break # 최대 200개까지
+                if save_product_and_rank(item, rank, category["code"], category["name"]):
+                    saved_count += 1
+                    
+            print(f"  💾 '{category['name']}' 저장 완료: {saved_count}개")
+            total_saved += saved_count
                 
         await browser.close()
         

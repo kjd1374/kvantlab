@@ -345,7 +345,7 @@
     "alert_empty_cart": "Please select at least one item.",
     "alert_invalid_url": "⚠️ Some URLs are not valid. Please check and try again.",
     "alert_fail": "Request failed.",
-    "alert_success": "Quote request submitted! We'll notify you soon.",
+    "alert_success": "Quote request submitted! It may take up to 3 business days. We'll notify you soon.",
     "modal_title": "📦 B2B Sourcing Quote Request",
     "modal_desc": "Request a unit price and shipping quote from K-Vant for items in your cart.",
     "modal_placeholder": "Leave additional requirements (e.g., Ship to Ho Chi Minh City by end of month.)",
