@@ -5,10 +5,12 @@ import { createClient } from '@supabase/supabase-js';
 const SERVER_BASE_URL = "https://www.kvantlab.com";
 
 function getSupabaseClient() {
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+    const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const key = process.env.SUPABASE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+    if (!url || !key) {
         throw new Error("Supabase credentials missing in process.env");
     }
-    return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+    return createClient(url, key);
 }
 
 function getTransporter() {
