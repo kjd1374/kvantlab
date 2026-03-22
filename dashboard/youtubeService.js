@@ -17,8 +17,8 @@ function getTransporter() {
 }
 
 export async function extractAndSaveChannels(supabase, keyword, maxResults, llmFilter) {
-    const YOUTUBE_API_KEY = process.env.GOOGLE_TRANSLATE_API_KEY;
-    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    const YOUTUBE_API_KEY = process.env.GOOGLE_TRANSLATE_API_KEY || process.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
     if (!YOUTUBE_API_KEY || !GEMINI_API_KEY) throw new Error("API Keys missing in .env");
 
     let savedCount = 0;
