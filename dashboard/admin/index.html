@@ -992,6 +992,18 @@
                   window.loadYouTubeCampaigns();
               });
           });
+
+          // localStorage auto-save/load for email template fields
+          const fields = ['ytEmailSubject', 'ytEmailBody', 'ytLlmFilter'];
+          fields.forEach(id => {
+              const el = document.getElementById(id);
+              if (!el) return;
+              const saved = localStorage.getItem('yt_' + id);
+              if (saved !== null) el.value = saved;
+              el.addEventListener('input', () => {
+                  localStorage.setItem('yt_' + id, el.value);
+              });
+          });
       });
     </script>
 </body>
