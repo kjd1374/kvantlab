@@ -1,28 +1,32 @@
 import fetch from 'node-fetch';
 import nodemailer from 'nodemailer';
 import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-dotenv.config();
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-
-const YOUTUBE_API_KEY = process.env.GOOGLE_TRANSLATE_API_KEY;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
-// Nodemailer config
-const mailOptions = {
-    host: process.env.SMTP_SERVER || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD
-    }
-};
-const transporter = nodemailer.createTransport(mailOptions);
 const SERVER_BASE_URL = "https://www.kvantlab.com";
 
+function getSupabaseClient() {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+        throw new Error("Supabase credentials missing in process.env");
+    }
+    return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+}
+
+function getTransporter() {
+    return nodemailer.createTransport({
+        host: process.env.SMTP_SERVER || 'smtp.gmail.com',
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASSWORD
+        }
+    });
+}
+
 export async function extractAndSaveChannels(keyword, maxResults, llmFilter) {
+    const supabase = getSupabaseClient();
+    const YOUTUBE_API_KEY = process.env.GOOGLE_TRANSLATE_API_KEY;
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
     if (!YOUTUBE_API_KEY || !GEMINI_API_KEY) throw new Error("API Keys missing in .env");
 
     let savedCount = 0;
@@ -121,6 +125,9 @@ ${textBlock}
 }
 
 export async function sendEmailToChannel(leadId, emailSubject, emailBody) {
+    const supabase = getSupabaseClient();
+    const transporter = getTransporter();
+
     if (!process.env.SMTP_USER) throw new Error("SMTP credentials missing.");
 
     // Fetch lead details
