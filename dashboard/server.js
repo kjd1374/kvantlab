@@ -15,6 +15,7 @@ dotenv.config();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 import { createClient } from '@supabase/supabase-js';
+import { extractAndSaveChannels, sendEmailToChannel } from './youtubeService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -116,6 +117,24 @@ async function sendUserNotificationEmail(userEmail, title, messageBody) {
         console.log('[Email] ✅ User notification email sent to', userEmail);
     } catch (e) {
         console.error('[Email] ❌ Failed to send user email:', e.message);
+    }
+}
+
+// --- Telegram Notification Helper ---
+async function sendTelegramNotification(message) {
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+    if (!token || !chatId) return;
+    try {
+        const url = `https://api.telegram.org/bot${token}/sendMessage`;
+        await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: chatId, text: message })
+        });
+        console.log('[Telegram] ✅ Notification sent');
+    } catch (error) {
+        console.error('[Telegram] ❌ Failed to send:', error.message);
     }
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -376,6 +395,9 @@ app.post('/api/auth/complete-signup', async (req, res) => {
         supabase.from('user_notifications').insert(notifications).then(({ error }) => {
             if (error) console.error('[Signup] Welcome notification error:', error.message);
         });
+
+        // 텔레그램 알림 전송 API
+        await sendTelegramNotification(`🎉 [회원가입] 새로운 유저가 가입했습니다!\n\n이메일: ${email}\n이름: ${fullName || '미입력'}\n회사명: ${companyName || '미입력'}`);
 
         // Sign the user in to get a valid session token
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
@@ -1006,6 +1028,9 @@ app.post('/api/paypal/orders/capture', async (req, res) => {
                 }).then(() => {});
             }
 
+            // 텔레그램 알림
+            await sendTelegramNotification(`💸 [결제 완료] 소싱 요청 결제 완료!\n- 유저 ID: ${request.user_id || '알 수 없음'}\n- 요청 ID: ${sourcing_request_id}\n- 상태: 결제 완료 (paid)`);
+
             res.json({ success: true, message: 'Payment captured successfully' });
         } else {
             throw new Error(`Payment not completed. Status: ${captureData.status}`);
@@ -1426,6 +1451,9 @@ app.post('/api/paypal/capture', async (req, res) => {
                 throw new Error("Subscription verified, but failed to update user profile.");
             }
 
+            // 텔레그램 알림
+            await sendTelegramNotification(`👑 [구독 완료] 새로운 Pro 플랜 구독자 발생!\n- 유저 ID: ${userId}\n- 구독 ID: ${subscriptionID}\n- 만료일: ${expiresAt.toISOString().split('T')[0]}`);
+
             res.json({ success: true, message: 'Subscription captured and profile updated.' });
         } else {
             console.error("PayPal subscription capture failed:", captureData);
@@ -1770,6 +1798,83 @@ app.get('/api/product-reviews', async (req, res) => {
         console.error('[Review Scraper] Error:', error.message);
         res.status(500).json({ success: false, error: error.message });
     }
+});
+
+// --- YouTube Outreach APIs ---
+
+// 1. Get Campaigns
+app.get('/api/admin/youtube/campaigns', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('youtube_campaigns')
+            .select('*')
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        res.json({ success: true, campaigns: data });
+    } catch (error) {
+        console.error("Fetch campaigns failed:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 2. Run Extractor (Native Node)
+app.post('/api/admin/youtube/run-extractor', async (req, res) => {
+    const { keyword, max_results, llm_filter } = req.body;
+    if (!keyword) return res.status(400).json({ success: false, error: 'Keyword is required' });
+    try {
+        const count = max_results ? parseInt(max_results) : 10;
+        
+        // Run asynchronously in background to avoid timeout
+        extractAndSaveChannels(keyword, count, llm_filter).then(result => {
+             console.log(`[YouTube Extraction Finished]: ${result.message}`);
+        }).catch(err => {
+             console.error(`[YouTube Extraction Error]:`, err);
+        });
+        
+        res.json({ success: true, message: '채널 수집이 백그라운드에서 시작되었습니다. 잠시 후 새로고침 해보세요.' });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 3. Manual Send Mailer
+app.post('/api/admin/youtube/send/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { emailSubject, emailBody } = req.body;
+        
+        await sendEmailToChannel(id, emailSubject, emailBody);
+        
+        res.json({ success: true, message: '발송 완료되었습니다.' });
+    } catch (error) {
+        console.error("Send Error:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 4. Track Read Receipts (1x1 Pixel)
+app.get('/api/admin/youtube/track/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        if (id && id !== 'undefined') {
+            await supabase
+                .from('youtube_campaigns')
+                .update({ opened_at: new Date().toISOString() })
+                .eq('id', id)
+                .is('opened_at', null); // Only update if not previously opened
+        }
+    } catch (e) {
+        console.error("Tracking Error:", e);
+    }
+    
+    // Return 1x1 transparent GIF
+    const pixel = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+    res.writeHead(200, {
+        'Content-Type': 'image/gif',
+        'Content-Length': pixel.length,
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+    });
+    res.end(pixel);
 });
 
 if (process.env.NODE_ENV !== 'production') {
