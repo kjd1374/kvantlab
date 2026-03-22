@@ -1824,14 +1824,11 @@ app.post('/api/admin/youtube/run-extractor', async (req, res) => {
     try {
         const count = max_results ? parseInt(max_results) : 10;
         
-        // Run asynchronously in background to avoid timeout
-        extractAndSaveChannels(keyword, count, llm_filter).then(result => {
-             console.log(`[YouTube Extraction Finished]: ${result.message}`);
-        }).catch(err => {
-             console.error(`[YouTube Extraction Error]:`, err);
-        });
+        // Await the extraction (now parallelized to avoid Vercel timeout)
+        const result = await extractAndSaveChannels(keyword, count, llm_filter);
+        console.log(`[YouTube Extraction Finished]: ${result.message}`);
         
-        res.json({ success: true, message: '채널 수집이 백그라운드에서 시작되었습니다. 잠시 후 새로고침 해보세요.' });
+        res.json({ success: true, message: result.message });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }

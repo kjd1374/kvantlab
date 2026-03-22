@@ -44,7 +44,7 @@ export async function extractAndSaveChannels(keyword, maxResults, llmFilter) {
     const defaultLlmFilter = "K-뷰티, 화장품, 혹은 한국 제품 관련";
     const filterRule = llmFilter || defaultLlmFilter;
 
-    for (let item of searchData.items) {
+    const promises = searchData.items.map(async (item) => {
         const channelId = item.snippet.channelId;
         const channelTitle = item.snippet.title;
         const channelDesc = item.snippet.description;
@@ -54,12 +54,12 @@ export async function extractAndSaveChannels(keyword, maxResults, llmFilter) {
         const vidRes = await fetch(vidUrl);
         const vidData = await vidRes.json();
 
-        if (!vidData.items || vidData.items.length === 0) continue; // Skip if no videos
+        if (!vidData.items || vidData.items.length === 0) return; // Skip if no videos
 
         // Active Check
         const latestVideo = vidData.items[0];
         const publishedAt = new Date(latestVideo.snippet.publishedAt);
-        if (publishedAt < threeMonthsAgo) continue; // Inactive
+        if (publishedAt < threeMonthsAgo) return; // Inactive
 
         // 3. Prepare Text for Gemini
         let textBlock = `Channel Description: ${channelDesc}\n\n`;
@@ -96,7 +96,7 @@ ${textBlock}
             
             if (!resultText || resultText === "NOT_FOUND" || resultText === "REJECTED" || !resultText.includes("@")) {
                 console.log(`[YouTube] Skipped ${channelTitle}: ${resultText}`);
-                continue;
+                return;
             }
 
             const email = resultText;
@@ -120,7 +120,9 @@ ${textBlock}
         } catch (e) {
             console.error(`[YouTube] Gemini API Error for ${channelTitle}:`, e.message);
         }
-    }
+    });
+
+    await Promise.all(promises);
     return { count: savedCount, message: `Successfully extracted and saved ${savedCount} channels.` };
 }
 
