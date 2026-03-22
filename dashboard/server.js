@@ -1825,7 +1825,7 @@ app.post('/api/admin/youtube/run-extractor', async (req, res) => {
         const count = max_results ? parseInt(max_results) : 10;
         
         // Await the extraction (now parallelized to avoid Vercel timeout)
-        const result = await extractAndSaveChannels(keyword, count, llm_filter);
+        const result = await extractAndSaveChannels(supabase, keyword, count, llm_filter);
         console.log(`[YouTube Extraction Finished]: ${result.message}`);
         
         res.json({ success: true, message: result.message });
@@ -1840,7 +1840,7 @@ app.post('/api/admin/youtube/send/:id', async (req, res) => {
         const { id } = req.params;
         const { emailSubject, emailBody } = req.body;
         
-        await sendEmailToChannel(id, emailSubject, emailBody);
+        await sendEmailToChannel(supabase, id, emailSubject, emailBody);
         
         res.json({ success: true, message: '발송 완료되었습니다.' });
     } catch (error) {

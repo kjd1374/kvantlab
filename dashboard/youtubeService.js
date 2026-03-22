@@ -4,15 +4,6 @@ import { createClient } from '@supabase/supabase-js';
 
 const SERVER_BASE_URL = "https://www.kvantlab.com";
 
-function getSupabaseClient() {
-    const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const key = process.env.SUPABASE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-    if (!url || !key) {
-        throw new Error("Supabase credentials missing in process.env");
-    }
-    return createClient(url, key);
-}
-
 function getTransporter() {
     return nodemailer.createTransport({
         host: process.env.SMTP_SERVER || 'smtp.gmail.com',
@@ -25,8 +16,7 @@ function getTransporter() {
     });
 }
 
-export async function extractAndSaveChannels(keyword, maxResults, llmFilter) {
-    const supabase = getSupabaseClient();
+export async function extractAndSaveChannels(supabase, keyword, maxResults, llmFilter) {
     const YOUTUBE_API_KEY = process.env.GOOGLE_TRANSLATE_API_KEY;
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
     if (!YOUTUBE_API_KEY || !GEMINI_API_KEY) throw new Error("API Keys missing in .env");
@@ -128,8 +118,7 @@ ${textBlock}
     return { count: savedCount, message: `Successfully extracted and saved ${savedCount} channels.` };
 }
 
-export async function sendEmailToChannel(leadId, emailSubject, emailBody) {
-    const supabase = getSupabaseClient();
+export async function sendEmailToChannel(supabase, leadId, emailSubject, emailBody) {
     const transporter = getTransporter();
 
     if (!process.env.SMTP_USER) throw new Error("SMTP credentials missing.");
