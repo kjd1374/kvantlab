@@ -33,7 +33,7 @@ export async function extractAndSaveChannels(supabase, keyword, maxResults, llmF
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
-    const defaultLlmFilter = "K-뷰티, 화장품, 혹은 한국 제품 관련 (단, 한국 드라마/영화/음악 등 엔터테인먼트 리뷰 채널은 무조건 제외)";
+    const defaultLlmFilter = "한국 뷰티/화장품/패션/제품 리뷰, 혹은 쇼피(Shopee)/라자다 등 쇼핑몰 운영 및 마케팅 등 이커머스 관련 팁 채널 (단, 단순 유튜브 드라마/영화 리뷰 채널은 무조건 제외)";
     const filterRule = llmFilter || defaultLlmFilter;
 
     const promises = searchData.items.map(async (item) => {
