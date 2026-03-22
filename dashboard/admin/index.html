@@ -589,6 +589,7 @@
 <p>Best regards,<br>The K-Vant Team</p>
                             </textarea>
                         </div>
+                        <button onclick="window.sendTestEmail()" style="margin-top: 12px; width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ff9800; background: #fff3e0; color: #e65100; font-weight: 600; cursor: pointer;">📧 테스트 발송 (roundbase84@gmail.com)</button>
                     </section>
                 </div>
 
@@ -898,7 +899,8 @@
                               <div style="font-size:11px; color:#666;">수신: ${c.opened_at ? new Date(c.opened_at).toLocaleString() : '-'}</div>
                           </td>
                           <td style="padding: 12px;">
-                              ${c.status === 'pending' || c.status === 'failed' ? `<button onclick="window.sendYouTubeEmail('${c.id}')" style="background:#28a745; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer;">발송하기</button>` : `<span style="color:#aaa; font-size:13px;">완료됨</span>`}
+                              ${c.status === 'pending' || c.status === 'failed' ? `<button onclick="window.sendYouTubeEmail('${c.id}')" style="background:#28a745; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; margin-right:4px;">발송하기</button>` : `<span style="color:#aaa; font-size:13px;">완료됨</span>`}
+                              <button onclick="window.deleteYouTubeCampaign('${c.id}')" style="background:#dc3545; color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:12px;" title="삭제">🗑</button>
                           </td>
                       </tr>
                   `).join('');
@@ -948,6 +950,39 @@
                   alert('발송 실패: ' + d.error);
               }
           }).catch(err => alert('오류: ' + err));
+      };
+
+      window.deleteYouTubeCampaign = async function(id) {
+          if(!confirm('이 캠페인을 삭제하시겠습니까?')) return;
+          try {
+              const res = await fetch('/api/admin/youtube/campaigns/' + id, { method: 'DELETE' });
+              const d = await res.json();
+              if(d.success) {
+                  alert('삭제 완료');
+                  window.loadYouTubeCampaigns();
+              } else {
+                  alert('삭제 실패: ' + d.error);
+              }
+          } catch(err) { alert('오류: ' + err); }
+      };
+
+      window.sendTestEmail = async function() {
+          const subj = document.getElementById('ytEmailSubject').value;
+          const body = document.getElementById('ytEmailBody').value;
+          if(!subj || !body) return alert('메일 제목과 본문을 입력하세요.');
+          try {
+              const res = await fetch('/api/admin/youtube/test-email', {
+                  method: 'POST',
+                  headers: {'Content-Type': 'application/json'},
+                  body: JSON.stringify({ emailSubject: subj, emailBody: body })
+              });
+              const d = await res.json();
+              if(d.success) {
+                  alert(d.message);
+              } else {
+                  alert('테스트 발송 실패: ' + d.error);
+              }
+          } catch(err) { alert('오류: ' + err); }
       };
       
       // Auto trigger if youtube tab is clicked

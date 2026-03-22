@@ -1874,6 +1874,59 @@ app.get('/api/admin/youtube/track/:id', async (req, res) => {
     res.end(pixel);
 });
 
+// 5. Delete Campaign
+app.delete('/api/admin/youtube/campaigns/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { error } = await supabase.from('youtube_campaigns').delete().eq('id', id);
+        if (error) throw error;
+        res.json({ success: true, message: '삭제 완료' });
+    } catch (error) {
+        console.error("Delete Error:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 6. Test Email Send
+app.post('/api/admin/youtube/test-email', async (req, res) => {
+    try {
+        const { emailSubject, emailBody } = req.body;
+        if (!emailSubject || !emailBody) {
+            return res.status(400).json({ success: false, error: '제목과 본문을 입력하세요.' });
+        }
+
+        const smtpUser = process.env.SMTP_USER;
+        const smtpPassword = process.env.SMTP_PASSWORD;
+        if (!smtpUser || !smtpPassword) {
+            return res.status(500).json({ success: false, error: 'SMTP 설정 없음' });
+        }
+
+        const transporter = nodemailer.createTransport({
+            host: process.env.SMTP_SERVER || 'smtp.gmail.com',
+            port: parseInt(process.env.SMTP_PORT || '587'),
+            secure: (process.env.SMTP_PORT || '587') === '465',
+            auth: { user: smtpUser, pass: smtpPassword }
+        });
+
+        // Replace template variables with test values
+        const testChannelName = '테스트 채널 (Test Channel)';
+        let finalSubject = emailSubject.replace(/\{\{channelName\}\}/g, testChannelName);
+        let finalBody = emailBody.replace(/\{\{channelName\}\}/g, testChannelName);
+
+        await transporter.sendMail({
+            from: `"K-Vant Team" <${smtpUser}>`,
+            to: 'roundbase84@gmail.com',
+            subject: `[TEST] ${finalSubject}`,
+            html: finalBody
+        });
+
+        res.json({ success: true, message: '테스트 메일이 roundbase84@gmail.com으로 발송되었습니다!' });
+    } catch (error) {
+        console.error("Test Mail Error:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
         console.log(`Data Pool Admin Backend running on http://localhost:${PORT}`);
