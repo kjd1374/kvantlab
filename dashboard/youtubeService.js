@@ -22,13 +22,13 @@ export async function extractAndSaveChannels(supabase, keyword, maxResults, llmF
     if (!YOUTUBE_API_KEY || !GEMINI_API_KEY) throw new Error("API Keys missing in .env");
 
     let savedCount = 0;
-    
+
     // 1. Search VIDEOS (not channels) — this matches how YouTube's own search works
     const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=${maxResults}&q=${encodeURIComponent(keyword)}&key=${YOUTUBE_API_KEY}`;
     console.log(`[YouTube] Searching videos for: "${keyword}" (maxResults=${maxResults})`);
     const searchRes = await fetch(searchUrl);
     const searchData = await searchRes.json();
-    
+
     // Debug: log API response if empty
     if (!searchData.items || searchData.items.length === 0) {
         console.log(`[YouTube] API Response:`, JSON.stringify(searchData).substring(0, 500));
@@ -74,13 +74,13 @@ export async function extractAndSaveChannels(supabase, keyword, maxResults, llmF
         const chData = await chRes.json();
         const channelDesc = chData.items?.[0]?.snippet?.description || '';
 
-        // 2b. Fetch Latest Videos
+        // 2. Fetch Latest Videos
         const vidUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&order=date&maxResults=4&channelId=${channelId}&key=${YOUTUBE_API_KEY}`;
         const vidRes = await fetch(vidUrl);
         const vidData = await vidRes.json();
 
         if (!vidData.items || vidData.items.length === 0) {
-            console.log(`[YouTube] ❌ ${channelTitle}: no videos found`);
+            console.log(`[YouTube] ❌ ${channelTitle}: no videos`);
             skippedNoVideos++;
             return;
         }
@@ -93,12 +93,12 @@ export async function extractAndSaveChannels(supabase, keyword, maxResults, llmF
             skippedInactive++;
             return;
         }
-        console.log(`[YouTube] ✅ ${channelTitle}: active (last: ${publishedAt.toISOString()})`);
+        console.log(`[YouTube] ✅ ${channelTitle}: active`);
 
         // 3. Prepare Text for Gemini
         let textBlock = `Channel Name: ${channelTitle}\nChannel Description: ${channelDesc}\n\n`;
         vidData.items.forEach((vid, i) => {
-            textBlock += `Video ${i+1} Title: ${vid.snippet.title}\nVideo ${i+1} Description: ${vid.snippet.description}\n\n`;
+            textBlock += `Video ${i + 1} Title: ${vid.snippet.title}\nVideo ${i + 1} Description: ${vid.snippet.description}\n\n`;
         });
 
         const prompt = `
@@ -118,7 +118,7 @@ ${textBlock}
 
         // 4. Gemini Email Extraction & Filter
         try {
-            const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
+            const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${GEMINI_API_KEY}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -127,7 +127,7 @@ ${textBlock}
             });
             const geminiData = await geminiRes.json();
             const resultText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
-            
+
             if (resultText === "REJECTED") {
                 console.log(`[YouTube] ❌ ${channelTitle}: REJECTED by LLM`);
                 skippedRejected++;
@@ -135,15 +135,13 @@ ${textBlock}
             }
 
             if (!resultText || resultText === "NOT_FOUND" || !resultText.includes("@")) {
-                console.log(`[YouTube] ❌ ${channelTitle}: no email (LLM said: "${resultText}")`);
+                console.log(`[YouTube] ❌ ${channelTitle}: no email (LLM: "${resultText}")`);
                 skippedNoEmail++;
                 return;
             }
 
-            const email = resultText.replace(/[^a-zA-Z0-9@._\-+]/g, ''); // Clean email
+            const email = resultText.replace(/[^a-zA-Z0-9@._\-+]/g, '');
             const channelUrl = `https://www.youtube.com/channel/${channelId}`;
-
-            console.log(`[YouTube] ✅ ${channelTitle}: APPROVED with email ${email}`);
 
             // Save to DB
             const { error } = await supabase.from('youtube_campaigns').insert([{
@@ -161,15 +159,15 @@ ${textBlock}
                 console.error(`[YouTube] DB Save Error for ${channelTitle}:`, error.message);
             }
         } catch (e) {
-            console.error(`[YouTube] Gemini API Error for ${channelTitle}:`, e.message);
+            console.error(`[YouTube] Gemini Error for ${channelTitle}:`, e.message);
             skippedGeminiError++;
         }
     });
 
     await Promise.all(promises);
     
-    const summary = `총 ${totalChannels}개 채널 분석 → 저장: ${savedCount}개 | 영상없음: ${skippedNoVideos} | 비활성: ${skippedInactive} | LLM거절: ${skippedRejected} | 이메일없음: ${skippedNoEmail} | API오류: ${skippedGeminiError}`;
-    console.log(`[YouTube] === RESULT: ${summary}`);
+    const summary = `총 ${totalChannels}개 채널 분석 완료\n\n✅ 저장: ${savedCount}개\n❌ LLM 거절(주제 불일치): ${skippedRejected}개\n📭 이메일 없음: ${skippedNoEmail}개\n💤 비활성(3개월 초과): ${skippedInactive}개\n🚫 영상 없음: ${skippedNoVideos}개\n⚠️ API 오류: ${skippedGeminiError}개`;
+    console.log(`[YouTube] === DONE ===\n${summary}`);
     return { count: savedCount, message: summary };
 }
 
@@ -184,7 +182,7 @@ export async function sendEmailToChannel(supabase, leadId, emailSubject, emailBo
         .select('*')
         .eq('id', leadId)
         .single();
-        
+
     if (fetchErr || !lead) throw new Error("Lead not found: " + fetchErr?.message);
     if (lead.status === 'sent') throw new Error("이미 발송된 메일입니다.");
 
@@ -211,13 +209,13 @@ export async function sendEmailToChannel(supabase, leadId, emailSubject, emailBo
 
     try {
         await transporter.sendMail(mailOptionsConfig);
-        
+
         // Update DB
         await supabase
             .from('youtube_campaigns')
             .update({ status: 'sent', sent_at: new Date().toISOString() })
             .eq('id', leadId);
-            
+
         return { success: true };
     } catch (err) {
         console.error("Mail send error:", err);
