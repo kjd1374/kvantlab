@@ -25,9 +25,15 @@ export async function extractAndSaveChannels(supabase, keyword, maxResults, llmF
     
     // 1. Search VIDEOS (not channels) — this matches how YouTube's own search works
     const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=${maxResults}&q=${encodeURIComponent(keyword)}&key=${YOUTUBE_API_KEY}`;
+    console.log(`[YouTube] Searching videos for: "${keyword}" (maxResults=${maxResults})`);
     const searchRes = await fetch(searchUrl);
     const searchData = await searchRes.json();
-    if(!searchData.items || searchData.items.length === 0) return { count: 0, message: "No videos found for this keyword." };
+    
+    // Debug: log API response if empty
+    if (!searchData.items || searchData.items.length === 0) {
+        console.log(`[YouTube] API Response:`, JSON.stringify(searchData).substring(0, 500));
+        return { count: 0, message: `No videos found for "${keyword}". API error: ${searchData.error?.message || 'none'}` };
+    }
 
     // Extract unique channels from video results
     const channelMap = new Map();
