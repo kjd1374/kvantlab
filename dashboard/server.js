@@ -1874,7 +1874,29 @@ app.get('/api/admin/youtube/track/:id', async (req, res) => {
     res.end(pixel);
 });
 
-// 5. Delete Campaign
+// 5. Manual Lead Registration
+app.post('/api/admin/youtube/campaigns', async (req, res) => {
+    try {
+        const { channel_name, email, channel_url, keyword } = req.body;
+        if (!channel_name || !email) {
+            return res.status(400).json({ success: false, error: '채널명과 이메일은 필수입니다.' });
+        }
+        const { error } = await supabase.from('youtube_campaigns').insert([{
+            channel_name,
+            email,
+            channel_url: channel_url || '',
+            keyword: keyword || '',
+            status: 'pending'
+        }]);
+        if (error) throw error;
+        res.json({ success: true, message: '리드가 등록되었습니다.' });
+    } catch (error) {
+        console.error("Add Lead Error:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 6. Delete Campaign
 app.delete('/api/admin/youtube/campaigns/:id', async (req, res) => {
     try {
         const { id } = req.params;
