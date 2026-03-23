@@ -23,11 +23,25 @@ export async function extractAndSaveChannels(supabase, keyword, maxResults, llmF
 
     let savedCount = 0;
     
-    // 1. Search Channels
-    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&maxResults=${maxResults}&q=${encodeURIComponent(keyword)}&key=${YOUTUBE_API_KEY}`;
+    // 1. Search VIDEOS (not channels) — this matches how YouTube's own search works
+    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=${maxResults}&q=${encodeURIComponent(keyword)}&key=${YOUTUBE_API_KEY}`;
     const searchRes = await fetch(searchUrl);
     const searchData = await searchRes.json();
-    if(!searchData.items) return { count: 0, message: "No channels found." };
+    if(!searchData.items || searchData.items.length === 0) return { count: 0, message: "No videos found for this keyword." };
+
+    // Extract unique channels from video results
+    const channelMap = new Map();
+    for (const item of searchData.items) {
+        const chId = item.snippet.channelId;
+        if (!channelMap.has(chId)) {
+            channelMap.set(chId, {
+                channelId: chId,
+                channelTitle: item.snippet.channelTitle,
+                channelDesc: ''
+            });
+        }
+    }
+    console.log(`[YouTube] Found ${channelMap.size} unique channels from ${searchData.items.length} videos`);
 
     // Set limit 3 months ago
     const threeMonthsAgo = new Date();
@@ -36,10 +50,15 @@ export async function extractAndSaveChannels(supabase, keyword, maxResults, llmF
     const defaultLlmFilter = "한국 뷰티/화장품/패션/제품 리뷰, 혹은 쇼피(Shopee)/라자다 등 쇼핑몰 운영 및 마케팅 등 이커머스 관련 팁 채널 (단, 단순 유튜브 드라마/영화 리뷰 채널은 무조건 제외)";
     const filterRule = llmFilter || defaultLlmFilter;
 
-    const promises = searchData.items.map(async (item) => {
-        const channelId = item.snippet.channelId;
-        const channelTitle = item.snippet.title;
-        const channelDesc = item.snippet.description;
+    const promises = Array.from(channelMap.values()).map(async (ch) => {
+        const channelId = ch.channelId;
+        const channelTitle = ch.channelTitle;
+
+        // 2. Fetch channel description
+        const chUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelId}&key=${YOUTUBE_API_KEY}`;
+        const chRes = await fetch(chUrl);
+        const chData = await chRes.json();
+        const channelDesc = chData.items?.[0]?.snippet?.description || '';
 
         // 2. Fetch Latest Videos
         const vidUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&order=date&maxResults=4&channelId=${channelId}&key=${YOUTUBE_API_KEY}`;
