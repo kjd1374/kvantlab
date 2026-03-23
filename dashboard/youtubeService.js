@@ -56,6 +56,14 @@ export async function extractAndSaveChannels(supabase, keyword, maxResults, llmF
     const defaultLlmFilter = "한국 뷰티/화장품/패션/제품 리뷰, 혹은 쇼피(Shopee)/라자다 등 쇼핑몰 운영 및 마케팅 등 이커머스 관련 팁 채널 (단, 단순 유튜브 드라마/영화 리뷰 채널은 무조건 제외)";
     const filterRule = llmFilter || defaultLlmFilter;
 
+    // Stats counters
+    let totalChannels = channelMap.size;
+    let skippedNoVideos = 0;
+    let skippedInactive = 0;
+    let skippedRejected = 0;
+    let skippedNoEmail = 0;
+    let skippedGeminiError = 0;
+
     const promises = Array.from(channelMap.values()).map(async (ch) => {
         const channelId = ch.channelId;
         const channelTitle = ch.channelTitle;
@@ -66,22 +74,31 @@ export async function extractAndSaveChannels(supabase, keyword, maxResults, llmF
         const chData = await chRes.json();
         const channelDesc = chData.items?.[0]?.snippet?.description || '';
 
-        // 2. Fetch Latest Videos
+        // 2b. Fetch Latest Videos
         const vidUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&order=date&maxResults=4&channelId=${channelId}&key=${YOUTUBE_API_KEY}`;
         const vidRes = await fetch(vidUrl);
         const vidData = await vidRes.json();
 
-        if (!vidData.items || vidData.items.length === 0) return; // Skip if no videos
+        if (!vidData.items || vidData.items.length === 0) {
+            console.log(`[YouTube] ❌ ${channelTitle}: no videos found`);
+            skippedNoVideos++;
+            return;
+        }
 
         // Active Check
         const latestVideo = vidData.items[0];
         const publishedAt = new Date(latestVideo.snippet.publishedAt);
-        if (publishedAt < threeMonthsAgo) return; // Inactive
+        if (publishedAt < threeMonthsAgo) {
+            console.log(`[YouTube] ❌ ${channelTitle}: inactive (last: ${publishedAt.toISOString()})`);
+            skippedInactive++;
+            return;
+        }
+        console.log(`[YouTube] ✅ ${channelTitle}: active (last: ${publishedAt.toISOString()})`);
 
         // 3. Prepare Text for Gemini
-        let textBlock = `Channel Description: ${channelDesc}\n\n`;
+        let textBlock = `Channel Name: ${channelTitle}\nChannel Description: ${channelDesc}\n\n`;
         vidData.items.forEach((vid, i) => {
-            textBlock += `Video ${i+1} Description: ${vid.snippet.description}\n\n`;
+            textBlock += `Video ${i+1} Title: ${vid.snippet.title}\nVideo ${i+1} Description: ${vid.snippet.description}\n\n`;
         });
 
         const prompt = `
@@ -101,7 +118,7 @@ ${textBlock}
 
         // 4. Gemini Email Extraction & Filter
         try {
-            const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+            const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -111,13 +128,22 @@ ${textBlock}
             const geminiData = await geminiRes.json();
             const resultText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
             
-            if (!resultText || resultText === "NOT_FOUND" || resultText === "REJECTED" || !resultText.includes("@")) {
-                console.log(`[YouTube] Skipped ${channelTitle}: ${resultText}`);
+            if (resultText === "REJECTED") {
+                console.log(`[YouTube] ❌ ${channelTitle}: REJECTED by LLM`);
+                skippedRejected++;
                 return;
             }
 
-            const email = resultText;
+            if (!resultText || resultText === "NOT_FOUND" || !resultText.includes("@")) {
+                console.log(`[YouTube] ❌ ${channelTitle}: no email (LLM said: "${resultText}")`);
+                skippedNoEmail++;
+                return;
+            }
+
+            const email = resultText.replace(/[^a-zA-Z0-9@._\-+]/g, ''); // Clean email
             const channelUrl = `https://www.youtube.com/channel/${channelId}`;
+
+            console.log(`[YouTube] ✅ ${channelTitle}: APPROVED with email ${email}`);
 
             // Save to DB
             const { error } = await supabase.from('youtube_campaigns').insert([{
@@ -129,18 +155,22 @@ ${textBlock}
             }]);
 
             if (!error) {
-                console.log(`[YouTube] Saved: ${channelTitle} (${email})`);
+                console.log(`[YouTube] 💾 Saved: ${channelTitle} (${email})`);
                 savedCount++;
             } else {
                 console.error(`[YouTube] DB Save Error for ${channelTitle}:`, error.message);
             }
         } catch (e) {
             console.error(`[YouTube] Gemini API Error for ${channelTitle}:`, e.message);
+            skippedGeminiError++;
         }
     });
 
     await Promise.all(promises);
-    return { count: savedCount, message: `Successfully extracted and saved ${savedCount} channels.` };
+    
+    const summary = `총 ${totalChannels}개 채널 분석 → 저장: ${savedCount}개 | 영상없음: ${skippedNoVideos} | 비활성: ${skippedInactive} | LLM거절: ${skippedRejected} | 이메일없음: ${skippedNoEmail} | API오류: ${skippedGeminiError}`;
+    console.log(`[YouTube] === RESULT: ${summary}`);
+    return { count: savedCount, message: summary };
 }
 
 export async function sendEmailToChannel(supabase, leadId, emailSubject, emailBody) {
