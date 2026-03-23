@@ -582,12 +582,19 @@
                         <h3>메일 템플릿 설정 (Global Mail Settings)</h3>
                         <div style="margin-top: 15px;">
                             <input type="text" id="ytEmailSubject" placeholder="메일 제목 (예: Business Inquiry: {{channelName}} x K-Vant)" value="Business Inquiry: Collaboration with {{channelName}} and K-Vant" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box; margin-bottom: 10px;">
-                            <textarea id="ytEmailBody" rows="4" placeholder="메일 본문 (HTML 지원)" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box; resize:vertical; font-family: inherit;">
-<p>Hi Team at {{channelName}},</p>
-<p>We've been following your channel and love your content! We believe there's a great synergy between your audience and the Korean brands we work with, and we'd like to discuss a potential partnership.</p>
-<p>Please let us know if you're open to discussing this further.</p>
-<p>Best regards,<br>The K-Vant Team</p>
-                            </textarea>
+                            <textarea id="ytEmailBody" rows="10" placeholder="메일 본문 (일반 텍스트로 입력하면 자동으로 HTML 변환됩니다)" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing:border-box; resize:vertical; font-family: inherit;">Hi {{channelName}},
+
+Your viewers know that Korean products sell well on Shopee — but the real challenge is finding them before they get too competitive.
+
+I just launched K-Vant Lab (kvantlab.com), a tool that tracks real-time rankings from Olive Young, Musinsa, and Ably — so Southeast Asian sellers can spot trending Korean products before the competition catches on.
+
+I think your audience would find real value in a video like "How to source Korean products before everyone else" — and you can explore all the data yourself at kvantlab.com. It's currently free to use.
+
+No strings attached — if you find it useful, a mention in one of your videos would mean a lot.
+
+Best,
+K-Vant Team
+kvantlab.com</textarea>
                         </div>
                         <button onclick="window.sendTestEmail()" style="margin-top: 12px; width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ff9800; background: #fff3e0; color: #e65100; font-weight: 600; cursor: pointer;">📧 테스트 발송 (roundbase84@gmail.com)</button>
                     </section>
@@ -932,6 +939,11 @@
           });
       };
 
+      // Plain text → HTML converter
+      function toHtml(text) {
+          return text.split('\n\n').map(p => '<p>' + p.replace(/\n/g, '<br>') + '</p>').join('');
+      }
+
       window.sendYouTubeEmail = async function(id) {
           const subj = document.getElementById('ytEmailSubject').value;
           const body = document.getElementById('ytEmailBody').value;
@@ -941,7 +953,7 @@
           fetch('/api/admin/youtube/send/' + id, {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({ emailSubject: subj, emailBody: body })
+              body: JSON.stringify({ emailSubject: subj, emailBody: toHtml(body) })
           }).then(res=>res.json()).then(d => {
               if(d.success) {
                   alert(d.message);
@@ -974,7 +986,7 @@
               const res = await fetch('/api/admin/youtube/test-email', {
                   method: 'POST',
                   headers: {'Content-Type': 'application/json'},
-                  body: JSON.stringify({ emailSubject: subj, emailBody: body })
+                  body: JSON.stringify({ emailSubject: subj, emailBody: toHtml(body) })
               });
               const d = await res.json();
               if(d.success) {
