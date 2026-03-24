@@ -222,6 +222,17 @@ class I18n {
             if (key) el.title = this.t(key);
         });
 
+        // Update data-i18n-html for HTML content
+        document.querySelectorAll('[data-i18n-html]').forEach(el => {
+            const key = el.getAttribute('data-i18n-html');
+            if (key) {
+               const translation = this.t(key);
+               if (translation !== key) {
+                   el.innerHTML = translation;
+               }
+            }
+        });
+
         // Update data-i18n-href for links
         document.querySelectorAll('[data-i18n-href]').forEach(el => {
             const key = el.getAttribute('data-i18n-href');
