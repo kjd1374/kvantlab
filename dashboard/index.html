@@ -1980,14 +1980,74 @@
       </div>
 
 
-      <!-- Interview Hero Card -->
-      <div class="hero-interview-card" style="background-image: url('/hero_interview.png');">
+      <!-- Interview Hero Carousel -->
+      <div class="hero-interview-card">
          <div class="interview-play-badge">Live Testimonial</div>
-         <div class="hero-interview-overlay">
-            <div class="interview-subtitle" data-i18n-html="heroInterviewText">"K-Vant Lab 덕분에 상품 소싱이 비교도 안 되게 빨라졌습니다. 한국 트렌드를 가장 먼저 파악하고 판매해서 매출 단위가 달라졌어요!"</div>
-            <div class="interview-name" data-i18n="heroInterviewName">- 태국 탑 뷰티/패션 셀러</div>
+         
+         <!-- Slide 1: Thai Seller -->
+         <div class="interview-slide active" style="background-image: url('/hero_interview.png');">
+            <div class="hero-interview-overlay">
+               <div class="interview-subtitle" data-i18n-html="heroInterviewText">"K-Vant Lab 덕분에 상품 소싱이 비교도 안 되게 빨라졌습니다. 한국 트렌드를 가장 먼저 파악하고 판매해서 매출 단위가 달라졌어요!"</div>
+               <div class="interview-name" data-i18n="heroInterviewName">- 태국 탑 뷰티/패션 셀러</div>
+            </div>
+         </div>
+
+         <!-- Slide 2: Vietnamese Seller -->
+         <div class="interview-slide" style="background-image: url('/hero_interview_vi.png');">
+            <div class="hero-interview-overlay">
+               <div class="interview-subtitle" data-i18n-html="heroInterviewText2">"어떤 화장품을 팔아야 할지 막막했는데, K-Vant 덕분에 정확한 수요를 알게 되었어요. 지금은 저희 뷰티 스토어가 현지 1위입니다!"</div>
+               <div class="interview-name" data-i18n="heroInterviewName2">- 베트남 뷰티 셀러</div>
+            </div>
+         </div>
+
+         <!-- Slide 3: Indonesian Seller -->
+         <div class="interview-slide" style="background-image: url('/hero_interview_id.png');">
+            <div class="hero-interview-overlay">
+               <div class="interview-subtitle" data-i18n-html="heroInterviewText3">"데이터의 정확도가 정말 놀랍습니다. 시장 조사를 위해 며칠을 버릴 필요 없이, 이젠 K-Vant로 10분만에 소싱 결정을 내립니다."</div>
+               <div class="interview-name" data-i18n="heroInterviewName3">- 인도네시아 종합몰 대표</div>
+            </div>
+         </div>
+
+         <!-- Indicators -->
+         <div class="interview-indicators">
+            <div class="indicator active" data-slide="0"></div>
+            <div class="indicator" data-slide="1"></div>
+            <div class="indicator" data-slide="2"></div>
          </div>
       </div>
+
+      <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          const slides = document.querySelectorAll('.interview-slide');
+          const indicators = document.querySelectorAll('.indicator');
+          let currentSlide = 0;
+          let slideInterval;
+
+          function goToSlide(index) {
+            slides[currentSlide].classList.remove('active');
+            indicators[currentSlide].classList.remove('active');
+            currentSlide = index;
+            slides[currentSlide].classList.add('active');
+            indicators[currentSlide].classList.add('active');
+          }
+
+          function nextSlide() {
+            goToSlide((currentSlide + 1) % slides.length);
+          }
+
+          if (slides.length > 0) {
+            slideInterval = setInterval(nextSlide, 5000);
+
+            indicators.forEach((ind, index) => {
+              ind.addEventListener('click', () => {
+                clearInterval(slideInterval);
+                goToSlide(index);
+                slideInterval = setInterval(nextSlide, 5000);
+              });
+            });
+          }
+        });
+      </script>
   </section>
 
   <!-- STATS BAR -->
