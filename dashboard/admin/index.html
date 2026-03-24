@@ -135,6 +135,9 @@
                     <li style="margin-bottom: 20px;"><a href="#" class="nav-link" data-tab="youtube"
                             style="color: #666; text-decoration: none; display: flex; align-items: center; gap: 10px;">💌
                             YouTube Outreach</a></li>
+                    <li style="margin-bottom: 20px;"><a href="#" class="nav-link" data-tab="crm"
+                            style="color: #666; text-decoration: none; display: flex; align-items: center; gap: 10px;">📇
+                            Outreach CRM</a></li>
                     <li style="margin-top: 50px;"><a href="/"
                             style="color: var(--admin-primary); text-decoration: none;">← Back to Dashboard</a></li>
                 </ul>
@@ -625,6 +628,82 @@ kvantlab.com</textarea>
                 </section>
             </div>
 
+            <!-- Outreach CRM Section -->
+            <div id="crmSection" class="tab-content" style="display: none;">
+                <header class="admin-header">
+                    <h1>Outreach CRM</h1>
+                    <p style="color: #666;">TikTok, Instagram, Facebook 등 전체 아웃리치 활동을 통합 관리합니다.</p>
+                </header>
+
+                <!-- Stats -->
+                <div id="crmStats" style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;"></div>
+
+                <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                    <!-- Add Lead Form -->
+                    <section class="admin-card" style="flex: 1; margin-bottom: 0;">
+                        <h3>➕ 리드 등록</h3>
+                        <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+                            <select id="crmPlatform" style="padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                                <option value="tiktok">🎵 TikTok</option>
+                                <option value="instagram">📸 Instagram</option>
+                                <option value="facebook">📘 Facebook</option>
+                                <option value="youtube">▶️ YouTube</option>
+                                <option value="other">🔗 기타</option>
+                            </select>
+                            <input type="text" id="crmAccountName" placeholder="계정명/채널명 (필수)" style="padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                            <input type="text" id="crmContact" placeholder="연락처 (DM주소, 이메일 등)" style="padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                            <input type="text" id="crmMemo" placeholder="메모 (선택)" style="padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                        </div>
+                        <button class="btn-primary" style="margin-top: 15px; width: 100%;" onclick="window.addCrmLead()">리드 등록</button>
+                    </section>
+
+                    <!-- Filter -->
+                    <section class="admin-card" style="flex: 2; margin-bottom: 0;">
+                        <h3>🔍 상태 필터</h3>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px;">
+                            <button class="crm-filter active" data-status="all" onclick="window.filterCrm('all', this)">전체</button>
+                            <button class="crm-filter" data-status="pending" onclick="window.filterCrm('pending', this)">⬜ 미접촉</button>
+                            <button class="crm-filter" data-status="dm_sent" onclick="window.filterCrm('dm_sent', this)">📨 DM발송</button>
+                            <button class="crm-filter" data-status="waiting" onclick="window.filterCrm('waiting', this)">⏳ 회신대기</button>
+                            <button class="crm-filter" data-status="negotiating" onclick="window.filterCrm('negotiating', this)">🤝 협의중</button>
+                            <button class="crm-filter" data-status="completed" onclick="window.filterCrm('completed', this)">✅ 완료</button>
+                            <button class="crm-filter" data-status="rejected" onclick="window.filterCrm('rejected', this)">❌ 거절</button>
+                        </div>
+                        <style>
+                            .crm-filter { padding: 8px 16px; border-radius: 20px; border: 1px solid #ddd; background: white; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+                            .crm-filter:hover { border-color: #0066ff; color: #0066ff; }
+                            .crm-filter.active { background: #0066ff; color: white; border-color: #0066ff; }
+                        </style>
+                    </section>
+                </div>
+
+                <!-- Table -->
+                <section class="admin-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3>리드 목록</h3>
+                        <button class="btn-primary" style="padding: 8px 16px;" onclick="window.loadCrmLeads()">🔄 새로고침</button>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                            <thead>
+                                <tr style="background: #f8f9fa; text-align: left; border-bottom: 2px solid #eee;">
+                                    <th style="padding: 12px;">플랫폼</th>
+                                    <th style="padding: 12px;">계정명</th>
+                                    <th style="padding: 12px;">연락처</th>
+                                    <th style="padding: 12px;">상태</th>
+                                    <th style="padding: 12px;">메모</th>
+                                    <th style="padding: 12px;">최종수정</th>
+                                    <th style="padding: 12px;">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="crmTableBody">
+                                <tr><td colspan="7" style="padding: 20px; text-align: center; color: #888;">불러오는 중...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
         </main>
     </div>
 
@@ -1003,10 +1082,127 @@ kvantlab.com</textarea>
       };
       
       // Auto trigger if youtube tab is clicked
+      // ===================== CRM =====================
+      const CRM_STATUS_LABELS = {
+          pending: '⬜ 미접촉', dm_sent: '📨 DM발송', waiting: '⏳ 회신대기',
+          negotiating: '🤝 협의중', completed: '✅ 완료', rejected: '❌ 거절'
+      };
+      const CRM_PLATFORM_ICONS = {
+          tiktok: '🎵', instagram: '📸', facebook: '📘', youtube: '▶️', other: '🔗'
+      };
+      let crmCurrentFilter = 'all';
+
+      window.loadCrmLeads = async function(statusFilter) {
+          const filter = statusFilter || crmCurrentFilter;
+          const tbody = document.getElementById('crmTableBody');
+          tbody.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:#888;">불러오는 중...</td></tr>';
+          try {
+              const url = filter === 'all' ? '/api/admin/crm' : `/api/admin/crm?status=${filter}`;
+              const res = await fetch(url);
+              const data = await res.json();
+              if (!data.success) throw new Error(data.error);
+              const items = data.leads;
+              window._crmAllLeads = items;
+              window.updateCrmStats(items);
+              if (!items.length) {
+                  tbody.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:#888;">등록된 리드가 없습니다.</td></tr>';
+                  return;
+              }
+              tbody.innerHTML = items.map(c => {
+                  const icon = CRM_PLATFORM_ICONS[c.platform] || '🔗';
+                  const statusOptions = Object.entries(CRM_STATUS_LABELS).map(([val,lbl]) =>
+                      `<option value="${val}" ${c.status===val?'selected':''}>${lbl}</option>`
+                  ).join('');
+                  return `<tr style="border-bottom:1px solid #eee;">
+                      <td style="padding:12px;font-size:16px;" title="${c.platform}">${icon} ${c.platform}</td>
+                      <td style="padding:12px;font-weight:600;">${c.account_name}</td>
+                      <td style="padding:12px;font-size:13px;color:#555;">${c.contact_info || '-'}</td>
+                      <td style="padding:12px;"><select onchange="window.updateCrmStatus('${c.id}',this.value)" style="padding:6px 8px;border-radius:6px;border:1px solid #ddd;font-size:13px;">${statusOptions}</select></td>
+                      <td style="padding:12px;font-size:13px;color:#666;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${c.memo||''}">${c.memo || '-'}</td>
+                      <td style="padding:12px;font-size:12px;color:#999;">${c.updated_at ? new Date(c.updated_at).toLocaleDateString() : '-'}</td>
+                      <td style="padding:12px;"><button onclick="window.deleteCrmLead('${c.id}')" style="background:#dc3545;color:white;border:none;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;">🗑</button></td>
+                  </tr>`;
+              }).join('');
+          } catch(e) {
+              console.error(e);
+              tbody.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:red;">오류: '+e.message+'</td></tr>';
+          }
+      };
+
+      window.addCrmLead = async function() {
+          const platform = document.getElementById('crmPlatform').value;
+          const name = document.getElementById('crmAccountName').value.trim();
+          const contact = document.getElementById('crmContact').value.trim();
+          const memo = document.getElementById('crmMemo').value.trim();
+          if (!name) return alert('계정명은 필수입니다.');
+          try {
+              const res = await fetch('/api/admin/crm', {
+                  method: 'POST', headers: {'Content-Type':'application/json'},
+                  body: JSON.stringify({ platform, account_name: name, contact_info: contact, memo })
+              });
+              const d = await res.json();
+              if (d.success) {
+                  document.getElementById('crmAccountName').value = '';
+                  document.getElementById('crmContact').value = '';
+                  document.getElementById('crmMemo').value = '';
+                  window.loadCrmLeads();
+              } else { alert('등록 실패: ' + d.error); }
+          } catch(e) { alert('오류: ' + e); }
+      };
+
+      window.updateCrmStatus = async function(id, newStatus) {
+          try {
+              const res = await fetch('/api/admin/crm/' + id, {
+                  method: 'PATCH', headers: {'Content-Type':'application/json'},
+                  body: JSON.stringify({ status: newStatus })
+              });
+              const d = await res.json();
+              if (!d.success) alert('상태 변경 실패: ' + d.error);
+              // Reload to refresh stats
+              window.loadCrmLeads();
+          } catch(e) { alert('오류: ' + e); }
+      };
+
+      window.deleteCrmLead = async function(id) {
+          if (!confirm('이 리드를 삭제하시겠습니까?')) return;
+          try {
+              const res = await fetch('/api/admin/crm/' + id, { method: 'DELETE' });
+              const d = await res.json();
+              if (d.success) window.loadCrmLeads();
+              else alert('삭제 실패: ' + d.error);
+          } catch(e) { alert('오류: ' + e); }
+      };
+
+      window.filterCrm = function(status, btn) {
+          crmCurrentFilter = status;
+          document.querySelectorAll('.crm-filter').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          window.loadCrmLeads(status);
+      };
+
+      window.updateCrmStats = function(leads) {
+          // Fetch all leads for stats (even if filtered view)
+          const statsDiv = document.getElementById('crmStats');
+          const counts = { total: leads.length };
+          Object.keys(CRM_STATUS_LABELS).forEach(s => counts[s] = 0);
+          leads.forEach(l => { if (counts[l.status] !== undefined) counts[l.status]++; });
+          statsDiv.innerHTML = `
+              <div style="background:#f0f4ff;padding:12px 18px;border-radius:10px;text-align:center;min-width:80px;"><div style="font-size:22px;font-weight:700;color:#0066ff;">${counts.total}</div><div style="font-size:11px;color:#666;">전체</div></div>
+              <div style="background:#fff3cd;padding:12px 18px;border-radius:10px;text-align:center;min-width:80px;"><div style="font-size:22px;font-weight:700;color:#856404;">${counts.pending}</div><div style="font-size:11px;color:#666;">미접촉</div></div>
+              <div style="background:#cce5ff;padding:12px 18px;border-radius:10px;text-align:center;min-width:80px;"><div style="font-size:22px;font-weight:700;color:#004085;">${counts.dm_sent + counts.waiting}</div><div style="font-size:11px;color:#666;">접촉</div></div>
+              <div style="background:#d4edda;padding:12px 18px;border-radius:10px;text-align:center;min-width:80px;"><div style="font-size:22px;font-weight:700;color:#155724;">${counts.completed}</div><div style="font-size:11px;color:#666;">완료</div></div>
+              <div style="background:#f8d7da;padding:12px 18px;border-radius:10px;text-align:center;min-width:80px;"><div style="font-size:22px;font-weight:700;color:#721c24;">${counts.rejected}</div><div style="font-size:11px;color:#666;">거절</div></div>`;
+      };
+
       document.addEventListener('DOMContentLoaded', () => {
           document.querySelectorAll('.nav-link[data-tab="youtube"]').forEach(link => {
               link.addEventListener('click', () => {
                   window.loadYouTubeCampaigns();
+              });
+          });
+          document.querySelectorAll('.nav-link[data-tab="crm"]').forEach(link => {
+              link.addEventListener('click', () => {
+                  window.loadCrmLeads();
               });
           });
 

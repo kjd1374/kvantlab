@@ -1949,6 +1949,65 @@ app.post('/api/admin/youtube/test-email', async (req, res) => {
     }
 });
 
+// ===================== OUTREACH CRM =====================
+
+// CRM: List leads (with optional status filter)
+app.get('/api/admin/crm', async (req, res) => {
+    try {
+        const { status } = req.query;
+        let query = supabase.from('outreach_crm').select('*').order('updated_at', { ascending: false });
+        if (status && status !== 'all') query = query.eq('status', status);
+        const { data, error } = await query;
+        if (error) throw error;
+        res.json({ success: true, leads: data });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// CRM: Add lead
+app.post('/api/admin/crm', async (req, res) => {
+    try {
+        const { platform, account_name, contact_info, memo } = req.body;
+        if (!account_name) return res.status(400).json({ success: false, error: '계정명은 필수입니다.' });
+        const { error } = await supabase.from('outreach_crm').insert([{
+            platform: platform || 'other',
+            account_name,
+            contact_info: contact_info || '',
+            status: 'pending',
+            memo: memo || ''
+        }]);
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// CRM: Update lead (status / memo)
+app.patch('/api/admin/crm/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = { ...req.body, updated_at: new Date().toISOString() };
+        const { error } = await supabase.from('outreach_crm').update(updates).eq('id', id);
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// CRM: Delete lead
+app.delete('/api/admin/crm/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { error } = await supabase.from('outreach_crm').delete().eq('id', id);
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
         console.log(`Data Pool Admin Backend running on http://localhost:${PORT}`);
