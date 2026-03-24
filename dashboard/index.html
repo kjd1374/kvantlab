@@ -593,6 +593,83 @@
       color: var(--ac2);
     }
 
+    /* HERO COMPARISON */
+    .hero-comparison-wrap {
+      position: relative;
+      width: 100%;
+      height: 300px;
+      margin-top: 60px;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 50px 100px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.04);
+      display: flex;
+    }
+
+    .hero-comparison-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 1;
+    }
+
+    .hero-comparison-half {
+      position: relative;
+      z-index: 2;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 30px;
+    }
+
+    .hero-comparison-half.left {
+      background: linear-gradient(to right, rgba(20,0,0,0.8) 0%, rgba(20,0,0,0.4) 100%);
+      border-right: 1px solid rgba(255,255,255,0.1);
+    }
+    .hero-comparison-half.right {
+      background: linear-gradient(to left, rgba(0,10,40,0.8) 0%, rgba(0,20,80,0.4) 100%);
+    }
+
+    .hero-comparison-half h3 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 15px;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-comparison-half.left h3 {
+      color: #ff6b6b;
+    }
+
+    .hero-comparison-half.right h3 {
+      color: #4facfe;
+    }
+
+    .hero-comparison-half p {
+      font-size: 16px;
+      color: rgba(255,255,255,0.8);
+      line-height: 1.5;
+    }
+
+    @media (max-width: 768px) {
+      .hero-comparison-wrap {
+        flex-direction: column;
+        height: auto;
+      }
+      .hero-comparison-half {
+        padding: 40px 20px;
+      }
+      .hero-comparison-half.left {
+        border-right: none;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+      }
+    }
+
     /* STATS BAR */
     .stats-bar {
       background: var(--bg2);
@@ -1902,6 +1979,19 @@
         <p class="hero-note" data-i18n-html="heroNote">No credit card required &nbsp;&middot;&nbsp; Cancel anytime</p>
       </div>
 
+      <!-- Comparison Block -->
+      <div class="hero-comparison-wrap">
+        <img src="/hero_comparison.png" alt="Without vs With K-Vant Lab" class="hero-comparison-img">
+        <div class="hero-comparison-half left">
+          <h3 data-i18n="heroWithoutTitle">Without K-Vant Lab</h3>
+          <p data-i18n-html="heroWithoutDesc">Endless manual searches,<br>guessing what sells.</p>
+        </div>
+        <div class="hero-comparison-half right">
+          <h3 data-i18n="heroWithTitle">With K-Vant Lab</h3>
+          <p data-i18n-html="heroWithDesc">Real-time data tracking,<br>instant market clarity.</p>
+        </div>
+      </div>
+
       <div class="mockup-wrap">
         <img src="/hero_mockup.png" alt="K-Vant Dashboard Preview"
           style="width: 100%; border-radius: 18px; box-shadow: 0 50px 100px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.04); display: block;">
@@ -2346,7 +2436,11 @@
         heroSub: "올리브영, 무신사, 에이블리, 네이버 쇼핑 등의 실시간 랭킹 정보. 한국 상품 셀러들을 위한 솔루션입니다.",
         btnPrimary: "14일 무료 체험 시작하기 &rarr;",
         btnGhost: "라이브 데이터 보기 &darr;",
-        heroNote: "신용카드 불필요 &nbsp;&middot;&nbsp; 언제든 해지 가능"
+        heroNote: "신용카드 불필요 &nbsp;&middot;&nbsp; 언제든 해지 가능",
+        heroWithoutTitle: "K-Vant Lab 도입 전",
+        heroWithoutDesc: "끝없는 수동 검색, 감에 의존한 소싱",
+        heroWithTitle: "K-Vant Lab 도입 후",
+        heroWithDesc: "실시간 데이터 추적, 명확한 시장 트렌드 파악",
       },
       en: {
         heroPill: "Real-time Korean Market Intelligence",
@@ -2354,7 +2448,11 @@
         heroSub: "Real-time rankings from Olive Young, Musinsa, Ably, Naver Shopping & more — with AI-powered review analysis. Built for K-product sellers.",
         btnPrimary: "Start Free &mdash; 14 Days &rarr;",
         btnGhost: "See live data &darr;",
-        heroNote: "No credit card required &nbsp;&middot;&nbsp; Cancel anytime"
+        heroNote: "No credit card required &nbsp;&middot;&nbsp; Cancel anytime",
+        heroWithoutTitle: "Without K-Vant Lab",
+        heroWithoutDesc: "Endless manual searches,<br>guessing what sells.",
+        heroWithTitle: "With K-Vant Lab",
+        heroWithDesc: "Real-time data tracking,<br>instant market clarity.",
       },
       vi: {
         heroPill: "Thông tin thị trường Hàn Quốc theo thời gian thực",
@@ -2362,7 +2460,11 @@
         heroSub: "Bảng xếp hạng thời gian thực từ Olive Young, Musinsa, Ably, Naver Shopping... với phân tích đánh giá bằng AI. Dành cho người bán hàng K-product.",
         btnPrimary: "Bắt đầu miễn phí 14 ngày &rarr;",
         btnGhost: "Xem dữ liệu trực tiếp &darr;",
-        heroNote: "Không cần thẻ tín dụng &nbsp;&middot;&nbsp; Hủy bất cứ lúc nào"
+        heroNote: "Không cần thẻ tín dụng &nbsp;&middot;&nbsp; Hủy bất cứ lúc nào",
+        heroWithoutTitle: "Trước bảng K-Vant Lab",
+        heroWithoutDesc: "Tìm kiếm thủ công vô tận,<br>đoán xem cái gì bán được.",
+        heroWithTitle: "Sau K-Vant Lab",
+        heroWithDesc: "Theo dõi dữ liệu thời gian thực,<br>nhìn rõ xu hướng ngay lập tức.",
       },
       th: {
         heroPill: "ข้อมูลตลาดเกาหลีแบบเรียลไทม์",
@@ -2370,7 +2472,11 @@
         heroSub: "อันดับแบบเรียลไทม์จาก Olive Young, Musinsa, Ably, Naver Shopping และอื่นๆ พร้อมการวิเคราะห์รีวิวด้วย AI สร้างขึ้นสำหรับผู้ขายสินค้าเกาหลี",
         btnPrimary: "เริ่มทดลองใช้ฟรี 14 วัน &rarr;",
         btnGhost: "ดูข้อมูลสด &darr;",
-        heroNote: "ไม่ต้องใช้บัตรเครดิต &nbsp;&middot;&nbsp; ยกเลิกได้ตลอดเวลา"
+        heroNote: "ไม่ต้องใช้บัตรเครดิต &nbsp;&middot;&nbsp; ยกเลิกได้ตลอดเวลา",
+        heroWithoutTitle: "ก่อนใช้ K-Vant Lab",
+        heroWithoutDesc: "ค้นหาด้วยมือไม่รู้จักจบสิ้น,<br>ต้องเดาว่าอะไรขายดี",
+        heroWithTitle: "หลังใช้ K-Vant Lab",
+        heroWithDesc: "ติดตามข้อมูลแบบเรียลไทม์,<br>เห็นเทรนด์ตลาดชัดเจนทันที",
       }
     };
 
