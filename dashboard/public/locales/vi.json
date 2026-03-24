@@ -226,5 +226,9 @@
   },
   "sourcing": {
     "request_quote": "Yêu cầu báo giá tìm nguồn"
-  }
+  },
+  "heroWithoutTitle": "Trước K-Vant Lab",
+  "heroWithoutDesc": "Tìm kiếm thủ công vô tận,<br>đoán xem cái gì bán được.",
+  "heroWithTitle": "Sau K-Vant Lab",
+  "heroWithDesc": "Theo dõi dữ liệu thời gian thực,<br>nhìn rõ xu hướng ngay lập tức."
 }

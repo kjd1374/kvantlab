@@ -214,5 +214,9 @@
   },
   "sourcing": {
     "request_quote": "ソーシング見積もりをリクエスト"
-  }
+  },
+  "heroWithoutTitle": "Without K-Vant Lab",
+  "heroWithoutDesc": "Endless manual searches,<br>guessing what sells.",
+  "heroWithTitle": "With K-Vant Lab",
+  "heroWithDesc": "Real-time data tracking,<br>instant market clarity."
 }

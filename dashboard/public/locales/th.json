@@ -216,5 +216,9 @@
   },
   "sourcing": {
     "request_quote": "ขอใบเสนอราคาจัดหา"
-  }
+  },
+  "heroWithoutTitle": "ก่อนใช้ K-Vant Lab",
+  "heroWithoutDesc": "ค้นหาด้วยมือไม่รู้จักจบสิ้น,<br>ต้องเดาว่าอะไรขายดี",
+  "heroWithTitle": "หลังใช้ K-Vant Lab",
+  "heroWithDesc": "ติดตามข้อมูลแบบเรียลไทม์,<br>เห็นเทรนด์ตลาดชัดเจนทันที"
 }

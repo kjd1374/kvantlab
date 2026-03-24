@@ -432,5 +432,9 @@
     "today_title": "오늘의 특가 주문 마감까지",
     "today_desc": "KST(한국시간) 매일 저녁 9시에 주문이 마감됩니다.",
     "closed_message": "✅ 금일 주문 마감 (내일 특가 준비중)"
-  }
+  },
+  "heroWithoutTitle": "K-Vant Lab 도입 전",
+  "heroWithoutDesc": "끝없는 수동 검색,<br>감에 의존한 소싱",
+  "heroWithTitle": "K-Vant Lab 도입 후",
+  "heroWithDesc": "실시간 데이터 추적,<br>명확한 시장 트렌드 파악"
 }
