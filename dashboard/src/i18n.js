@@ -4,7 +4,7 @@
  */
 
 const SUPPORTED_LANGUAGES = ['ko', 'en', 'vi', 'th', 'id', 'ja'];
-const DEFAULT_LANGUAGE = 'ko';
+const DEFAULT_LANGUAGE = 'en';
 
 const FALLBACK_STRINGS = {
     'platforms.oliveyoung': { ko: '올리브영', en: 'Olive Young' },
