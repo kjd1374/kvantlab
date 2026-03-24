@@ -218,5 +218,11 @@
   "heroWithoutTitle": "Without K-Vant Lab",
   "heroWithoutDesc": "Endless manual searches,<br>guessing what sells.",
   "heroWithTitle": "With K-Vant Lab",
-  "heroWithDesc": "Real-time data tracking,<br>instant market clarity."
+  "heroWithDesc": "Real-time data tracking,<br>instant market clarity.",
+  "heroPill": "Real-time Korean Market Intelligence",
+  "heroH1": "Your competitors already<br>know what's trending<br><em>in Korea.</em> <span class=\"line2\">Do you?</span>",
+  "heroSub": "Real-time rankings from Olive Young, Musinsa, Ably, Naver Shopping & more — with AI-powered review analysis. Built for K-product sellers.",
+  "btnPrimary": "Start Free &mdash; 14 Days &rarr;",
+  "btnGhost": "See live data &darr;",
+  "heroNote": "No credit card required &nbsp;&middot;&nbsp; Cancel anytime"
 }

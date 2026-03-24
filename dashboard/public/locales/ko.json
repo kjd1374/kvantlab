@@ -436,5 +436,11 @@
   "heroWithoutTitle": "K-Vant Lab 도입 전",
   "heroWithoutDesc": "끝없는 수동 검색,<br>감에 의존한 소싱",
   "heroWithTitle": "K-Vant Lab 도입 후",
-  "heroWithDesc": "실시간 데이터 추적,<br>명확한 시장 트렌드 파악"
+  "heroWithDesc": "실시간 데이터 추적,<br>명확한 시장 트렌드 파악",
+  "heroPill": "실시간 한국 시장 트렌드 인텔리전스",
+  "heroH1": "경쟁자들은 이미 한국의 트렌드를<br>알고 있습니다.<br><em>당신은 어떤가요?</em>",
+  "heroSub": "올리브영, 무신사, 에이블리, 네이버 쇼핑 등의 실시간 랭킹 정보. 한국 상품 셀러들을 위한 솔루션입니다.",
+  "btnPrimary": "14일 무료 체험 시작하기 &rarr;",
+  "btnGhost": "라이브 데이터 보기 &darr;",
+  "heroNote": "신용카드 불필요 &nbsp;&middot;&nbsp; 언제든 해지 가능"
 }

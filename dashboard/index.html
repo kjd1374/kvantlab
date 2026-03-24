@@ -599,7 +599,7 @@
       flex-direction: column;
       gap: 24px;
       width: 100%;
-      max-width: 480px;
+      max-width: 580px;
       justify-self: center;
       position: relative;
       z-index: 10;
@@ -613,8 +613,8 @@
       overflow: hidden;
       display: flex;
       align-items: center;
-      gap: 20px;
-      padding: 16px;
+      gap: 24px;
+      padding: 24px;
       box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
       transition: transform 0.3s ease, border-color 0.3s ease;
     }
@@ -625,13 +625,32 @@
     }
 
     .card-news-img {
-      width: 140px;
-      height: 140px;
+      width: 160px;
+      height: 160px;
       border-radius: 14px;
       background-size: cover;
       background-position: center;
       flex-shrink: 0;
       box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    
+    .card-logo-overlay {
+      position: absolute;
+      top: 55%;
+      left: 60%;
+      transform: translate(-50%, -50%) rotate(-5deg);
+      background: rgba(10, 14, 23, 0.95);
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.15);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+      z-index: 5;
+    }
+    
+    .card-logo-overlay img {
+      height: 18px;
+      display: block;
     }
 
     .card-news-content {
@@ -663,15 +682,15 @@
     }
 
     .card-news-content h3 {
-      font-size: 19px;
+      font-size: 21px;
       font-weight: 800;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
       color: #fff;
       letter-spacing: -0.01em;
     }
 
     .card-news-content p {
-      font-size: 14px;
+      font-size: 15px;
       color: #94a3b8;
       line-height: 1.5;
     }
@@ -2021,7 +2040,11 @@
 
         <!-- After Card -->
         <div class="card-news-item">
-          <div class="card-news-img" style="background-image: url('/card_after_v2.png'); border: 1px solid rgba(79,172,254,0.3);"></div>
+          <div class="card-news-img" style="background-image: url('/card_after_v2.png'); border: 1px solid rgba(79,172,254,0.3);">
+             <div class="card-logo-overlay">
+               <img src="/kvant_lab_logo.png" alt="K-Vant">
+             </div>
+          </div>
           <div class="card-news-content">
             <span class="card-badge badge-green">With K-Vant Lab</span>
             <h3 data-i18n="heroWithTitle">K-Vant Lab 도입 후</h3>
