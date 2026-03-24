@@ -593,123 +593,80 @@
       color: var(--ac2);
     }
 
-    /* HERO CARD NEWS */
-    .hero-card-news {
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
+    /* HERO INTERVIEW CARD */
+    .hero-interview-card {
+      position: relative;
       width: 100%;
       max-width: 580px;
-      justify-self: center;
-      position: relative;
-      z-index: 10;
-    }
-
-    .card-news-item {
-      background: rgba(20, 25, 35, 0.6);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      height: 380px;
       border-radius: 20px;
       overflow: hidden;
-      display: flex;
-      align-items: center;
-      gap: 24px;
-      padding: 24px;
-      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-      transition: transform 0.3s ease, border-color 0.3s ease;
-    }
-
-    .card-news-item:hover {
-      transform: translateY(-5px);
-      border-color: rgba(255, 255, 255, 0.15);
-    }
-
-    .card-news-img {
-      width: 130px;
-      height: 130px;
-      border-radius: 12px;
-      background-size: contain;
-      background-repeat: no-repeat;
+      justify-self: center;
+      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      background-size: cover;
       background-position: center;
-      flex-shrink: 0;
-      position: relative;
+      background-color: #1a1f2c;
     }
-    
-    .card-logo-overlay {
+
+    .hero-interview-overlay {
       position: absolute;
-      top: 52%;
-      left: 56%;
-      transform: translate(-50%, -50%) rotate(-3deg);
-      z-index: 5;
-      pointer-events: none;
-    }
-    
-    .card-logo-overlay img {
-      height: 11px;
-      display: block;
-      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
+      bottom: 0; left: 0; right: 0;
+      height: 65%;
+      background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 50%, transparent 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 30px;
     }
 
-    .card-news-content {
-      flex: 1;
-      text-align: left;
-    }
-
-    .card-badge {
-      display: inline-block;
+    .interview-play-badge {
+      position: absolute;
+      top: 20px; left: 20px;
+      background: rgba(220, 38, 38, 0.9);
+      color: #fff;
       padding: 6px 12px;
-      border-radius: 20px;
+      border-radius: 6px;
       font-size: 11px;
       font-weight: 800;
-      text-transform: uppercase;
       letter-spacing: 0.05em;
-      margin-bottom: 12px;
+      text-transform: uppercase;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    .badge-red {
-      background: rgba(255, 107, 107, 0.15);
-      color: #ff6b6b;
-      border: 1px solid rgba(255, 107, 107, 0.3);
+    .interview-play-badge::before {
+      content: '▶';
+      font-size: 10px;
     }
 
-    .badge-green {
-      background: rgba(79, 172, 254, 0.15);
-      color: #4facfe;
-      border: 1px solid rgba(79, 172, 254, 0.3);
-    }
-
-    .card-news-content h3 {
-      font-size: 21px;
-      font-weight: 800;
-      margin-bottom: 8px;
-      color: #fff;
+    .interview-subtitle {
+      font-size: 19px;
+      font-weight: 700;
+      color: #ffeba1;
+      line-height: 1.5;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+      margin-bottom: 10px;
       letter-spacing: -0.01em;
     }
 
-    .card-news-content p {
-      font-size: 15px;
-      color: #94a3b8;
-      line-height: 1.5;
+    .interview-name {
+      font-size: 14px;
+      color: rgba(255,255,255,0.6);
+      font-weight: 500;
     }
 
     @media (max-width: 768px) {
-      .hero-card-news {
+      .hero-interview-card {
         margin-top: 50px;
-        max-width: 100%;
+        height: 300px;
       }
-      .card-news-item {
-        flex-direction: column;
-        align-items: flex-start;
+      .interview-subtitle {
+        font-size: 16px;
+      }
+      .hero-interview-overlay {
         padding: 20px;
-      }
-      .card-news-img {
-        width: 100%;
-        height: 200px;
-      }
-      .card-news-content {
-        text-align: left;
-        width: 100%;
-        margin-top: 10px;
       }
     }
 
@@ -2023,31 +1980,13 @@
       </div>
 
 
-      <!-- Card News Section replaces mockup -->
-      <div class="hero-card-news">
-        <!-- Before Card -->
-        <div class="card-news-item">
-          <div class="card-news-img" style="background-image: url('/card_before_v2.png');"></div>
-          <div class="card-news-content">
-            <span class="card-badge badge-red">Before K-Vant Lab</span>
-            <h3 data-i18n="heroWithoutTitle">K-Vant Lab 도입 전</h3>
-            <p data-i18n-html="heroWithoutDesc">끝없는 수동 검색,<br>감에 의존한 소싱</p>
-          </div>
-        </div>
-
-        <!-- After Card -->
-        <div class="card-news-item">
-          <div class="card-news-img" style="background-image: url('/card_after_v2.png');">
-             <div class="card-logo-overlay">
-               <img src="/kvant_lab_logo.png" alt="K-Vant">
-             </div>
-          </div>
-          <div class="card-news-content">
-            <span class="card-badge badge-green">With K-Vant Lab</span>
-            <h3 data-i18n="heroWithTitle">K-Vant Lab 도입 후</h3>
-            <p data-i18n-html="heroWithDesc">실시간 데이터 추적,<br>명확한 시장 트렌드 파악</p>
-          </div>
-        </div>
+      <!-- Interview Hero Card -->
+      <div class="hero-interview-card" style="background-image: url('/hero_interview.png');">
+         <div class="interview-play-badge">Live Testimonial</div>
+         <div class="hero-interview-overlay">
+            <div class="interview-subtitle" data-i18n-html="heroInterviewText">"K-Vant Lab 덕분에 상품 소싱이 비교도 안 되게 빨라졌습니다. 한국 트렌드를 가장 먼저 파악하고 판매해서 매출 단위가 달라졌어요!"</div>
+            <div class="interview-name" data-i18n="heroInterviewName">- 태국 탑 뷰티/패션 셀러</div>
+         </div>
       </div>
   </section>
 
