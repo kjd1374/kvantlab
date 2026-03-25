@@ -398,7 +398,7 @@ app.post('/api/auth/complete-signup', async (req, res) => {
         });
 
         // 텔레그램 알림 전송 API
-        await sendTelegramNotification(`🎉 [회원가입] 새로운 유저가 가입했습니다!\n\n이메일: ${email}\n이름: ${fullName || '미입력'}\n회사명: ${companyName || '미입력'}`);
+        await sendTelegramNotification(`🎉 [회원가입] 새로운 유저가 가입했습니다!\n\n이메일: ${email}\n이름: ${name || '미입력'}\n회사명: ${company || '미입력'}`);
 
         // Sign the user in to get a valid session token
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
