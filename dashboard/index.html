@@ -2427,10 +2427,10 @@
       await i18n.init();
 
       window.addEventListener('languageChanged', () => {
-        window.t = (k) => k === 'common.login_signup' ? 'Login / Register' : (k === 'common.logout' ? 'Logout' : k.split('.').pop()); setupAuthUI();
+        setupAuthUI();
       });
 
-      window.t = (k) => k === 'common.login_signup' ? 'Login / Register' : (k === 'common.logout' ? 'Logout' : k.split('.').pop()); setupAuthUI();
+      setupAuthUI();
 
       // Hook up CTA buttons
       const ctaBtns = document.querySelectorAll('.btn-primary, .btn-plan, .nav-cta');

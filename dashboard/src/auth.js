@@ -3,6 +3,35 @@
  */
 import { signUp, signIn, signOut, getSession, sendOtp, verifyOtp, updateUserPassword, updateUserProfile, fetchUserProfile, query } from '../supabase.js';
 
+// === INITIALIZATION: Handle URL Tracking Params Immediately ===
+try {
+  const urlParams = new URLSearchParams(window.location.search);
+  
+  // 1. Affiliate Referral Link
+  const refCode = urlParams.get('ref');
+  if (refCode) {
+      document.cookie = `kvant_ref=${encodeURIComponent(refCode)}; Path=/; max-age=${60 * 60 * 24 * 30}`;
+      urlParams.delete('ref');
+      const newQs = urlParams.toString();
+      window.history.replaceState({}, document.title, window.location.pathname + (newQs ? '?' + newQs : ''));
+  }
+
+  // 2. Partner Admin Invite Link
+  const partnerInvite = urlParams.get('partner_invite');
+  if (partnerInvite) {
+      sessionStorage.setItem('kv_partner_invite', partnerInvite);
+      urlParams.delete('partner_invite');
+      const newQs = urlParams.toString();
+      window.history.replaceState({}, document.title, window.location.pathname + (newQs ? '?' + newQs : ''));
+      
+      // Auto-open signup modal after a short delay
+      setTimeout(() => {
+          document.getElementById('authModal')?.classList.add('open');
+          const signupTab = document.querySelector('.auth-tab[data-mode="signup"]');
+          if (signupTab) signupTab.click();
+      }, 500);
+  }
+} catch (e) { console.error('Error parsing URL tracking params:', e); }
 // Fallback for i18n when not loaded via i18n.js
 window.t = window.t || ((key) => {
   const fallbacks = {
@@ -262,33 +291,7 @@ function setupAuthModals() {
   }
 
   // Handle URL tracking parameters (Partner Invites & Affiliate Referrals)
-  const urlParams = new URLSearchParams(window.location.search);
-  
-  // 1. Affiliate Referral Link
-  const refCode = urlParams.get('ref');
-  if (refCode) {
-      document.cookie = `kvant_ref=${encodeURIComponent(refCode)}; Path=/; max-age=${60 * 60 * 24 * 30}`;
-      urlParams.delete('ref');
-      const newQs = urlParams.toString();
-      window.history.replaceState({}, document.title, window.location.pathname + (newQs ? '?' + newQs : ''));
-  }
-
-  // 2. Partner Admin Invite Link
-  const partnerInvite = urlParams.get('partner_invite');
-  if (partnerInvite) {
-      sessionStorage.setItem('kv_partner_invite', partnerInvite);
-      urlParams.delete('partner_invite');
-      const newQs = urlParams.toString();
-      window.history.replaceState({}, document.title, window.location.pathname + (newQs ? '?' + newQs : ''));
-      
-      // Auto-open signup modal after a short delay
-      setTimeout(() => {
-          document.getElementById('authModal')?.classList.add('open');
-          const signupTab = document.querySelector('.auth-tab[data-mode="signup"]');
-          if (signupTab) signupTab.click();
-      }, 500);
-  }
-
+  // Handle Admin Auth State
   const modal = document.getElementById('authModal');
   const form = document.getElementById('authForm');
   const tabs = document.querySelectorAll('.auth-tab');
