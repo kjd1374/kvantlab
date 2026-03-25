@@ -1,7 +1,7 @@
 /**
  * Authentication UI Module
  */
-import { signUp, signIn, signOut, getSession, sendOtp, verifyOtp, updateUserPassword, updateUserProfile, fetchUserProfile } from '../supabase.js';
+import { signUp, signIn, signOut, getSession, sendOtp, verifyOtp, updateUserPassword, updateUserProfile, fetchUserProfile, query } from '../supabase.js';
 
 // Fallback for i18n when not loaded via i18n.js
 window.t = window.t || ((key) => {
@@ -81,6 +81,7 @@ export function setupAuthUI() {
 async function renderAuthButton(container, session) {
   if (session) {
     let isAdmin = false;
+    let isPartner = false;
     try {
       const profileData = await fetchUserProfile(session.user.id);
       if (profileData) {
@@ -89,6 +90,15 @@ async function renderAuthButton(container, session) {
           isAdmin = true;
         }
       }
+
+      // Check if user is a valid partner
+      try {
+          const partnerRes = await query('affiliate_partners', `select=id&user_id=eq.${session.user.id}`);
+          if (partnerRes && partnerRes.data && partnerRes.data.length > 0) {
+              isPartner = true;
+          }
+      } catch (e) { console.error('Error fetching partner role:', e); }
+
     } catch (err) { console.error('Error fetching role for dropdown:', err); }
 
     container.innerHTML = `
@@ -96,6 +106,7 @@ async function renderAuthButton(container, session) {
         <div class="user-avatar">${session.user.email[0].toUpperCase()}</div>
         <div class="user-dropdown">
           <div class="user-email">${session.user.email}</div>
+          ${isPartner ? `<a href="/partner.html" class="dropdown-item" data-i18n="common.partner" style="font-weight: 600; color: #00d4ff;">${window.t('common.partner') || '파트너 대시보드'}</a>` : ''}
           ${isAdmin ? `<a href="/admin/index.html" class="dropdown-item" data-i18n="common.admin">${window.t('common.admin') || '관리자 페이지'}</a>` : ''}
           <a href="#" onclick="event.preventDefault(); window.openMyPageModal(); setTimeout(() => document.querySelector('.auth-tab[data-mypage-tab=\\'account\\']').click(), 50);" class="dropdown-item" data-i18n="mypage.title">${window.t('mypage.title') || '마이페이지 (계정 정보)'}</a>
           <a href="#" onclick="event.preventDefault(); window.openMyPageModal(); setTimeout(() => document.querySelector('.auth-tab[data-mypage-tab=\\'billing\\']').click(), 50);" class="dropdown-item" data-i18n="mypage.billing">${window.t('mypage.billing') || '결제 / 플랜 관리'}</a>

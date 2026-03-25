@@ -2355,6 +2355,29 @@ app.post('/api/admin/partners/invite', async (req, res) => {
     }
 });
 
+// PATCH /api/admin/partners/:id/commission — Edit a partner's commission rate
+app.patch('/api/admin/partners/:id/commission', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { commission_rate } = req.body;
+        
+        if (typeof commission_rate !== 'number' || commission_rate < 0 || commission_rate > 100) {
+            return res.status(400).json({ error: 'Invalid commission rate' });
+        }
+
+        const { error } = await supabase
+            .from('affiliate_partners')
+            .update({ commission_rate })
+            .eq('id', id);
+
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (e) {
+        console.error('Edit commission error:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // POST /api/partner/join — User accepts an invite link
 app.post('/api/partner/join', async (req, res) => {
     try {

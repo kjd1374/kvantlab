@@ -1262,7 +1262,10 @@ kvantlab.com</textarea>
                       <tr style="border-bottom:1px solid #eee;">
                           <td style="padding:12px;"><strong>${p.name || '-'}</strong><br><span style="font-size:12px;color:#666;">${p.email}</span></td>
                           <td style="padding:12px;font-family:monospace;color:#0066ff;">${p.ref_code}</td>
-                          <td style="padding:12px;">${p.commission_rate}%</td>
+                          <td style="padding:12px;">
+                            ${p.commission_rate}%
+                            <button onclick="window.editCommission('${p.id}', ${p.commission_rate}, '${p.email}')" style="margin-left:8px; background:#f1f3f5; border:1px solid #dee2e6; cursor:pointer; font-size:11px; padding:2px 6px; border-radius:4px; color:#495057;">수정</button>
+                          </td>
                           <td style="padding:12px;">${p.partner_stats?.[0]?.total_signups || 0}</td>
                           <td style="padding:12px;">${p.partner_stats?.[0]?.paid_conversions || 0}</td>
                           <td style="padding:12px;font-weight:bold;color:#28a745;">$${(p.partner_stats?.[0]?.total_earnings || 0).toFixed(2)}</td>
@@ -1275,6 +1278,29 @@ kvantlab.com</textarea>
           } catch (e) {
               console.error(e);
               tbody.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:red;">Failed to load partners</td></tr>';
+          }
+      };
+
+      window.editCommission = async function(partnerId, currentRate, email) {
+          const newRate = prompt(`${email} 파트너의 커미션 비율을 입력하세요 (%)`, currentRate);
+          if (newRate === null || newRate === '') return;
+          const parsed = parseFloat(newRate);
+          if (isNaN(parsed) || parsed < 0 || parsed > 100) return alert('유효한 비율(0~100)을 입력하세요.');
+
+          try {
+              const res = await fetch(`/api/admin/partners/${partnerId}/commission`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ commission_rate: parsed })
+              });
+              const data = await res.json();
+              if (data.success) {
+                  loadPartners();
+              } else {
+                  alert(data.error || '수정 실패');
+              }
+          } catch (e) {
+              alert('Error: ' + e.message);
           }
       };
 

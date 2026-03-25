@@ -70,6 +70,8 @@ const FALLBACK_STRINGS = {
     'auth.pf_qoo10': { 'en': 'Qoo10', 'ko': '큐텐' },
     'auth.pf_amazon': { 'en': 'Amazon', 'ko': '아마존' },
     'common.login_signup': { 'en': 'Login / Register', 'ko': '로그인 / 회원가입' },
+    'common.admin': { 'en': 'Admin Panel', 'ko': '관리자 페이지' },
+    'common.partner': { 'en': 'Partner Dashboard', 'ko': '파트너 페이지' },
     'mypage.btn_renew': { 'ko': '🔄 구독 갱신 (Renew)', 'en': '🔄 Renew Subscription' },
     'mypage.btn_extend': { 'ko': '⏳ 구독 연장 (Extend)', 'en': '⏳ Extend Subscription' },
     'mypage.btn_cancel': { 'ko': '🚫 구독 해지 (Cancel)', 'en': '🚫 Cancel Subscription' },
