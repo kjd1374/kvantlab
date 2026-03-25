@@ -408,6 +408,57 @@ app.post('/api/auth/complete-signup', async (req, res) => {
 
         if (signInError) throw signInError;
 
+        // --- Process Referral Tracking Server-Side ---
+        const cookies = {};
+        const header = req.headers.cookie || '';
+        header.split(';').forEach(c => {
+            const [k, ...v] = c.trim().split('=');
+            if (k) cookies[k] = decodeURIComponent(v.join('='));
+        });
+        const refCode = cookies.kvant_ref || null;
+
+        if (refCode) {
+            try {
+                // Find Partner
+                const { data: partner } = await supabase
+                    .from('affiliate_partners')
+                    .select('id')
+                    .eq('ref_code', refCode)
+                    .eq('status', 'active')
+                    .single();
+
+                if (partner) {
+                    const { data: existingRef } = await supabase
+                        .from('affiliate_referrals')
+                        .select('id')
+                        .eq('referred_user_id', userId)
+                        .limit(1);
+
+                    if (!existingRef || existingRef.length === 0) {
+                        await supabase.from('affiliate_referrals').insert({
+                            partner_id: partner.id,
+                            referred_user_id: userId,
+                            ref_code: refCode,
+                            status: 'signed_up'
+                        });
+
+                        await supabase.rpc('increment_partner_signups', { p_id: partner.id }).catch(async () => {
+                            // Manual increment fallback if RPC doesn't exist
+                            const { data: currentStats } = await supabase.from('partner_stats').select('total_signups').eq('partner_id', partner.id).single();
+                            const newTotal = (currentStats?.total_signups || 0) + 1;
+                            supabase.from('partner_stats').upsert({
+                                partner_id: partner.id,
+                                total_signups: newTotal,
+                                updated_at: new Date().toISOString()
+                            }, { onConflict: 'partner_id' });
+                        });
+                    }
+                }
+            } catch (err) {
+                console.error('[Signup] Auto-referral tracking failed:', err.message);
+            }
+        }
+
         res.json({
             success: true,
             session: {
