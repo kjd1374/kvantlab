@@ -1288,7 +1288,7 @@ kvantlab.com</textarea>
               });
               const data = await res.json();
               if (data.success) {
-                  const url = location.origin + '/partner?invite=' + data.token;
+                  const url = location.origin + '/?partner_invite=' + data.token;
                   document.getElementById('inviteLinkUrl').value = url;
                   document.getElementById('inviteLinkResult').style.display = 'block';
               } else {

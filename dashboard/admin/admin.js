@@ -157,7 +157,7 @@ async function initAdmin() {
                     <td style="padding: 12px;">
                         <div style="display: flex; gap: 8px;">
                             <button onclick="window.adminActions.openSubModal('${user.id}', '${user.subscription_tier}', '${user.subscription_expires_at || ''}')" style="background: #e7f5ff; border: 1px solid #a5d8ff; color: #1971c2; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">구독 수정</button>
-                            ${user.role !== 'admin' ? `<button onclick="window.adminActions.promoteToPartner('${user.id}', '${user.email}')" style="background: #e6fcf5; border: 1px solid #b2f2bb; color: #0ca678; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">👑 파트너 임명</button>` : ''}
+                            <button onclick="window.adminActions.promoteToPartner('${user.id}', '${user.email}')" style="background: #e6fcf5; border: 1px solid #b2f2bb; color: #0ca678; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">👑 파트너 임명</button>
                             <button onclick="window.adminActions.resetPassword('${user.email}')" style="background: #f1f3f5; border: 1px solid #dee2e6; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">비번 초기화</button>
                             ${user.role !== 'admin' ? `<button onclick="window.adminActions.deleteUser('${user.id}', '${user.email}')" style="background: #fff5f5; border: 1px solid #ffc9c9; color: #fa5252; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">삭제</button>` : ''}
                         </div>

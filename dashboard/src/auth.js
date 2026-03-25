@@ -250,6 +250,21 @@ function setupAuthModals() {
     window.i18n.documentUpdate();
   }
 
+  // Handle partner invite URL parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const partnerInvite = urlParams.get('partner_invite');
+  if (partnerInvite) {
+      sessionStorage.setItem('kv_partner_invite', partnerInvite);
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // Auto-open signup modal after a short delay
+      setTimeout(() => {
+          document.getElementById('authModal')?.classList.add('open');
+          const signupTab = document.querySelector('.auth-tab[data-mode="signup"]');
+          if (signupTab) signupTab.click();
+      }, 500);
+  }
+
   const modal = document.getElementById('authModal');
   const form = document.getElementById('authForm');
   const tabs = document.querySelectorAll('.auth-tab');
@@ -444,6 +459,26 @@ function setupAuthModals() {
       if (mode === 'login') {
         const result = await signIn(email, password);
         if (result.error) throw new Error(result.error_description || result.error);
+
+        // --- Auto Partner Join ---
+        const inviteToken = sessionStorage.getItem('kv_partner_invite');
+        if (inviteToken) {
+            try {
+                const joinRes = await fetch('/api/partner/join', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${result.access_token || sessionStorage.getItem('sb-token')}` },
+                    body: JSON.stringify({ token: inviteToken })
+                });
+                if (joinRes.ok) {
+                    sessionStorage.removeItem('kv_partner_invite');
+                    window.location.href = '/partner.html';
+                    return;
+                }
+            } catch (e) {
+                console.error('Failed to join partner:', e);
+            }
+        }
+
         if (window.location.pathname === '/' || window.location.pathname.endsWith('index.html')) {
           window.location.href = '/app.html';
         } else {
@@ -511,6 +546,26 @@ function setupAuthModals() {
             const profile = await fetchUserProfile(signupData.session.user.id);
             if (profile) sessionStorage.setItem('sb-profile', JSON.stringify(profile));
           } catch (e) { }
+          
+          // --- Auto Partner Join ---
+          const inviteToken = sessionStorage.getItem('kv_partner_invite');
+          if (inviteToken) {
+              try {
+                  const joinRes = await fetch('/api/partner/join', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${signupData.session.access_token}` },
+                      body: JSON.stringify({ token: inviteToken })
+                  });
+                  if (joinRes.ok) {
+                      sessionStorage.removeItem('kv_partner_invite');
+                      alert(window.t('auth.signup_success_partner') || '회원가입 및 파트너 등록이 완료되었습니다!');
+                      window.location.href = '/partner.html';
+                      return;
+                  }
+              } catch (e) {
+                  console.error('Failed to join partner:', e);
+              }
+          }
         }
 
         alert(window.t('auth.signup_success') || '회원가입이 완료되었습니다!');
