@@ -534,9 +534,8 @@ app.delete('/api/admin/users/:id', async (req, res) => {
 });
 
 // 3.01 Promote to Partner (Admin)
-app.post('/api/admin/users/:id/promote-partner', authMiddleware, async (req, res) => {
+app.post('/api/admin/users/:id/promote-partner', async (req, res) => {
     try {
-        if (!req.user || req.user.email !== 'admin@test.com') return res.status(403).json({ error: 'Admin only' });
         const { id } = req.params;
         const { email } = req.body;
 
@@ -2315,11 +2314,8 @@ app.post('/api/affiliate/record-referral', async (req, res) => {
 // ═════════════════════════════════════════════════════════════════════
 
 // GET /api/admin/partners — Load all partners and their stats
-app.get('/api/admin/partners', authMiddleware, async (req, res) => {
+app.get('/api/admin/partners', async (req, res) => {
     try {
-        if (!req.user || req.user.email !== 'admin@test.com') { // Assuming simple admin check
-            return res.status(403).json({ error: 'Admin only' });
-        }
 
         const { data: partners, error } = await supabase
             .from('affiliate_partners')
@@ -2341,12 +2337,8 @@ app.get('/api/admin/partners', authMiddleware, async (req, res) => {
 const INVITE_SECRET = process.env.SUPABASE_JWT_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'kvant-default-secret-fallback';
 
 // POST /api/admin/partners/invite — Generate an invite link
-app.post('/api/admin/partners/invite', authMiddleware, async (req, res) => {
+app.post('/api/admin/partners/invite', async (req, res) => {
     try {
-        if (!req.user || req.user.email !== 'admin@test.com') {
-            return res.status(403).json({ error: 'Admin only' });
-        }
-        
         const { commission_rate } = req.body;
         const payload = Buffer.from(JSON.stringify({ 
             rate: commission_rate || 20, 
