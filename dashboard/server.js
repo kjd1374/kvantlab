@@ -2008,6 +2008,203 @@ app.delete('/api/admin/crm/:id', async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AFFILIATE PARTNER SYSTEM API
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Helper: parse cookies from request
+function parseCookies(req) {
+    const cookies = {};
+    const header = req.headers.cookie || '';
+    header.split(';').forEach(c => {
+        const [k, ...v] = c.trim().split('=');
+        if (k) cookies[k] = decodeURIComponent(v.join('='));
+    });
+    return cookies;
+}
+
+// GET /api/affiliate/get-ref — Read ref code from httpOnly cookie (frontend can't read it directly)
+app.get('/api/affiliate/get-ref', (req, res) => {
+    const cookies = parseCookies(req);
+    const ref = cookies.kvant_ref || null;
+    res.json({ ref });
+});
+
+// GET /api/affiliate/stats — Partner KPI dashboard data (reads ONLY from partner_stats summary table)
+app.get('/api/affiliate/stats', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader) return res.status(401).json({ error: 'Unauthorized' });
+
+        const token = authHeader.replace('Bearer ', '');
+        // Get user from token
+        const { data: { user }, error: userErr } = await supabase.auth.getUser(token);
+        if (userErr || !user) return res.status(401).json({ error: 'Invalid token' });
+
+        // Find partner by user_id
+        const { data: partner, error: partnerErr } = await supabase
+            .from('affiliate_partners')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+
+        if (partnerErr || !partner) return res.status(404).json({ error: 'Partner not found' });
+
+        // Read pre-aggregated stats
+        const { data: stats } = await supabase
+            .from('partner_stats')
+            .select('*')
+            .eq('partner_id', partner.id)
+            .single();
+
+        res.json({
+            partner,
+            stats: stats || {
+                total_signups: 0,
+                active_trials: 0,
+                paid_conversions: 0,
+                total_earnings: 0,
+                available_payout: 0
+            }
+        });
+    } catch (e) {
+        console.error('affiliate stats error:', e);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// GET /api/affiliate/payouts — Payout history
+app.get('/api/affiliate/payouts', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader) return res.status(401).json({ error: 'Unauthorized' });
+
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user }, error: userErr } = await supabase.auth.getUser(token);
+        if (userErr || !user) return res.status(401).json({ error: 'Invalid token' });
+
+        const { data: partner } = await supabase
+            .from('affiliate_partners')
+            .select('id')
+            .eq('user_id', user.id)
+            .single();
+
+        if (!partner) return res.status(404).json({ error: 'Partner not found' });
+
+        const { data: payouts } = await supabase
+            .from('partner_payouts')
+            .select('*')
+            .eq('partner_id', partner.id)
+            .order('requested_at', { ascending: false })
+            .limit(20);
+
+        res.json({ payouts: payouts || [] });
+    } catch (e) {
+        console.error('affiliate payouts error:', e);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// POST /api/affiliate/request-payout — Request payout
+app.post('/api/affiliate/request-payout', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader) return res.status(401).json({ error: 'Unauthorized' });
+
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user }, error: userErr } = await supabase.auth.getUser(token);
+        if (userErr || !user) return res.status(401).json({ error: 'Invalid token' });
+
+        const { data: partner } = await supabase
+            .from('affiliate_partners')
+            .select('id')
+            .eq('user_id', user.id)
+            .single();
+
+        if (!partner) return res.status(404).json({ error: 'Partner not found' });
+
+        // Get available payout
+        const { data: stats } = await supabase
+            .from('partner_stats')
+            .select('available_payout')
+            .eq('partner_id', partner.id)
+            .single();
+
+        const available = stats?.available_payout || 0;
+        if (available <= 0) return res.status(400).json({ error: 'No available payout' });
+
+        // Create payout request
+        await supabase.from('partner_payouts').insert({
+            partner_id: partner.id,
+            amount: available,
+            status: 'pending'
+        });
+
+        // Reset available payout
+        await supabase.from('partner_stats').update({
+            available_payout: 0,
+            updated_at: new Date().toISOString()
+        }).eq('partner_id', partner.id);
+
+        res.json({ success: true, amount: available });
+    } catch (e) {
+        console.error('affiliate payout request error:', e);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// POST /api/affiliate/record-referral — Called during signup to record a referral
+app.post('/api/affiliate/record-referral', async (req, res) => {
+    try {
+        const { ref_code, user_id } = req.body;
+        if (!ref_code || !user_id) return res.status(400).json({ error: 'Missing ref_code or user_id' });
+
+        // Find the partner
+        const { data: partner, error: partnerErr } = await supabase
+            .from('affiliate_partners')
+            .select('id')
+            .eq('ref_code', ref_code)
+            .eq('status', 'active')
+            .single();
+
+        if (partnerErr || !partner) return res.status(404).json({ error: 'Invalid referral code' });
+
+        // Check if already referred
+        const { data: existing } = await supabase
+            .from('affiliate_referrals')
+            .select('id')
+            .eq('referred_user_id', user_id)
+            .limit(1);
+
+        if (existing && existing.length > 0) return res.json({ success: true, message: 'Already referred' });
+
+        // Create referral record
+        await supabase.from('affiliate_referrals').insert({
+            partner_id: partner.id,
+            referred_user_id: user_id,
+            ref_code: ref_code,
+            status: 'signed_up'
+        });
+
+        // Update partner_stats
+        await supabase.rpc('increment_partner_signups', { p_id: partner.id }).catch(() => {
+            // If RPC doesn't exist, update manually
+            supabase.from('partner_stats')
+                .upsert({
+                    partner_id: partner.id,
+                    total_signups: 1,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'partner_id' });
+        });
+
+        res.json({ success: true });
+    } catch (e) {
+        console.error('record referral error:', e);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
         console.log(`Data Pool Admin Backend running on http://localhost:${PORT}`);

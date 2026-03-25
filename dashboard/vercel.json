@@ -28,6 +28,10 @@
             "destination": "/notice.html"
         },
         {
+            "source": "/partner",
+            "destination": "/partner.html"
+        },
+        {
             "source": "/(.*)",
             "destination": "/index.html"
         }

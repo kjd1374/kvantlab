@@ -605,6 +605,19 @@ export async function fetchProductCount(platform = 'oliveyoung') {
  */
 
 export async function signUp(email, password, metadata = {}) {
+    // Check if there's a referral code stored in httpOnly cookie
+    let refCode = metadata.referral_code || null;
+    if (!refCode) {
+        try {
+            const refRes = await fetch('/api/affiliate/get-ref');
+            const refData = await refRes.json();
+            if (refData.ref) {
+                refCode = refData.ref;
+                metadata.referral_code = refCode;
+            }
+        } catch (e) { /* silently ignore */ }
+    }
+
     const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
         method: 'POST',
         headers: headers,
@@ -616,7 +629,20 @@ export async function signUp(email, password, metadata = {}) {
             }
         })
     });
-    return await res.json();
+    const data = await res.json();
+
+    // If signup succeeded and we have a referral code, record the referral
+    if (data && data.id && refCode) {
+        try {
+            await fetch('/api/affiliate/record-referral', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ref_code: refCode, user_id: data.id })
+            });
+        } catch (e) { console.error('Failed to record referral:', e); }
+    }
+
+    return data;
 }
 
 export async function sendOtp(email) {

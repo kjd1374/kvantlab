@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>K-Vant Lab — Partner Dashboard</title>
+  <meta name="description" content="K-Vant Lab Affiliate Partner Dashboard. Track referrals, earnings, and manage your affiliate link.">
+  <link rel="icon" type="image/png" href="/logo_kvant_new.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0e17;
+      --surface: #111827;
+      --surface2: #1a2236;
+      --border: rgba(255, 255, 255, 0.06);
+      --text: #e2e8f0;
+      --text2: #94a3b8;
+      --ac: #00d4ff;
+      --ac2: #38bdf8;
+      --green: #22c55e;
+      --yellow: #facc15;
+      --red: #ef4444;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 32px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10, 14, 23, 0.9);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .nav-logo img { height: 28px; }
+    .nav-logo span { font-family: 'Syne', sans-serif; font-weight: 800; color: var(--text); font-size: 16px; }
+    .nav-badge {
+      background: linear-gradient(135deg, var(--ac), #6366f1);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text2);
+      font-size: 13px;
+    }
+    .btn-logout {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+    .btn-logout:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+    /* CONTAINER */
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+    .page-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .page-subtitle {
+      color: var(--text2);
+      font-size: 14px;
+      margin-bottom: 36px;
+    }
+
+    /* KPI CARDS */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: transform 0.2s;
+    }
+    .kpi-card:hover { transform: translateY(-2px); }
+    .kpi-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    .kpi-icon.blue { background: rgba(0, 212, 255, 0.1); }
+    .kpi-icon.green { background: rgba(34, 197, 94, 0.1); }
+    .kpi-icon.yellow { background: rgba(250, 204, 21, 0.1); }
+    .kpi-icon.purple { background: rgba(139, 92, 246, 0.1); }
+    .kpi-label { font-size: 12px; color: var(--text2); font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+    .kpi-value { font-size: 32px; font-weight: 800; color: #fff; }
+
+    /* SECTION CARD */
+    .section-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* LINK GENERATOR */
+    .link-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .link-input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 14px;
+      color: var(--ac);
+      font-family: 'Inter', monospace;
+      font-weight: 600;
+      outline: none;
+    }
+    .btn-copy {
+      background: linear-gradient(135deg, var(--ac), #6366f1);
+      border: none;
+      color: #fff;
+      padding: 14px 24px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.2s;
+    }
+    .btn-copy:hover { opacity: 0.85; }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      background: var(--green);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: all 0.3s ease;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* MEDIA KIT */
+    .media-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .media-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      transition: background 0.2s;
+    }
+    .media-item:hover { background: rgba(255,255,255,0.04); }
+    .media-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .media-emoji { font-size: 22px; }
+    .media-name { font-size: 14px; font-weight: 600; }
+    .media-desc { font-size: 12px; color: var(--text2); }
+    .btn-media {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: var(--ac);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-media:hover { background: rgba(0, 212, 255, 0.1); }
+
+    /* PAYOUT TABLE */
+    .payout-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .payout-table th {
+      text-align: left;
+      font-size: 11px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .payout-table td {
+      padding: 14px 16px;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .status-badge.pending { background: rgba(250, 204, 21, 0.15); color: var(--yellow); }
+    .status-badge.paid { background: rgba(34, 197, 94, 0.15); color: var(--green); }
+    .empty-msg { color: var(--text2); font-size: 13px; text-align: center; padding: 32px; }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 560px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal-box h3 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+    .modal-box pre {
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 20px;
+      font-size: 13px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      color: var(--text2);
+    }
+    .btn-close-modal {
+      margin-top: 16px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    /* AUTH GATE (shown if not logged in or not a partner) */
+    .auth-gate {
+      text-align: center;
+      padding: 80px 24px;
+    }
+    .auth-gate h2 { font-size: 24px; margin-bottom: 12px; }
+    .auth-gate p { color: var(--text2); margin-bottom: 24px; }
+    .btn-login {
+      background: linear-gradient(135deg, var(--ac), #6366f1);
+      border: none;
+      color: #fff;
+      padding: 14px 32px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* LOADING */
+    .loading-spinner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 80px;
+      color: var(--text2);
+      font-size: 14px;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .link-row { flex-direction: column; }
+      .link-input { width: 100%; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- NAV -->
+  <nav class="nav">
+    <a href="/" class="nav-logo">
+      <img src="/logo_kvant_new.png" alt="K-Vant Lab">
+      <span>K-Vant Lab</span>
+      <span class="nav-badge">Partner</span>
+    </a>
+    <div class="nav-user">
+      <span id="userEmail">-</span>
+      <button class="btn-logout" id="btnLogout" onclick="handleLogout()">Logout</button>
+    </div>
+  </nav>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast">✓ Copied!</div>
+
+  <!-- MODAL: TikTok Script -->
+  <div class="modal-overlay" id="scriptModal">
+    <div class="modal-box">
+      <h3>🎬 TikTok 15s Script</h3>
+      <pre id="scriptContent">🎤 "Still manually searching Korean trends?"
+
+📊 K-Vant Lab gives you REAL-TIME data from Korea's top platforms.
+
+💰 Olive Young, Musinsa, Ably — daily rankings in YOUR language.
+
+🔥 Source BEFORE the crowd. Not after.
+
+👉 Link in bio — 14-day FREE trial!</pre>
+      <button class="btn-close-modal" onclick="document.getElementById('scriptModal').classList.remove('active')">Close</button>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="container" id="mainContent" style="display:none;">
+    <h1 class="page-title">Partner Dashboard</h1>
+    <p class="page-subtitle">Track your referral performance and manage your affiliate link.</p>
+
+    <!-- KPI CARDS -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-icon blue">👥</div>
+        <div class="kpi-label">Total Signups</div>
+        <div class="kpi-value" id="kpiSignups">0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon green">🧪</div>
+        <div class="kpi-label">Active Trials</div>
+        <div class="kpi-value" id="kpiTrials">0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon yellow">💳</div>
+        <div class="kpi-label">Paid Conversions</div>
+        <div class="kpi-value" id="kpiPaid">0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon purple">💰</div>
+        <div class="kpi-label">Available Payout</div>
+        <div class="kpi-value" id="kpiPayout">$0</div>
+      </div>
+    </div>
+
+    <!-- LINK GENERATOR -->
+    <div class="section-card">
+      <div class="section-title">🔗 Your Referral Link</div>
+      <div class="link-row">
+        <input type="text" class="link-input" id="refLink" readonly value="Loading...">
+        <button class="btn-copy" onclick="copyLink()">📋 Copy Link</button>
+      </div>
+    </div>
+
+    <!-- MEDIA KIT -->
+    <div class="section-card">
+      <div class="section-title">📦 Media Kit</div>
+      <div class="media-list">
+        <div class="media-item">
+          <div class="media-info">
+            <div class="media-emoji">🎬</div>
+            <div>
+              <div class="media-name">TikTok 15s Script</div>
+              <div class="media-desc">Ready-to-use promotional script for short video</div>
+            </div>
+          </div>
+          <button class="btn-media" onclick="document.getElementById('scriptModal').classList.add('active')">View Script</button>
+        </div>
+        <div class="media-item">
+          <div class="media-info">
+            <div class="media-emoji">💬</div>
+            <div>
+              <div class="media-name">Facebook / Telegram Promo Text</div>
+              <div class="media-desc">Copy-paste comparison text for seller groups</div>
+            </div>
+          </div>
+          <button class="btn-media" onclick="copyPromoText()">Copy Text</button>
+        </div>
+        <div class="media-item">
+          <div class="media-info">
+            <div class="media-emoji">🎥</div>
+            <div>
+              <div class="media-name">Demo Video</div>
+              <div class="media-desc">Full product walkthrough video for sharing</div>
+            </div>
+          </div>
+          <button class="btn-media" onclick="alert('Demo video coming soon!')">Download</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYOUT HISTORY -->
+    <div class="section-card">
+      <div class="section-title">📋 Payout History</div>
+      <table class="payout-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="payoutBody">
+          <tr><td colspan="3" class="empty-msg">No payouts yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- AUTH GATE -->
+  <div class="container" id="authGate" style="display:none;">
+    <div class="auth-gate">
+      <h2>🔒 Partner Access Required</h2>
+      <p>Please log in with your registered partner account to access the dashboard.</p>
+      <button class="btn-login" onclick="window.location.href='/'">Go to Homepage</button>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading-spinner" id="loadingState">Loading partner dashboard...</div>
+
+  <script type="module">
+    const SUPABASE_URL = 'https://hgxblbbjlnsfkffwvfao.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhneGJsYmJqbG5zZmtmZnd2ZmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwNjU2ODYsImV4cCI6MjA3OTY0MTY4Nn0.VHaQag1E3P0VCH-6lrgZYfBIsnCMp0yvMG0XtKdkEAk';
+
+    // Check session
+    const token = sessionStorage.getItem('sb-token');
+    const user = JSON.parse(sessionStorage.getItem('sb-user') || 'null');
+
+    if (!token || !user) {
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('authGate').style.display = 'block';
+    } else {
+      loadDashboard(token, user);
+    }
+
+    async function loadDashboard(token, user) {
+      try {
+        document.getElementById('userEmail').textContent = user.email || '-';
+
+        // Fetch partner stats
+        const statsRes = await fetch('/api/affiliate/stats', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!statsRes.ok) {
+          // Not a partner
+          document.getElementById('loadingState').style.display = 'none';
+          document.getElementById('authGate').style.display = 'block';
+          return;
+        }
+
+        const { partner, stats } = await statsRes.json();
+
+        // Populate KPIs
+        document.getElementById('kpiSignups').textContent = stats.total_signups || 0;
+        document.getElementById('kpiTrials').textContent = stats.active_trials || 0;
+        document.getElementById('kpiPaid').textContent = stats.paid_conversions || 0;
+        document.getElementById('kpiPayout').textContent = `$${(stats.available_payout || 0).toFixed(2)}`;
+
+        // Populate referral link
+        document.getElementById('refLink').value = `https://kvantlab.com/?ref=${partner.ref_code}`;
+
+        // Fetch payouts
+        const payoutsRes = await fetch('/api/affiliate/payouts', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const { payouts } = await payoutsRes.json();
+
+        if (payouts && payouts.length > 0) {
+          document.getElementById('payoutBody').innerHTML = payouts.map(p => `
+            <tr>
+              <td>${new Date(p.requested_at).toLocaleDateString()}</td>
+              <td>$${parseFloat(p.amount).toFixed(2)}</td>
+              <td><span class="status-badge ${p.status}">${p.status}</span></td>
+            </tr>
+          `).join('');
+        }
+
+        // Show main content
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('mainContent').style.display = 'block';
+
+      } catch (e) {
+        console.error('Failed to load partner dashboard:', e);
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('authGate').style.display = 'block';
+      }
+    }
+
+    // Copy link
+    window.copyLink = function () {
+      const input = document.getElementById('refLink');
+      navigator.clipboard.writeText(input.value).then(() => {
+        showToast('✓ Link copied!');
+      });
+    };
+
+    // Copy promo text
+    window.copyPromoText = function () {
+      const text = `🔥 Stop guessing what Korean products to sell!
+
+K-Vant Lab gives you REAL-TIME ranking data from:
+✅ Olive Young (K-Beauty #1)
+✅ Musinsa (K-Fashion #1)
+✅ Ably, Naver Shopping & more
+
+💰 Know exactly what's trending BEFORE your competitors.
+📊 AI-powered review analysis in YOUR language.
+
+👉 Try FREE for 14 days: ${document.getElementById('refLink').value}`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('✓ Promo text copied!');
+      });
+    };
+
+    // Toast
+    window.showToast = function (msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    };
+
+    // Logout
+    window.handleLogout = function () {
+      sessionStorage.clear();
+      window.location.href = '/';
+    };
+  </script>
+</body>
+
+</html>
