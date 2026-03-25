@@ -492,12 +492,29 @@
     const SUPABASE_URL = 'https://hgxblbbjlnsfkffwvfao.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhneGJsYmJqbG5zZmtmZnd2ZmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwNjU2ODYsImV4cCI6MjA3OTY0MTY4Nn0.VHaQag1E3P0VCH-6lrgZYfBIsnCMp0yvMG0XtKdkEAk';
 
+    // Check for invite token in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const inviteToken = urlParams.get('invite');
+    if (inviteToken) {
+      sessionStorage.setItem('partner_invite', inviteToken);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     // Check session
     const token = sessionStorage.getItem('sb-token');
     const user = JSON.parse(sessionStorage.getItem('sb-user') || 'null');
 
     if (!token || !user) {
       document.getElementById('loadingState').style.display = 'none';
+      if (sessionStorage.getItem('partner_invite')) {
+        document.getElementById('authGate').innerHTML = `
+          <div class="auth-gate">
+            <h2>✨ 파트너 초대가 도착했습니다!</h2>
+            <p>파트너 초대를 수락하려면 K-Vant 홈에서 먼저 로그인해주세요.</p>
+            <button class="btn-login" onclick="window.location.href='/'">Go to Homepage</button>
+          </div>
+        `;
+      }
       document.getElementById('authGate').style.display = 'block';
     } else {
       loadDashboard(token, user);
@@ -505,6 +522,22 @@
 
     async function loadDashboard(token, user) {
       try {
+        const pendingInvite = sessionStorage.getItem('partner_invite');
+        if (pendingInvite) {
+          try {
+            const acceptRes = await fetch('/api/partner/join', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              body: JSON.stringify({ token: pendingInvite })
+            });
+            const acceptData = await acceptRes.json();
+            if (acceptData.success) {
+              sessionStorage.removeItem('partner_invite');
+              alert('🎉 파트너 등급이 부여되었습니다! 대시보드를 이용해 보세요.');
+            }
+          } catch(e) { console.error('Failed to accept invite:', e); }
+        }
+
         document.getElementById('userEmail').textContent = user.email || '-';
 
         // Fetch partner stats

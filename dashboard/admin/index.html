@@ -138,6 +138,9 @@
                     <li style="margin-bottom: 20px;"><a href="#" class="nav-link" data-tab="crm"
                             style="color: #666; text-decoration: none; display: flex; align-items: center; gap: 10px;">📇
                             Outreach CRM</a></li>
+                    <li style="margin-bottom: 20px;"><a href="#" class="nav-link" data-tab="partners"
+                            style="color: #666; text-decoration: none; display: flex; align-items: center; gap: 10px;">🤝
+                            Partner Mgmt</a></li>
                     <li style="margin-top: 50px;"><a href="/"
                             style="color: var(--admin-primary); text-decoration: none;">← Back to Dashboard</a></li>
                 </ul>
@@ -704,6 +707,57 @@ kvantlab.com</textarea>
                 </section>
             </div>
 
+            <!-- Partner Management Section -->
+            <div id="partnersSection" class="tab-content" style="display: none;">
+                <header class="admin-header">
+                    <h1>Partner Management</h1>
+                    <p style="color: #666;">제휴 파트너 승인, 커미션 관리 및 초대 링크 생성</p>
+                </header>
+
+                <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                    <!-- Invite Link Generator -->
+                    <section class="admin-card" style="flex: 1; margin-bottom: 0;">
+                        <h3>🔗 파트너 초대 링크 생성</h3>
+                        <p style="font-size: 13px; color: #666; margin-bottom: 15px;">이 링크로 가입한 유저는 자동으로 파트너 등급이 부여됩니다.</p>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="number" id="inviteCommission" value="20" placeholder="커미션(%)" style="width: 80px; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                            <span style="font-size: 14px; color: #333;">%</span>
+                            <button class="btn-primary" style="flex: 1; padding: 10px;" onclick="window.generatePartnerInvite()">링크 생성</button>
+                        </div>
+                        <div id="inviteLinkResult" style="margin-top: 15px; display: none;">
+                            <input type="text" id="inviteLinkUrl" readonly style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; background: #f8f9fa; margin-bottom: 10px; font-family: monospace; font-size: 12px;">
+                            <button class="btn-primary" style="width: 100%; background: #28a745; padding: 8px;" onclick="window.copyInviteLink()">복사하기</button>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Partners Table -->
+                <section class="admin-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3>Active Partners</h3>
+                        <button class="btn-primary" style="padding: 8px 16px;" onclick="window.loadPartners()">🔄 새로고침</button>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                            <thead>
+                                <tr style="background: #f8f9fa; text-align: left; border-bottom: 2px solid #eee;">
+                                    <th style="padding: 12px;">Name / Email</th>
+                                    <th style="padding: 12px;">Ref Code</th>
+                                    <th style="padding: 12px;">Commission</th>
+                                    <th style="padding: 12px;">Total Signups</th>
+                                    <th style="padding: 12px;">Paid Conversions</th>
+                                    <th style="padding: 12px;">Total Earnings</th>
+                                    <th style="padding: 12px;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="partnersTableBody">
+                                <tr><td colspan="7" style="padding: 20px; text-align: center; color: #888;">데이터를 불러오는 중입니다...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
         </main>
     </div>
 
@@ -1194,6 +1248,67 @@ kvantlab.com</textarea>
               <div style="background:#f8d7da;padding:12px 18px;border-radius:10px;text-align:center;min-width:80px;"><div style="font-size:22px;font-weight:700;color:#721c24;">${counts.rejected}</div><div style="font-size:11px;color:#666;">거절</div></div>`;
       };
 
+      // ───────────────────────────────────────────────
+      // PARTNER MANAGEMENT LOGIC
+      // ───────────────────────────────────────────────
+      window.loadPartners = async function() {
+          const tbody = document.getElementById('partnersTableBody');
+          tbody.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;">Loading...</td></tr>';
+          try {
+              const res = await fetch('/api/admin/partners');
+              const data = await res.json();
+              if (data.partners && data.partners.length > 0) {
+                  tbody.innerHTML = data.partners.map(p => `
+                      <tr style="border-bottom:1px solid #eee;">
+                          <td style="padding:12px;"><strong>${p.name || '-'}</strong><br><span style="font-size:12px;color:#666;">${p.email}</span></td>
+                          <td style="padding:12px;font-family:monospace;color:#0066ff;">${p.ref_code}</td>
+                          <td style="padding:12px;">${p.commission_rate}%</td>
+                          <td style="padding:12px;">${p.partner_stats?.[0]?.total_signups || 0}</td>
+                          <td style="padding:12px;">${p.partner_stats?.[0]?.paid_conversions || 0}</td>
+                          <td style="padding:12px;font-weight:bold;color:#28a745;">$${(p.partner_stats?.[0]?.total_earnings || 0).toFixed(2)}</td>
+                          <td style="padding:12px;"><span class="status-badge" style="background:#d4edda;color:#155724;padding:4px 8px;border-radius:4px;font-size:11px;">Active</span></td>
+                      </tr>
+                  `).join('');
+              } else {
+                  tbody.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:#666;">등록된 파트너가 없습니다.</td></tr>';
+              }
+          } catch (e) {
+              console.error(e);
+              tbody.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:red;">Failed to load partners</td></tr>';
+          }
+      };
+
+      window.generatePartnerInvite = async function() {
+          const rate = document.getElementById('inviteCommission').value;
+          try {
+              const res = await fetch('/api/admin/partners/invite', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ commission_rate: parseFloat(rate) })
+              });
+              const data = await res.json();
+              if (data.success) {
+                  const url = location.origin + '/partner?invite=' + data.token;
+                  document.getElementById('inviteLinkUrl').value = url;
+                  document.getElementById('inviteLinkResult').style.display = 'block';
+              } else {
+                  alert(data.error);
+              }
+          } catch (e) {
+              alert('Failed to generate invite link');
+          }
+      };
+
+      window.copyInviteLink = function() {
+          const input = document.getElementById('inviteLinkUrl');
+          navigator.clipboard.writeText(input.value).then(() => {
+              const btn = input.nextElementSibling;
+              const originalText = btn.innerText;
+              btn.innerText = '복사완료! ✓';
+              setTimeout(() => btn.innerText = originalText, 2000);
+          });
+      };
+
       document.addEventListener('DOMContentLoaded', () => {
           document.querySelectorAll('.nav-link[data-tab="youtube"]').forEach(link => {
               link.addEventListener('click', () => {
@@ -1203,6 +1318,11 @@ kvantlab.com</textarea>
           document.querySelectorAll('.nav-link[data-tab="crm"]').forEach(link => {
               link.addEventListener('click', () => {
                   window.loadCrmLeads();
+              });
+          });
+          document.querySelectorAll('.nav-link[data-tab="partners"]').forEach(link => {
+              link.addEventListener('click', () => {
+                  if (window.loadPartners) window.loadPartners();
               });
           });
 

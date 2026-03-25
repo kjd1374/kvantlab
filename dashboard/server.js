@@ -9,6 +9,7 @@ import { promises as fs } from 'fs';
 import { fileURLToPath } from 'url';
 import nodemailer from 'nodemailer';
 import multer from 'multer';
+import crypto from 'crypto';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -529,6 +530,44 @@ app.delete('/api/admin/users/:id', async (req, res) => {
     } catch (error) {
         console.error('Admin delete user error:', error);
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// 3.01 Promote to Partner (Admin)
+app.post('/api/admin/users/:id/promote-partner', authMiddleware, async (req, res) => {
+    try {
+        if (!req.user || req.user.email !== 'admin@test.com') return res.status(403).json({ error: 'Admin only' });
+        const { id } = req.params;
+        const { email } = req.body;
+
+        const { data: existing } = await supabase.from('affiliate_partners').select('id').eq('user_id', id).single();
+        if (existing) return res.json({ success: true, message: 'Already a partner' });
+
+        const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const refCode = `KVP${randomStr}`;
+
+        const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', id).single();
+        const partnerName = profile?.full_name || email?.split('@')[0] || 'Unknown';
+
+        const { data: newPartner, error: insertErr } = await supabase.from('affiliate_partners').insert({
+            user_id: id,
+            ref_code: refCode,
+            name: partnerName,
+            email: email,
+            commission_rate: 20
+        }).select('id').single();
+
+        if (insertErr) throw insertErr;
+
+        await supabase.from('partner_stats').insert({
+            partner_id: newPartner.id,
+            total_signups: 0, active_trials: 0, paid_conversions: 0, total_earnings: 0, available_payout: 0
+        });
+
+        res.json({ success: true, ref_code: refCode });
+    } catch (e) {
+        console.error('Promote partner error:', e);
+        res.status(500).json({ error: e.message });
     }
 });
 
@@ -2268,6 +2307,131 @@ app.post('/api/affiliate/record-referral', async (req, res) => {
     } catch (e) {
         console.error('record referral error:', e);
         res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// ═════════════════════════════════════════════════════════════════════
+// PARTNER ADMIN & INVITE API
+// ═════════════════════════════════════════════════════════════════════
+
+// GET /api/admin/partners — Load all partners and their stats
+app.get('/api/admin/partners', authMiddleware, async (req, res) => {
+    try {
+        if (!req.user || req.user.email !== 'admin@test.com') { // Assuming simple admin check
+            return res.status(403).json({ error: 'Admin only' });
+        }
+
+        const { data: partners, error } = await supabase
+            .from('affiliate_partners')
+            .select(`
+                id, user_id, ref_code, name, email, commission_rate, status, created_at,
+                partner_stats ( total_signups, active_trials, paid_conversions, total_earnings, available_payout )
+            `)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        res.json({ success: true, partners });
+    } catch (e) {
+        console.error('Load partners error:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Helper: Secure Invite Token Generator
+const INVITE_SECRET = process.env.SUPABASE_JWT_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'kvant-default-secret-fallback';
+
+// POST /api/admin/partners/invite — Generate an invite link
+app.post('/api/admin/partners/invite', authMiddleware, async (req, res) => {
+    try {
+        if (!req.user || req.user.email !== 'admin@test.com') {
+            return res.status(403).json({ error: 'Admin only' });
+        }
+        
+        const { commission_rate } = req.body;
+        const payload = Buffer.from(JSON.stringify({ 
+            rate: commission_rate || 20, 
+            exp: Date.now() + 86400000 * 30 // 30 days expiry
+        })).toString('base64');
+        
+        const signature = crypto.createHmac('sha256', INVITE_SECRET).update(payload).digest('base64url');
+        const token = `${payload}.${signature}`;
+        
+        res.json({ success: true, token });
+    } catch (e) {
+        console.error('Generate invite error:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// POST /api/partner/join — User accepts an invite link
+app.post('/api/partner/join', async (req, res) => {
+    try {
+        // Authenticate the user calling this endpoint
+        const authHeader = req.headers.authorization;
+        if (!authHeader) return res.status(401).json({ error: 'Unauthorized' });
+
+        const authToken = authHeader.replace('Bearer ', '');
+        const { data: { user }, error: userErr } = await supabase.auth.getUser(authToken);
+        if (userErr || !user) return res.status(401).json({ error: 'Invalid token' });
+
+        const { token } = req.body;
+        if (!token) return res.status(400).json({ error: 'Missing invite token' });
+
+        // Verify the invite token
+        const parts = token.split('.');
+        if (parts.length !== 2) return res.status(400).json({ error: 'Invalid token format' });
+        
+        const [payload, signature] = parts;
+        const expectedSig = crypto.createHmac('sha256', INVITE_SECRET).update(payload).digest('base64url');
+        
+        if (expectedSig !== signature) return res.status(400).json({ error: 'Invalid or forged token' });
+        
+        const data = JSON.parse(Buffer.from(payload, 'base64').toString());
+        if (data.exp < Date.now()) return res.status(400).json({ error: 'Token expired' });
+
+        // User is legitimate, token is valid. Let's make them a partner.
+        // First check if they are already a partner
+        const { data: existing } = await supabase
+            .from('affiliate_partners')
+            .select('id')
+            .eq('user_id', user.id)
+            .single();
+            
+        if (existing) return res.json({ success: true, message: 'Already a partner' });
+
+        // Generate a 6-character referral code (KV + random 4 chars)
+        const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const refCode = `KV${randomStr}`;
+
+        // Get user profile to get their name
+        const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
+        const partnerName = profile?.full_name || user.email.split('@')[0];
+
+        // 1. Insert into affiliate_partners
+        const { data: newPartner, error: insertErr } = await supabase
+            .from('affiliate_partners')
+            .insert({
+                user_id: user.id,
+                ref_code: refCode, // Will uniquely fail if collision (rare)
+                name: partnerName,
+                email: user.email,
+                commission_rate: data.rate || 20
+            })
+            .select('id')
+            .single();
+
+        if (insertErr) throw insertErr;
+
+        // 2. Initialize partner_stats
+        await supabase.from('partner_stats').insert({
+            partner_id: newPartner.id,
+            total_signups: 0, active_trials: 0, paid_conversions: 0, total_earnings: 0, available_payout: 0
+        });
+
+        res.json({ success: true, ref_code: refCode });
+    } catch (e) {
+        console.error('Partner join error:', e);
+        res.status(500).json({ error: e.message });
     }
 });
 
