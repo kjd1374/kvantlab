@@ -261,12 +261,25 @@ function setupAuthModals() {
     window.i18n.documentUpdate();
   }
 
-  // Handle partner invite URL parameter
+  // Handle URL tracking parameters (Partner Invites & Affiliate Referrals)
   const urlParams = new URLSearchParams(window.location.search);
+  
+  // 1. Affiliate Referral Link
+  const refCode = urlParams.get('ref');
+  if (refCode) {
+      document.cookie = `kvant_ref=${encodeURIComponent(refCode)}; Path=/; max-age=${60 * 60 * 24 * 30}`;
+      urlParams.delete('ref');
+      const newQs = urlParams.toString();
+      window.history.replaceState({}, document.title, window.location.pathname + (newQs ? '?' + newQs : ''));
+  }
+
+  // 2. Partner Admin Invite Link
   const partnerInvite = urlParams.get('partner_invite');
   if (partnerInvite) {
       sessionStorage.setItem('kv_partner_invite', partnerInvite);
-      window.history.replaceState({}, document.title, window.location.pathname);
+      urlParams.delete('partner_invite');
+      const newQs = urlParams.toString();
+      window.history.replaceState({}, document.title, window.location.pathname + (newQs ? '?' + newQs : ''));
       
       // Auto-open signup modal after a short delay
       setTimeout(() => {
