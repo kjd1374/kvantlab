@@ -668,6 +668,72 @@ app.post('/api/subscription/activate', async (req, res) => {
 
         if (profileError) throw profileError;
 
+        // ═══════════════════════════════════════════════════════
+        // AFFILIATE COMMISSION: Track payment for referred users
+        // ═══════════════════════════════════════════════════════
+        try {
+            // Check if this user was referred by a partner
+            const { data: referral } = await supabase
+                .from('affiliate_referrals')
+                .select('id, partner_id, ref_code, status')
+                .eq('referred_user_id', userId)
+                .single();
+
+            if (referral && referral.partner_id) {
+                // Update referral status to 'paid'
+                await supabase
+                    .from('affiliate_referrals')
+                    .update({ status: 'paid' })
+                    .eq('id', referral.id);
+
+                // Get partner's commission rate
+                const { data: partner } = await supabase
+                    .from('affiliate_partners')
+                    .select('commission_rate')
+                    .eq('id', referral.partner_id)
+                    .single();
+
+                const commissionRate = partner?.commission_rate || 20; // default 20%
+                const paymentAmount = 14.99; // K-Vant Pro monthly price
+                const commission = parseFloat((paymentAmount * commissionRate / 100).toFixed(2));
+
+                // Upsert partner_stats: increment paid_conversions and add earnings
+                const { data: existingStats } = await supabase
+                    .from('partner_stats')
+                    .select('*')
+                    .eq('partner_id', referral.partner_id)
+                    .single();
+
+                if (existingStats) {
+                    await supabase
+                        .from('partner_stats')
+                        .update({
+                            paid_conversions: (existingStats.paid_conversions || 0) + 1,
+                            total_earnings: parseFloat(((existingStats.total_earnings || 0) + commission).toFixed(2)),
+                            available_payout: parseFloat(((existingStats.available_payout || 0) + commission).toFixed(2)),
+                            active_trials: Math.max(0, (existingStats.active_trials || 0) - 1),
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('partner_id', referral.partner_id);
+                } else {
+                    await supabase
+                        .from('partner_stats')
+                        .insert({
+                            partner_id: referral.partner_id,
+                            paid_conversions: 1,
+                            total_earnings: commission,
+                            available_payout: commission,
+                            updated_at: new Date().toISOString()
+                        });
+                }
+
+                console.log(`✅ Affiliate commission: $${commission} credited to partner ${referral.partner_id} for user ${userId}`);
+            }
+        } catch (affErr) {
+            // Non-fatal: don't break the subscription flow if affiliate tracking fails
+            console.error('⚠️ Affiliate commission tracking error (non-fatal):', affErr.message);
+        }
+
         res.json({ success: true, message: 'Subscription activated successfully' });
     } catch (error) {
         console.error('Subscription activation error:', error);
