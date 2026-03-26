@@ -411,31 +411,45 @@ app.post('/api/auth/complete-signup', async (req, res) => {
         // --- Process Referral Tracking Server-Side ---
         const cookies = {};
         const header = req.headers.cookie || '';
+        console.log('[Signup] Raw Cookie Header:', header);
         header.split(';').forEach(c => {
             const [k, ...v] = c.trim().split('=');
             if (k) cookies[k] = decodeURIComponent(v.join('='));
         });
         const refCode = cookies.kvant_ref || null;
+        console.log(`[Signup] Parsed kvant_ref: ${refCode}`);
 
         if (refCode) {
             try {
                 // Find Partner
-                const { data: partner } = await supabase
+                const { data: partner, error: partnerError } = await supabase
                     .from('affiliate_partners')
                     .select('id')
                     .eq('ref_code', refCode)
                     .eq('status', 'active')
                     .single();
 
+                if (partnerError) {
+                    console.error('[Signup] Error finding active partner from refCode:', partnerError.message);
+                } else if (!partner) {
+                    console.error('[Signup] No active partner found for ref_code:', refCode);
+                }
+
                 if (partner) {
-                    const { data: existingRef } = await supabase
+                    console.log(`[Signup] Found active partner ID: ${partner.id}. Checking for existing referral...`);
+                    const { data: existingRef, error: existingRefError } = await supabase
                         .from('affiliate_referrals')
                         .select('id')
                         .eq('referred_user_id', userId)
                         .limit(1);
 
+                    if (existingRefError) {
+                        console.error('[Signup] Error checking existing referrals:', existingRefError.message);
+                    }
+
                     if (!existingRef || existingRef.length === 0) {
-                        await supabase.from('affiliate_referrals').insert({
+                        console.log(`[Signup] No existing referral found. Inserting new referral...`);
+                        const { error: insertError } = await supabase.from('affiliate_referrals').insert({
                             partner_id: partner.id,
                             referred_user_id: userId,
                             ref_code: refCode,

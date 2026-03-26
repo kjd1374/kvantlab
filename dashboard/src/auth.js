@@ -547,6 +547,7 @@ function setupAuthModals() {
         const signupRes = await fetch('/api/auth/complete-signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             userId: userObj.id,
             email: email,
