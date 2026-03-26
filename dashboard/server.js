@@ -141,11 +141,24 @@ async function sendTelegramNotification(message) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── Affiliate Commission Processing Helper ────────────────────────────────────
-async function processReferralCommission(userId, amountStr) {
+async function processReferralCommission(userId, amountStr, paymentRef) {
     const amount = parseFloat(amountStr);
     if (!amount || isNaN(amount) || amount <= 0) return;
 
     try {
+        // 0. Duplicate guard: skip if this payment was already credited
+        if (paymentRef) {
+            const { data: existing } = await supabase
+                .from('partner_payouts')
+                .select('id')
+                .eq('payment_reference', paymentRef)
+                .limit(1);
+            if (existing && existing.length > 0) {
+                console.log(`[Referral] Duplicate skipped: payment_reference=${paymentRef} already credited.`);
+                return;
+            }
+        }
+
         // 1. Check if user is a referred user
         const { data: referral } = await supabase
             .from('affiliate_referrals')
@@ -164,8 +177,8 @@ async function processReferralCommission(userId, amountStr) {
 
         if (!partner || partner.status !== 'active') return;
 
-        // 2.5 Check Reward Duration (0 or null means lifetime)
-        const durationLimit = parseInt(partner.reward_duration_months, 10);
+        // 2.5 Check Reward Duration (0 or null means lifetime) — Fix #6: NaN defense
+        const durationLimit = parseInt(partner.reward_duration_months, 10) || 0;
         if (durationLimit > 0) {
             const signupDate = new Date(referral.created_at);
             const now = new Date();
@@ -181,11 +194,12 @@ async function processReferralCommission(userId, amountStr) {
         const commissionRate = parseFloat(partner.commission_rate) || 20.0;
         const commissionAmount = (amount * (commissionRate / 100)).toFixed(2);
 
-        // 4. Record Payout
+        // 4. Record Payout (with payment_reference for dedup)
         await supabase.from('partner_payouts').insert({
             partner_id: referral.partner_id,
             amount: commissionAmount,
-            status: 'pending' 
+            status: 'pending',
+            payment_reference: paymentRef || null
         });
 
         // 5. Update Referral Status to 'paid' (if not already)
@@ -195,30 +209,38 @@ async function processReferralCommission(userId, amountStr) {
                 .eq('referred_user_id', userId);
         }
 
-        // 6. Update Partner Stats (total_earnings and paid_conversions)
-        const { data: stats } = await supabase
-            .from('partner_stats')
-            .select('total_earnings, paid_conversions, available_payout')
-            .eq('partner_id', referral.partner_id)
-            .single();
+        // 6. Update Partner Stats — Fix #5: Use atomic increment via RPC, fallback to read-modify-write
+        const isFirstPaid = referral.status !== 'paid';
+        const { error: rpcErr } = await supabase.rpc('increment_partner_earnings', {
+            p_id: referral.partner_id,
+            earnings_delta: parseFloat(commissionAmount),
+            conversion_delta: isFirstPaid ? 1 : 0
+        });
 
-        const newEarnings = (parseFloat(stats?.total_earnings || 0) + parseFloat(commissionAmount)).toFixed(2);
-        const newAvailable = (parseFloat(stats?.available_payout || 0) + parseFloat(commissionAmount)).toFixed(2);
-        
-        let newConversions = parseInt(stats?.paid_conversions || 0, 10);
-        if (referral.status !== 'paid') {
-            newConversions += 1;
+        if (rpcErr) {
+            // Fallback: read-modify-write (acceptable for low traffic)
+            console.warn('[Referral] RPC increment_partner_earnings failed, falling back to manual upsert:', rpcErr.message);
+            const { data: stats } = await supabase
+                .from('partner_stats')
+                .select('total_earnings, paid_conversions, available_payout')
+                .eq('partner_id', referral.partner_id)
+                .single();
+
+            const newEarnings = (parseFloat(stats?.total_earnings || 0) + parseFloat(commissionAmount)).toFixed(2);
+            const newAvailable = (parseFloat(stats?.available_payout || 0) + parseFloat(commissionAmount)).toFixed(2);
+            let newConversions = parseInt(stats?.paid_conversions || 0, 10);
+            if (isFirstPaid) newConversions += 1;
+
+            await supabase.from('partner_stats').upsert({
+                partner_id: referral.partner_id,
+                total_earnings: newEarnings,
+                available_payout: newAvailable,
+                paid_conversions: newConversions,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'partner_id' });
         }
 
-        await supabase.from('partner_stats').upsert({
-            partner_id: referral.partner_id,
-            total_earnings: newEarnings,
-            available_payout: newAvailable,
-            paid_conversions: newConversions,
-            updated_at: new Date().toISOString()
-        }, { onConflict: 'partner_id' });
-
-        console.log(`[Referral] Commission of $${commissionAmount} recorded for partner ${referral.partner_id}`);
+        console.log(`[Referral] Commission of $${commissionAmount} recorded for partner ${referral.partner_id} (ref: ${paymentRef || 'none'})`);
 
     } catch (err) {
         console.error('[Referral] Failed to process commission:', err.message);
@@ -1265,7 +1287,7 @@ app.post('/api/paypal/orders/capture', async (req, res) => {
 
         // 2. Verify Capture Status
         if (captureData.status === 'COMPLETED') {
-            const capturedAmount = captureData.purchase_units?.[0]?.payments?.captures?.[0]?.amount?.value || 0;
+            const capturedAmount = captureData.purchase_units?.[0]?.payments?.captures?.[0]?.amount?.value || null;
 
             // Fetch user ID to notify them
             const { data: request } = await supabase
@@ -1274,9 +1296,9 @@ app.post('/api/paypal/orders/capture', async (req, res) => {
                 .eq('id', sourcing_request_id)
                 .single();
 
-            // Handle Partner Commission
-            if (request && request.user_id && capturedAmount > 0) {
-                await processReferralCommission(request.user_id, capturedAmount);
+            // Handle Partner Commission (Fix #3: null fallback + Fix #4: dedup via orderID)
+            if (request && request.user_id && capturedAmount) {
+                await processReferralCommission(request.user_id, capturedAmount, `order_${orderID}`);
             }
 
             // 3. Update Sourcing Request Status to 'paid'
@@ -1725,11 +1747,10 @@ app.post('/api/paypal/capture', async (req, res) => {
                 throw new Error("Subscription verified, but failed to update user profile.");
             }
 
-            // Handle Partner Commission
-            // Subscription last payment amount
+            // Handle Partner Commission (Fix #4: dedup via subscriptionID)
             const lastPaymentAmount = captureData.billing_info?.last_payment?.amount?.value;
             if (lastPaymentAmount) {
-                await processReferralCommission(userId, lastPaymentAmount);
+                await processReferralCommission(userId, lastPaymentAmount, `sub_${subscriptionID}`);
             }
 
             // 텔레그램 알림
@@ -1743,6 +1764,76 @@ app.post('/api/paypal/capture', async (req, res) => {
     } catch (error) {
         console.error("PayPal Capture Error:", error);
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// --- PayPal Webhook for Recurring Payments (Fix #2) ---
+// This endpoint is called by PayPal when a recurring subscription payment completes.
+// Configure this URL in PayPal Developer Dashboard → Webhooks → Add Webhook
+// Listen for event type: PAYMENT.SALE.COMPLETED
+app.post('/api/paypal/webhook', async (req, res) => {
+    try {
+        const event = req.body;
+        const eventType = event?.event_type;
+
+        console.log(`[PayPal Webhook] Received event: ${eventType}`);
+
+        // We only care about successful recurring payments
+        if (eventType !== 'PAYMENT.SALE.COMPLETED') {
+            return res.status(200).json({ received: true, action: 'ignored' });
+        }
+
+        const resource = event.resource;
+        if (!resource) {
+            return res.status(200).json({ received: true, action: 'no_resource' });
+        }
+
+        // Extract payment details
+        const saleId = resource.id; // Unique sale transaction ID (for dedup)
+        const billingAgreementId = resource.billing_agreement_id; // = PayPal Subscription ID
+        const paymentAmount = resource.amount?.total;
+        const paymentCurrency = resource.amount?.currency;
+
+        if (!billingAgreementId || !paymentAmount) {
+            console.warn('[PayPal Webhook] Missing billing_agreement_id or amount, skipping.');
+            return res.status(200).json({ received: true, action: 'missing_data' });
+        }
+
+        console.log(`[PayPal Webhook] Sale ${saleId}: $${paymentAmount} ${paymentCurrency} for subscription ${billingAgreementId}`);
+
+        // Find the user who owns this subscription
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, subscription_tier, subscription_expires_at')
+            .eq('subscription_id', billingAgreementId)
+            .single();
+
+        if (!profile) {
+            console.log(`[PayPal Webhook] No user found with subscription_id=${billingAgreementId}. Ignoring.`);
+            return res.status(200).json({ received: true, action: 'user_not_found' });
+        }
+
+        // Update the user's subscription expiry (extend by ~30 days from now)
+        const newExpiry = new Date();
+        newExpiry.setDate(newExpiry.getDate() + 30);
+        
+        await supabase.from('profiles').update({
+            subscription_tier: 'pro',
+            subscription_expires_at: newExpiry.toISOString()
+        }).eq('id', profile.id);
+
+        // Process affiliate commission with dedup via sale ID
+        await processReferralCommission(profile.id, paymentAmount, `webhook_sale_${saleId}`);
+
+        // Telegram notification for recurring payment
+        await sendTelegramNotification(`🔄 [구독 갱신] 정기결제 수신!\n- 유저 ID: ${profile.id}\n- 금액: $${paymentAmount} ${paymentCurrency}\n- 구독 ID: ${billingAgreementId}\n- Sale ID: ${saleId}`);
+
+        res.status(200).json({ received: true, action: 'commission_processed' });
+
+    } catch (error) {
+        console.error('[PayPal Webhook] Error:', error.message);
+        // Always return 200 to PayPal to prevent retries on server errors
+        res.status(200).json({ received: true, action: 'error', message: error.message });
     }
 });
 
@@ -2517,7 +2608,7 @@ app.get('/api/admin/partners', async (req, res) => {
         const { data: partners, error } = await supabase
             .from('affiliate_partners')
             .select(`
-                id, user_id, ref_code, name, email, commission_rate, status, created_at,
+                id, user_id, ref_code, name, email, commission_rate, status, created_at, reward_duration_months,
                 partner_stats ( total_signups, active_trials, paid_conversions, total_earnings, available_payout )
             `)
             .order('created_at', { ascending: false });
