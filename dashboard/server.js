@@ -140,6 +140,78 @@ async function sendTelegramNotification(message) {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─── Affiliate Commission Processing Helper ────────────────────────────────────
+async function processReferralCommission(userId, amountStr) {
+    const amount = parseFloat(amountStr);
+    if (!amount || isNaN(amount) || amount <= 0) return;
+
+    try {
+        // 1. Check if user is a referred user
+        const { data: referral } = await supabase
+            .from('affiliate_referrals')
+            .select('partner_id, status')
+            .eq('referred_user_id', userId)
+            .maybeSingle();
+
+        if (!referral) return; // Not a referred user
+
+        // 2. Get partner commission rate
+        const { data: partner } = await supabase
+            .from('affiliate_partners')
+            .select('commission_rate, status')
+            .eq('id', referral.partner_id)
+            .single();
+
+        if (!partner || partner.status !== 'active') return;
+
+        // 3. Calculate commission
+        const commissionRate = parseFloat(partner.commission_rate) || 20.0;
+        const commissionAmount = (amount * (commissionRate / 100)).toFixed(2);
+
+        // 4. Record Payout
+        await supabase.from('partner_payouts').insert({
+            partner_id: referral.partner_id,
+            amount: commissionAmount,
+            status: 'pending' 
+        });
+
+        // 5. Update Referral Status to 'paid' (if not already)
+        if (referral.status !== 'paid') {
+            await supabase.from('affiliate_referrals')
+                .update({ status: 'paid' })
+                .eq('referred_user_id', userId);
+        }
+
+        // 6. Update Partner Stats (total_earnings and paid_conversions)
+        const { data: stats } = await supabase
+            .from('partner_stats')
+            .select('total_earnings, paid_conversions, available_payout')
+            .eq('partner_id', referral.partner_id)
+            .single();
+
+        const newEarnings = (parseFloat(stats?.total_earnings || 0) + parseFloat(commissionAmount)).toFixed(2);
+        const newAvailable = (parseFloat(stats?.available_payout || 0) + parseFloat(commissionAmount)).toFixed(2);
+        
+        let newConversions = parseInt(stats?.paid_conversions || 0, 10);
+        if (referral.status !== 'paid') {
+            newConversions += 1;
+        }
+
+        await supabase.from('partner_stats').upsert({
+            partner_id: referral.partner_id,
+            total_earnings: newEarnings,
+            available_payout: newAvailable,
+            paid_conversions: newConversions,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'partner_id' });
+
+        console.log(`[Referral] Commission of $${commissionAmount} recorded for partner ${referral.partner_id}`);
+
+    } catch (err) {
+        console.error('[Referral] Failed to process commission:', err.message);
+    }
+}
+// ─────────────────────────────────────────────────────────────────────────────
 // ─── Custom Email OTP Helpers ─────────────────────────────────────────────────
 function generateOtp() {
     return Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit
@@ -1180,12 +1252,19 @@ app.post('/api/paypal/orders/capture', async (req, res) => {
 
         // 2. Verify Capture Status
         if (captureData.status === 'COMPLETED') {
+            const capturedAmount = captureData.purchase_units?.[0]?.payments?.captures?.[0]?.amount?.value || 0;
+
             // Fetch user ID to notify them
             const { data: request } = await supabase
                 .from('sourcing_requests')
                 .select('user_id')
                 .eq('id', sourcing_request_id)
                 .single();
+
+            // Handle Partner Commission
+            if (request && request.user_id && capturedAmount > 0) {
+                await processReferralCommission(request.user_id, capturedAmount);
+            }
 
             // 3. Update Sourcing Request Status to 'paid'
             const { error: updateError } = await supabase
@@ -1631,6 +1710,13 @@ app.post('/api/paypal/capture', async (req, res) => {
             if (updateError) {
                 console.error("Failed to update user profile in Supabase after successful subscription:", updateError);
                 throw new Error("Subscription verified, but failed to update user profile.");
+            }
+
+            // Handle Partner Commission
+            // Subscription last payment amount
+            const lastPaymentAmount = captureData.billing_info?.last_payment?.amount?.value;
+            if (lastPaymentAmount) {
+                await processReferralCommission(userId, lastPaymentAmount);
             }
 
             // 텔레그램 알림
