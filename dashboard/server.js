@@ -456,16 +456,29 @@ app.post('/api/auth/complete-signup', async (req, res) => {
                             status: 'signed_up'
                         });
 
-                        await supabase.rpc('increment_partner_signups', { p_id: partner.id }).catch(async () => {
-                            // Manual increment fallback if RPC doesn't exist
+                        console.log(`[Signup] Attempting to increment partner stats for ${partner.id}...`);
+                        const { error: rpcError } = await supabase.rpc('increment_partner_signups', { p_id: partner.id });
+                        
+                        // If RPC fails (e.g., function does not exist), use manual fallback
+                        if (rpcError) {
+                            console.log('[Signup] RPC increment failed. Falling back to manual update:', rpcError.message);
                             const { data: currentStats } = await supabase.from('partner_stats').select('total_signups').eq('partner_id', partner.id).single();
                             const newTotal = (currentStats?.total_signups || 0) + 1;
-                            supabase.from('partner_stats').upsert({
+                            
+                            const { error: upsertError } = await supabase.from('partner_stats').upsert({
                                 partner_id: partner.id,
                                 total_signups: newTotal,
                                 updated_at: new Date().toISOString()
                             }, { onConflict: 'partner_id' });
-                        });
+                            
+                            if (upsertError) {
+                                console.error('[Signup] Manual partner_stats upsert failed:', upsertError.message);
+                            } else {
+                                console.log('[Signup] Successfully incremented partner stats manually.');
+                            }
+                        } else {
+                            console.log('[Signup] Successfully incremented partner stats via RPC.');
+                        }
                     }
                 }
             } catch (err) {
