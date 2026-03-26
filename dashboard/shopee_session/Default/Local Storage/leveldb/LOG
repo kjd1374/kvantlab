@@ -1,0 +1,6 @@
+2026/03/20-09:21:20.543 2a5748 Reusing MANIFEST /Users/jungdookim/NAS/datapool-test/dashboard/shopee_session/Default/Local Storage/leveldb/MANIFEST-000001
+2026/03/20-09:21:20.548 2a5748 Recovering log #12
+2026/03/20-09:21:20.552 2a5748 Reusing old log /Users/jungdookim/NAS/datapool-test/dashboard/shopee_session/Default/Local Storage/leveldb/000012.log 
+2026/03/20-09:22:20.555 2a574d Level-0 table #16: started
+2026/03/20-09:22:20.559 2a574d Level-0 table #16: 56715 bytes OK
+2026/03/20-09:22:20.561 2a574d Delete type=0 #12

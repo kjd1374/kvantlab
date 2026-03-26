@@ -149,20 +149,33 @@ async function processReferralCommission(userId, amountStr) {
         // 1. Check if user is a referred user
         const { data: referral } = await supabase
             .from('affiliate_referrals')
-            .select('partner_id, status')
+            .select('partner_id, status, created_at')
             .eq('referred_user_id', userId)
             .maybeSingle();
 
         if (!referral) return; // Not a referred user
 
-        // 2. Get partner commission rate
+        // 2. Get partner commission rate and reward duration
         const { data: partner } = await supabase
             .from('affiliate_partners')
-            .select('commission_rate, status')
+            .select('commission_rate, status, reward_duration_months')
             .eq('id', referral.partner_id)
             .single();
 
         if (!partner || partner.status !== 'active') return;
+
+        // 2.5 Check Reward Duration (0 or null means lifetime)
+        const durationLimit = parseInt(partner.reward_duration_months, 10);
+        if (durationLimit > 0) {
+            const signupDate = new Date(referral.created_at);
+            const now = new Date();
+            const monthsDiff = (now.getFullYear() - signupDate.getFullYear()) * 12 + (now.getMonth() - signupDate.getMonth());
+            
+            if (monthsDiff > durationLimit) {
+                console.log(`[Referral] Commission skipped: Referral (${monthsDiff} months) is older than partner limit (${durationLimit} months).`);
+                return;
+            }
+        }
 
         // 3. Calculate commission
         const commissionRate = parseFloat(partner.commission_rate) || 20.0;
@@ -2365,9 +2378,29 @@ app.get('/api/affiliate/payouts', async (req, res) => {
             .select('*')
             .eq('partner_id', partner.id)
             .order('requested_at', { ascending: false })
-            .limit(20);
+            .limit(1000);
 
-        res.json({ payouts: payouts || [] });
+        const safePayouts = payouts || [];
+        
+        // Aggregate by month (YYYY-MM)
+        const monthly_summary = {};
+        safePayouts.forEach(p => {
+            if (!p.requested_at) return;
+            const date = new Date(p.requested_at);
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            if (!monthly_summary[monthKey]) {
+                monthly_summary[monthKey] = 0;
+            }
+            monthly_summary[monthKey] += parseFloat(p.amount) || 0;
+        });
+
+        // Convert to array and sort descending
+        const monthlyStats = Object.keys(monthly_summary).map(key => ({
+            month: key,
+            earnings: monthly_summary[key].toFixed(2)
+        })).sort((a, b) => b.month.localeCompare(a.month));
+
+        res.json({ payouts: safePayouts, monthlyStats });
     } catch (e) {
         console.error('affiliate payouts error:', e);
         res.status(500).json({ error: 'Server error' });
@@ -2523,15 +2556,20 @@ app.post('/api/admin/partners/invite', async (req, res) => {
 app.patch('/api/admin/partners/:id/commission', async (req, res) => {
     try {
         const { id } = req.params;
-        const { commission_rate } = req.body;
+        const { commission_rate, reward_duration_months } = req.body;
         
         if (typeof commission_rate !== 'number' || commission_rate < 0 || commission_rate > 100) {
             return res.status(400).json({ error: 'Invalid commission rate' });
         }
 
+        const updateData = { commission_rate };
+        if (typeof reward_duration_months === 'number' && reward_duration_months >= 0) {
+            updateData.reward_duration_months = reward_duration_months;
+        }
+
         const { error } = await supabase
             .from('affiliate_partners')
-            .update({ commission_rate })
+            .update(updateData)
             .eq('id', id);
 
         if (error) throw error;

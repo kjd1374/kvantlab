@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-Vant Foresight | 2026. 03. 24</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&family=Noto+Sans+KR:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --black: #0a0a0a;
+            --dark: #1a1a1a;
+            --gray: #888;
+            --light: #f5f5f5;
+            --white: #fff;
+            --gold: #d4af37;
+            --beauty: #e84393;
+            --fashion: #6c5ce7;
+            --lifestyle: #00b894;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Inter','Noto Sans KR',sans-serif;
+            background: var(--white); color: var(--black);
+            line-height: 1.6; -webkit-font-smoothing: antialiased;
+        }
+
+        /* ═══════ COVER PAGE ═══════ */
+        .cover-page {
+            width: 100%; height: 100vh; min-height: 1123px;
+            background: linear-gradient(160deg, #0a0a2e 0%, #0f0f0f 50%, #1a0a1e 100%);
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            position: relative; overflow: hidden;
+            page-break-after: always;
+        }
+        .cover-page::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 50%, rgba(212,175,55,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 50%, rgba(106,92,231,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(232,67,147,0.06) 0%, transparent 50%);
+        }
+        .cover-accent-line {
+            position: absolute; width: 1px; background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+        }
+        .cover-accent-line.left { left: 60px; top: 0; height: 100%; }
+        .cover-accent-line.right { right: 60px; top: 0; height: 100%; }
+        .cover-accent-line.top { top: 60px; left: 0; width: 100%; height: 1px;
+            background: linear-gradient(to right, transparent, var(--gold), transparent); }
+        .cover-accent-line.bottom { bottom: 60px; left: 0; width: 100%; height: 1px;
+            background: linear-gradient(to right, transparent, var(--gold), transparent); }
+
+        .cover-content {
+            position: relative; z-index: 1;
+            text-align: center; color: var(--white);
+            padding: 0 80px;
+        }
+        .cover-brand {
+            font-size: 0.85rem; font-weight: 600; letter-spacing: 8px;
+            text-transform: uppercase; color: var(--gold); margin-bottom: 20px;
+        }
+        .cover-title {
+            font-size: 4.5rem; font-weight: 900; letter-spacing: -2px;
+            line-height: 1.05; margin-bottom: 10px;
+        }
+        .cover-title span { font-weight: 300; color: rgba(255,255,255,0.5); }
+        .cover-subtitle {
+            font-size: 1.1rem; font-weight: 300; color: rgba(255,255,255,0.6);
+            letter-spacing: 3px; text-transform: uppercase; margin-bottom: 50px;
+        }
+        .cover-date {
+            font-size: 2rem; font-weight: 200; color: var(--white);
+            letter-spacing: 6px; margin-bottom: 60px;
+        }
+        .cover-trends {
+            display: flex; gap: 30px; justify-content: center;
+            flex-wrap: wrap; margin-bottom: 50px;
+        }
+        .cover-trend-pill {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 20px; border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 30px; background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+        }
+        .cover-trend-pill .emoji { font-size: 1.2rem; }
+        .cover-trend-pill .text {
+            font-size: 0.9rem; font-weight: 600; color: var(--white);
+            letter-spacing: 0.5px;
+        }
+        .cover-footer {
+            position: absolute; bottom: 80px; left: 0; right: 0;
+            text-align: center; z-index: 1;
+        }
+        .cover-footer-text {
+            font-size: 0.7rem; font-weight: 400; color: rgba(255,255,255,0.3);
+            letter-spacing: 3px; text-transform: uppercase;
+        }
+
+        /* ═══════ CONTENT PAGES ═══════ */
+        .page { max-width: 800px; margin: 0 auto; padding: 40px 40px 20px; }
+
+        header {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            border-bottom: 3px solid var(--black); padding-bottom: 15px; margin-bottom: 30px;
+        }
+        .logo { font-size: 1.8rem; font-weight: 900; letter-spacing: -1px; text-transform: uppercase; }
+        .logo span { font-weight: 300; color: var(--gray); }
+        .date { font-size: 0.8rem; font-weight: 600; color: var(--gray); letter-spacing: 1px; }
+
+        .toc {
+            background: var(--light); border-radius: 10px; padding: 25px 30px; margin-bottom: 40px;
+        }
+        .toc-title { font-size: 0.7rem; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; }
+        .toc-items { display: flex; flex-direction: column; gap: 10px; }
+        .toc-item { display: flex; align-items: center; gap: 12px; }
+        .toc-emoji { font-size: 1.3rem; }
+        .toc-label { font-size: 1rem; font-weight: 800; }
+        .toc-keyword { font-size: 0.9rem; font-weight: 400; color: var(--gray); margin-left: auto; }
+
+        /* Section */
+        .sector { margin-bottom: 45px; page-break-inside: avoid; }
+        .sector-header {
+            display: flex; align-items: center; gap: 10px;
+            padding-bottom: 10px; border-bottom: 2px solid; margin-bottom: 20px;
+        }
+        .sector-header.beauty { border-color: var(--beauty); }
+        .sector-header.fashion { border-color: var(--fashion); }
+        .sector-header.lifestyle { border-color: var(--lifestyle); }
+        .sector-emoji { font-size: 1.5rem; }
+        .sector-title { font-size: 1.3rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
+
+        .trend-box { background: var(--light); border-radius: 8px; padding: 20px 25px; margin-bottom: 20px; }
+        .trend-keyword { font-size: 1.8rem; font-weight: 900; margin-bottom: 8px; }
+        .trend-summary { font-size: 0.95rem; color: #444; margin-bottom: 15px; }
+        .trend-tip { font-size: 0.85rem; color: #666; font-style: italic; padding: 10px 14px; background: #fff; border-radius: 6px; border-left: 3px solid var(--gold); margin-bottom: 15px; }
+        .tags { display: flex; gap: 8px; flex-wrap: wrap; }
+        .tag { font-size: 0.75rem; font-weight: 600; padding: 4px 12px; border-radius: 15px; color: var(--white); }
+        .tag.beauty { background: var(--beauty); }
+        .tag.fashion { background: var(--fashion); }
+        .tag.lifestyle { background: var(--lifestyle); }
+
+        .products { display: flex; flex-direction: column; gap: 20px; }
+        .product {
+            display: flex; gap: 20px; padding: 15px;
+            border: 1px solid #eee; border-radius: 8px; background: var(--white);
+        }
+        .product-img {
+            width: 120px; height: 120px; flex-shrink: 0;
+            background: var(--light); border-radius: 6px; overflow: hidden;
+            display: flex; align-items: center; justify-content: center; position: relative;
+        }
+        .product-img img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+        .rank {
+            position: absolute; top: 5px; left: 5px;
+            background: var(--black); color: var(--white);
+            width: 22px; height: 22px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 0.7rem;
+        }
+        .product-body { flex: 1; min-width: 0; }
+        .p-brand { font-size: 0.75rem; font-weight: 700; color: var(--gray); text-transform: uppercase; }
+        .p-name { font-size: 1rem; font-weight: 800; margin: 3px 0 8px; line-height: 1.3; }
+        .p-reason {
+            font-size: 0.85rem; color: #555; font-style: italic;
+            padding: 8px 12px; border-left: 3px solid var(--black); background: #fafafa; margin-bottom: 10px;
+        }
+        .p-price { font-size: 0.85rem; font-weight: 700; }
+
+        .pitch {
+            background: var(--dark); color: var(--white);
+            padding: 15px 18px; border-radius: 8px; margin-top: 10px;
+        }
+        .pitch-lang { font-size: 0.65rem; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .pitch-headline { font-size: 1rem; font-weight: 800; color: #ffd700; margin-bottom: 10px; }
+        .pitch-reasons { list-style: none; margin-bottom: 10px; }
+        .pitch-reasons li { padding-left: 12px; position: relative; margin-bottom: 5px; font-size: 0.85rem; }
+        .pitch-reasons li::before { content: '•'; position: absolute; left: 0; color: #ffd700; }
+        .pitch-body { font-size: 0.8rem; color: #aaa; border-top: 1px solid #333; padding-top: 10px; margin-top: 8px; }
+        .cta {
+            display: inline-block; background: var(--white); color: var(--black);
+            font-weight: 800; font-size: 0.75rem; padding: 8px 16px;
+            border-radius: 4px; margin-top: 10px; text-decoration: none;
+        }
+
+        footer {
+            text-align: center; padding: 30px 0 10px;
+            font-size: 0.75rem; color: var(--gray); border-top: 1px solid #eee; margin-top: 20px;
+        }
+
+        @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .cover-page { height: 297mm; min-height: 297mm; }
+            .sector { page-break-inside: avoid; }
+            .product { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════ COVER PAGE ═══════════════ -->
+<div class="cover-page">
+    <div class="cover-accent-line left"></div>
+    <div class="cover-accent-line right"></div>
+    <div class="cover-accent-line top"></div>
+    <div class="cover-accent-line bottom"></div>
+
+    <div class="cover-content">
+        <div class="cover-brand">K-Vant Lab · AI-Powered Sourcing Intelligence</div>
+        <h1 class="cover-title">K-VANT<br><span>FORESIGHT</span></h1>
+        <div class="cover-subtitle">Predictive Trend Report for Southeast Asian Sellers</div>
+        <div class="cover-date">2026. 03. 24</div>
+        <div class="cover-trends">
+            
+            <div class="cover-trend-pill">
+                <span class="emoji">💄</span>
+                <span class="text">리페어링 크림</span>
+            </div>
+            
+            <div class="cover-trend-pill">
+                <span class="emoji">👗</span>
+                <span class="text">나일론 백팩</span>
+            </div>
+            
+            <div class="cover-trend-pill">
+                <span class="emoji">🏠</span>
+                <span class="text">와이드 데님 팬츠</span>
+            </div>
+            
+        </div>
+    </div>
+
+    <div class="cover-footer">
+        <div class="cover-footer-text">Confidential · For Authorized Partners Only</div>
+    </div>
+</div>
+
+<!-- ═══════════════ CONTENT ═══════════════ -->
+<div class="page">
+
+    <header>
+        <div class="logo">K-VANT <span>Foresight</span></div>
+        <div class="date">2026. 03. 24</div>
+    </header>
+
+    <!-- Table of Contents -->
+    <div class="toc">
+        <div class="toc-title">Today's K-Market Briefing</div>
+        <div class="toc-items">
+            
+            <div class="toc-item">
+                <span class="toc-emoji">💄</span>
+                <span class="toc-label">K-Beauty</span>
+                <span class="toc-keyword">리페어링 크림</span>
+            </div>
+            
+            <div class="toc-item">
+                <span class="toc-emoji">👗</span>
+                <span class="toc-label">K-Fashion</span>
+                <span class="toc-keyword">나일론 백팩</span>
+            </div>
+            
+            <div class="toc-item">
+                <span class="toc-emoji">🏠</span>
+                <span class="toc-label">K-Lifestyle</span>
+                <span class="toc-keyword">와이드 데님 팬츠</span>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Sectors -->
+    
+    <div class="sector">
+        <div class="sector-header beauty">
+            <span class="sector-emoji">💄</span>
+            <span class="sector-title">K-Beauty</span>
+        </div>
+
+        <div class="trend-box">
+            <div class="trend-keyword">리페어링 크림</div>
+            <div class="trend-summary">최근 한국 뷰티 시장은 단순 보습을 넘어 피부 장벽 회복과 손상 케어에 특화된 고기능성 더마 코스메틱이 주도하고 있습니다. 리쥬더마 EX와 라셀턴 같은 전문가용 브랜드의 인기는 소비자들이 피부과 시술 후 관리나 민감성 피부 진정을 위한 실질적인 '재생' 효과를 원하고 있음을 보여줍니다. 동남아 시장에서도 강한 자외선과 습한 기후로 손상된 피부를 복구하려는 수요와 맞물려 강력한 소싱 기회가 될 것입니다.</div>
+            
+            <div class="trend-tip">💡 상세페이지에 '피부과 테스트 완료' 또는 '장벽 개선 수치'와 같은 객관적 지표를 강조하고, 진정 효과를 시각적으로 보여주는 비포/애프터 콘텐츠를 활용해 신뢰도를 높이세요.</div>
+            
+            <div class="tags">
+                
+                <span class="tag beauty">피부 장벽 강화</span>
+                
+                <span class="tag beauty">시카 리페어</span>
+                
+                <span class="tag beauty">더마 코스메틱</span>
+                
+            </div>
+        </div>
+
+        <div class="products">
+            
+            <div class="product">
+                <div class="product-img">
+                    <div class="rank">1</div>
+                    
+                    <img src="https://image.oliveyoung.co.kr/cfimages/cf-goods/uploads/images/thumbnails/400/10/0000/0025/A00000025144601ko.jpg?l=ko" alt="리쥬더마 EX 리페어링 크림 20g">
+                    
+                </div>
+                <div class="product-body">
+                    <div class="p-brand">리쥬더마 EX · oliveyoung</div>
+                    <div class="p-name">리쥬더마 EX 리페어링 크림 20g</div>
+                    
+                    <div class="p-reason">"상품명에 '리페어링 크림' 키워드가 직접 포함되어 있으며, 피부 장벽 강화와 재생을 강조하는 더마 코스메틱 트렌드에 가장 완벽하게 부합하는 상품입니다."</div>
+                    
+                    <div class="p-price">₩45,000</div>
+
+                    
+                    
+                    
+                    <div class="pitch">
+                        <div class="pitch-lang">🇰🇷 Korean Pitch</div>
+                        <div class="pitch-headline">한국 피부과에서 선택한 바로 그 재생 크림, 리쥬더마 EX! ✨</div>
+                        <ul class="pitch-reasons">
+                            <li>한국 피부과 시술 후 필수 관리 아이템</li><li>무너진 피부 장벽을 위한 급속 복구 솔루션</li><li>민감성 피부도 안심하고 사용하는 고기능성 더마 케어</li>
+                        </ul>
+                    </div>
+                    
+                    
+                    
+                    <div class="pitch" style="margin-top:8px;">
+                        <div class="pitch-lang">🇹🇭 Thai Pitch</div>
+                        <div class="pitch-headline">กู้ผิวพังให้ปังเหมือนสาวเกาหลี! Rejuderma EX ครีมรีแพร์ระดับพรีเมียม 🏥✨</div>
+                        <ul class="pitch-reasons">
+                            <li>ฟื้นฟูผิวอย่างเร่งด่วนหลังทำเลเซอร์และหัตถการ</li><li>เสริมเกราะป้องกันผิวให้แข็งแรง สู้แดดและมลภาวะ</li><li>เนื้อสัมผัสบางเบา ซึมไว ไม่เหนียวเหนอะหนะ เหมาะกับอากาศเมืองไทย</li>
+                        </ul>
+                    </div>
+                    
+                    
+                    
+                    <div class="pitch" style="margin-top:8px;">
+                        <div class="pitch-lang">🇻🇳 Vietnamese Pitch</div>
+                        <div class="pitch-headline">Bí quyết phục hồi da chuẩn Clinic Hàn Quốc - Rejuderma EX Repairing Cream 🇰🇷💧</div>
+                        <ul class="pitch-reasons">
+                            <li>Phục hồi chuyên sâu cho da sau laser, peel da và treatment</li><li>Tái tạo hàng rào bảo vệ da, ngăn ngừa kích ứng từ môi trường</li><li>Sản phẩm dược mỹ phẩm cao cấp được tin dùng tại các bệnh viện thẩm mỹ Hàn</li>
+                        </ul>
+                        <a href="https://k-vant.com" class="cta">Source Now on K-Vant ▶</a>
+                    </div>
+                    
+                    
+                </div>
+            </div>
+            
+            <div class="product">
+                <div class="product-img">
+                    <div class="rank">2</div>
+                    
+                    <img src="https://image.oliveyoung.co.kr/cfimages/cf-goods/uploads/images/thumbnails/400/10/0000/0011/A00000011173835ko.jpg?l=ko" alt="[대용량/10매] 아이소이 에센셜 마스크팩 10매 기획 2종(잡티/진정) 중 택1">
+                    
+                </div>
+                <div class="product-body">
+                    <div class="p-brand">아이소이 · oliveyoung</div>
+                    <div class="p-name">[대용량/10매] 아이소이 에센셜 마스크팩 10매 기획 2종(잡티/진정) 중 택1</div>
+                    
+                    <div class="p-reason">"리페어링의 핵심인 '진정' 기능을 갖춘 마스크팩으로, 동남아 시장에서 선호도가 높은 아이소이 브랜드의 대용량 기획 상품이라 가격 경쟁력이 우수합니다."</div>
+                    
+                    <div class="p-price">₩30,000</div>
+
+                    
+                </div>
+            </div>
+            
+            <div class="product">
+                <div class="product-img">
+                    <div class="rank">3</div>
+                    
+                    <img src="https://image.oliveyoung.co.kr/cfimages/cf-goods/uploads/images/thumbnails/400/10/0000/0019/A00000019220107ko.jpg?l=ko" alt="아크네스 퍼펙트 솔루션 폼클렌저 125ml 1+1 기획">
+                    
+                </div>
+                <div class="product-body">
+                    <div class="p-brand">아크네스 · oliveyoung</div>
+                    <div class="p-name">아크네스 퍼펙트 솔루션 폼클렌저 125ml 1+1 기획</div>
+                    
+                    <div class="p-reason">"트러블 및 피부 고민 해결을 위한 전문 더마 브랜드 상품이며, 1+1 기획 구성으로 동남아 B2B 시장에서 소싱 시 높은 마진율과 판매량을 기대할 수 있습니다."</div>
+                    
+                    <div class="p-price">₩15,300</div>
+
+                    
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    
+    <div class="sector">
+        <div class="sector-header fashion">
+            <span class="sector-emoji">👗</span>
+            <span class="sector-title">K-Fashion</span>
+        </div>
+
+        <div class="trend-box">
+            <div class="trend-keyword">나일론 백팩</div>
+            <div class="trend-summary">최근 K-패션에서는 가볍고 내구성이 뛰어난 나일론 소재에 셔링이나 스트링 같은 디테일을 더한 백팩이 가방 카테고리 상위권을 점령하고 있습니다. 고프코어와 발레코어 트렌드가 결합되면서 실용적인 소재에 퍼플, 핑크 등 감각적인 컬러를 입힌 제품들이 2030 세대에게 큰 호응을 얻고 있습니다. 동남아시아의 고온다습한 기후에서도 가볍고 오염에 강한 나일론 소재는 데일리 아이템으로서 높은 시장성을 가집니다.</div>
+            
+            <div class="trend-tip">💡 기본적인 블랙 외에도 퍼플, 세이지 그린 등 한국 쇼핑몰에서 인기 있는 컬러 라인업을 확보하고 가벼운 무게와 수납력을 강조한 영상 콘텐츠로 소구하세요.</div>
+            
+            <div class="tags">
+                
+                <span class="tag fashion">스트링 디테일</span>
+                
+                <span class="tag fashion">파스텔 컬러</span>
+                
+                <span class="tag fashion">생활 방수</span>
+                
+            </div>
+        </div>
+
+        <div class="products">
+            
+            <div class="product">
+                <div class="product-img">
+                    <div class="rank">1</div>
+                    
+                    <img src="https://image.msscdn.net/images/goods_img/20260209/6000139/6000139_17718204700876_500.jpg" alt="일립스 나일론 백팩_Black">
+                    
+                </div>
+                <div class="product-body">
+                    <div class="p-brand">키야모 · musinsa</div>
+                    <div class="p-name">일립스 나일론 백팩_Black</div>
+                    
+                    <div class="p-reason">"트렌드 키워드인 '나일론'과 '백팩'이 상품명에 명시되어 있으며, 가장 경쟁력 있는 가격대로 동남아 B2B 시장 소싱에 최적화됨."</div>
+                    
+                    <div class="p-price">₩65,800</div>
+
+                    
+                    
+                    
+                    <div class="pitch">
+                        <div class="pitch-lang">🇰🇷 Korean Pitch</div>
+                        <div class="pitch-headline">지금 한국 2030이 가장 열광하는 '키야모' 나일론 백팩 드디어 상륙! 🎒</div>
+                        <ul class="pitch-reasons">
+                            <li>K-패션 랭킹을 점령한 가장 핫한 나일론 소재</li><li>고프코어와 발레코어 감성을 담은 유니크한 셔링 디테일</li><li>습한 날씨에도 걱정 없는 가벼움과 강력한 내구성</li>
+                        </ul>
+                    </div>
+                    
+                    
+                    
+                    <div class="pitch" style="margin-top:8px;">
+                        <div class="pitch-lang">🇹🇭 Thai Pitch</div>
+                        <div class="pitch-headline">ไอเทมสุดฮอตจากเกาหลี! 🇰🇷 กระเป๋าเป้ Nylon จาก KIYAMO ที่วัยรุ่นเกาหลีต้องมี!</div>
+                        <ul class="pitch-reasons">
+                            <li>ดีไซน์ Gorpcore ผสม Balletcore สุดชิคที่กำลังมาแรงในโซล</li><li>วัสดุไนลอนน้ำหนักเบาพิเศษ ทนทานต่อความชื้นและอากาศร้อน</li><li>แมทช์ง่ายได้ทุกลุค พร้อมดีเทลเชือกรูดที่ดูพรีเมียม</li>
+                        </ul>
+                    </div>
+                    
+                    
+                    
+                    <div class="pitch" style="margin-top:8px;">
+                        <div class="pitch-lang">🇻🇳 Vietnamese Pitch</div>
+                        <div class="pitch-headline">Cơn sốt K-Fashion đã đổ bộ! 🎒 Balo Nylon KIYAMO - Item 'must-have' của giới trẻ Hàn Quốc.</div>
+                        <ul class="pitch-reasons">
+                            <li>Chất liệu Nylon cao cấp siêu nhẹ, chống bám bẩn hoàn hảo</li><li>Phong cách Gorpcore thời thượng với chi tiết xếp nếp tinh tế</li><li>Độ bền cực cao, phù hợp cho cả đi học, đi làm và du lịch</li>
+                        </ul>
+                        <a href="https://k-vant.com" class="cta">Source Now on K-Vant ▶</a>
+                    </div>
+                    
+                    
+                </div>
+            </div>
+            
+            <div class="product">
+                <div class="product-img">
+                    <div class="rank">2</div>
+                    
+                    <img src="https://image.msscdn.net/images/goods_img/20260107/5875253/5875253_17700107926639_500.jpg" alt="[소올착용] 키보 백팩 (퍼플)">
+                    
+                </div>
+                <div class="product-body">
+                    <div class="p-brand">썬릿 · musinsa</div>
+                    <div class="p-name">[소올착용] 키보 백팩 (퍼플)</div>
+                    
+                    <div class="p-reason">"트렌드 특성인 파스텔톤 퍼플 컬러를 반영한 백팩으로, 가벼운 나일론 소재의 실용성과 스타일을 동시에 갖춘 상품임."</div>
+                    
+                    <div class="p-price">₩80,100</div>
+
+                    
+                </div>
+            </div>
+            
+            <div class="product">
+                <div class="product-img">
+                    <div class="rank">3</div>
+                    
+                    <img src="https://image.msscdn.net/images/goods_img/20260304/6076752/6076752_17727772356282_500.jpg" alt="스몰 러플백 - 글로리퍼플 / IA8912">
+                    
+                </div>
+                <div class="product-body">
+                    <div class="p-brand">아디다스 · musinsa</div>
+                    <div class="p-name">스몰 러플백 - 글로리퍼플 / IA8912</div>
+                    
+                    <div class="p-reason">"나일론 소재와 러플(스트링) 디테일, 파스텔 컬러가 트렌드와 일치하며 글로벌 브랜드 인지도로 인해 동남아 현지 판매가 용이함."</div>
+                    
+                    <div class="p-price">₩89,000</div>
+
+                    
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    
+    <div class="sector">
+        <div class="sector-header lifestyle">
+            <span class="sector-emoji">🏠</span>
+            <span class="sector-title">K-Lifestyle</span>
+        </div>
+
+        <div class="trend-box">
+            <div class="trend-keyword">와이드 데님 팬츠</div>
+            <div class="trend-summary">한국의 신학기 시즌을 맞아 활동성과 스타일을 동시에 잡은 키즈 패션 수요가 급증하며, 기존의 슬림핏 대신 여유로운 실루엣의 와이드 데님이 주류로 부상했습니다. 성인 패션의 와이드핏 트렌드가 아동복 시장으로 전이되면서 부모와 아이가 비슷한 스타일을 연출하는 수요가 반영된 결과입니다. 특히 허리 밴딩이나 스트레치 소재가 포함된 기능성 데님 아이템이 쇼핑몰 상위권을 점유하고 있습니다.</div>
+            
+            <div class="trend-tip">💡 활동성을 고려한 '허리 밴딩'과 '스트레치 데님' 소재를 강조하고, 바시티 점퍼나 조거 팬츠와 함께 코디 세트로 구성해 소싱하는 것이 유리합니다.</div>
+            
+            <div class="tags">
+                
+                <span class="tag lifestyle">키즈 청바지</span>
+                
+                <span class="tag lifestyle">밴딩 와이드팬츠</span>
+                
+                <span class="tag lifestyle">신학기 등원룩</span>
+                
+            </div>
+        </div>
+
+        <div class="products">
+            
+            <div class="product">
+                <div class="product-img">
+                    <div class="rank">1</div>
+                    
+                    <img src="https://sitem.ssgcdn.com/17/37/90/item/1000787903717_i1_302.jpg" alt="26년 SS (공용) 와이드 데님 팬츠 MKG1DP2011">
+                    
+                </div>
+                <div class="product-body">
+                    <div class="p-brand">탑텐키즈 · ssg</div>
+                    <div class="p-name">26년 SS (공용) 와이드 데님 팬츠 MKG1DP2011</div>
+                    
+                    <div class="p-reason">"트렌드 키워드인 '와이드 데님 팬츠'와 완벽히 일치하며, 한국 유명 SPA 브랜드 제품으로 동남아 시장에서 브랜드 신뢰도와 품질 경쟁력이 높음."</div>
+                    
+                    <div class="p-price">₩25,813</div>
+
+                    
+                    
+                    
+                    <div class="pitch">
+                        <div class="pitch-lang">🇰🇷 Korean Pitch</div>
+                        <div class="pitch-headline">지금 한국에서 가장 핫한 '와이드 핏' 키즈 데님! 🇰🇷</div>
+                        <ul class="pitch-reasons">
+                            <li>한국 신학기 베스트셀러 및 쇼핑몰 상위권 점유</li><li>성인 패션 트렌드를 그대로 옮겨온 세련된 와이드 실루엣</li><li>활동성을 극대화한 허리 밴딩과 편안한 스트레치 소재</li>
+                        </ul>
+                    </div>
+                    
+                    
+                    
+                    <div class="pitch" style="margin-top:8px;">
+                        <div class="pitch-lang">🇹🇭 Thai Pitch</div>
+                        <div class="pitch-headline">กางเกงยีนส์ทรง Wide สุดฮิตจากเกาหลี! สไตล์มินิมีที่เด็กๆ ต้องมี 👖✨</div>
+                        <ul class="pitch-reasons">
+                            <li>ดีไซน์ทรงกว้างสุดชิคตามเทรนด์เกาหลีล่าสุด 2026</li><li>เอวยืดหยุ่น ใส่สบาย ไม่อึดอัดตลอดวัน</li><li>แมตช์ง่าย ได้ลุคคุณหนูเกาหลีตัวจิ๋วแบบไอดอล</li>
+                        </ul>
+                    </div>
+                    
+                    
+                    
+                    <div class="pitch" style="margin-top:8px;">
+                        <div class="pitch-lang">🇻🇳 Vietnamese Pitch</div>
+                        <div class="pitch-headline">Quần Denim Ống Rộng Topten Kids - Xu Hướng Thời Trang Trẻ Em Hot Nhất Hàn Quốc 🇰🇷</div>
+                        <ul class="pitch-reasons">
+                            <li>Form dáng Wide-fit thời thượng dẫn đầu xu hướng SS26</li><li>Chất liệu denim cao cấp, co giãn thoải mái cho bé</li><li>Lưng thun tiện lợi giúp bé tự tin vận động cả ngày</li>
+                        </ul>
+                        <a href="https://k-vant.com" class="cta">Source Now on K-Vant ▶</a>
+                    </div>
+                    
+                    
+                </div>
+            </div>
+            
+            <div class="product">
+                <div class="product-img">
+                    <div class="rank">2</div>
+                    
+                    <img src="https://sitem.ssgcdn.com/02/40/67/item/1000800674002_i1_302.jpg" alt="신학기19900기획전 바시티점퍼F1TC1201 카고조거데님팬츠F3DP3211에코와이드데님 팬츠 F3DP2211">
+                    
+                </div>
+                <div class="product-body">
+                    <div class="p-brand">탑텐키즈 · ssg</div>
+                    <div class="p-name">신학기19900기획전 바시티점퍼F1TC1201 카고조거데님팬츠F3DP3211에코와이드데님 팬츠 F3DP2211</div>
+                    
+                    <div class="p-reason">"'신학기'와 '와이드 데님' 키워드를 모두 충족하며, 1만 원대의 매우 저렴한 가격으로 대량 소싱 시 가격 경쟁력이 매우 뛰어남."</div>
+                    
+                    <div class="p-price">₩17,180</div>
+
+                    
+                </div>
+            </div>
+            
+            <div class="product">
+                <div class="product-img">
+                    <div class="rank">3</div>
+                    
+                    <img src="https://sitem.ssgcdn.com/09/59/37/item/1000800375909_i1_302.jpg" alt="[커버낫키즈] 60%할인최저가도전 고학년데일리룩 브릿지로고맨투맨 ,브릿지와이드저지팬츠2종택1">
+                    
+                </div>
+                <div class="product-body">
+                    <div class="p-brand">커버낫 키즈 · ssg</div>
+                    <div class="p-name">[커버낫키즈] 60%할인최저가도전 고학년데일리룩 브릿지로고맨투맨 ,브릿지와이드저지팬츠2종택1</div>
+                    
+                    <div class="p-reason">"동남아에서 인기가 높은 K-스트릿 브랜드 '커버낫'의 키즈 라인이며, 와이드 핏 트렌드와 고학년 등원룩 수요를 동시에 공략 가능함."</div>
+                    
+                    <div class="p-price">₩20,603</div>
+
+                    
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    
+
+    <footer>
+        K-Vant Foresight — AI-Powered Sourcing Intelligence for Southeast Asian Sellers<br>
+        © 2026. 03. 24 K-Vant Lab. All rights reserved.
+    </footer>
+
+</div>
+</body>
+</html>

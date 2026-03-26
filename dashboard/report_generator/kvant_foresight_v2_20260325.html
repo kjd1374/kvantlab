@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-Vant Foresight | 2026. 03. 25</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&family=Noto+Sans+KR:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --black: #0a0a0a;
+            --dark: #1a1a1a;
+            --gray: #888;
+            --light: #f5f5f5;
+            --white: #fff;
+            --gold: #d4af37;
+            --beauty: #e84393;
+            --fashion: #6c5ce7;
+            --lifestyle: #00b894;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Inter','Noto Sans KR',sans-serif;
+            background: var(--white); color: var(--black);
+            line-height: 1.6; -webkit-font-smoothing: antialiased;
+        }
+
+        /* ═══════ COVER PAGE ═══════ */
+        .cover-page {
+            width: 100%; height: 100vh; min-height: 1123px;
+            background: linear-gradient(160deg, #0a0a2e 0%, #0f0f0f 50%, #1a0a1e 100%);
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            position: relative; overflow: hidden;
+            page-break-after: always;
+        }
+        .cover-page::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 50%, rgba(212,175,55,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 50%, rgba(106,92,231,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(232,67,147,0.06) 0%, transparent 50%);
+        }
+        .cover-accent-line {
+            position: absolute; width: 1px; background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+        }
+        .cover-accent-line.left { left: 60px; top: 0; height: 100%; }
+        .cover-accent-line.right { right: 60px; top: 0; height: 100%; }
+        .cover-accent-line.top { top: 60px; left: 0; width: 100%; height: 1px;
+            background: linear-gradient(to right, transparent, var(--gold), transparent); }
+        .cover-accent-line.bottom { bottom: 60px; left: 0; width: 100%; height: 1px;
+            background: linear-gradient(to right, transparent, var(--gold), transparent); }
+
+        .cover-content {
+            position: relative; z-index: 1;
+            text-align: center; color: var(--white);
+            padding: 0 80px;
+        }
+        .cover-brand {
+            font-size: 0.85rem; font-weight: 600; letter-spacing: 8px;
+            text-transform: uppercase; color: var(--gold); margin-bottom: 20px;
+        }
+        .cover-title {
+            font-size: 4.5rem; font-weight: 900; letter-spacing: -2px;
+            line-height: 1.05; margin-bottom: 10px;
+        }
+        .cover-title span { font-weight: 300; color: rgba(255,255,255,0.5); }
+        .cover-subtitle {
+            font-size: 1.1rem; font-weight: 300; color: rgba(255,255,255,0.6);
+            letter-spacing: 3px; text-transform: uppercase; margin-bottom: 50px;
+        }
+        .cover-date {
+            font-size: 2rem; font-weight: 200; color: var(--white);
+            letter-spacing: 6px; margin-bottom: 60px;
+        }
+        .cover-trends {
+            display: flex; gap: 30px; justify-content: center;
+            flex-wrap: wrap; margin-bottom: 50px;
+        }
+        .cover-trend-pill {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 20px; border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 30px; background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+        }
+        .cover-trend-pill .emoji { font-size: 1.2rem; }
+        .cover-trend-pill .text {
+            font-size: 0.9rem; font-weight: 600; color: var(--white);
+            letter-spacing: 0.5px;
+        }
+        .cover-footer {
+            position: absolute; bottom: 80px; left: 0; right: 0;
+            text-align: center; z-index: 1;
+        }
+        .cover-footer-text {
+            font-size: 0.7rem; font-weight: 400; color: rgba(255,255,255,0.3);
+            letter-spacing: 3px; text-transform: uppercase;
+        }
+
+        /* ═══════ CONTENT PAGES ═══════ */
+        .page { max-width: 800px; margin: 0 auto; padding: 40px 40px 20px; }
+
+        header {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            border-bottom: 3px solid var(--black); padding-bottom: 15px; margin-bottom: 30px;
+        }
+        .logo { font-size: 1.8rem; font-weight: 900; letter-spacing: -1px; text-transform: uppercase; }
+        .logo span { font-weight: 300; color: var(--gray); }
+        .date { font-size: 0.8rem; font-weight: 600; color: var(--gray); letter-spacing: 1px; }
+
+        .toc {
+            background: var(--light); border-radius: 10px; padding: 25px 30px; margin-bottom: 40px;
+        }
+        .toc-title { font-size: 0.7rem; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; }
+        .toc-items { display: flex; flex-direction: column; gap: 10px; }
+        .toc-item { display: flex; align-items: center; gap: 12px; }
+        .toc-emoji { font-size: 1.3rem; }
+        .toc-label { font-size: 1rem; font-weight: 800; }
+        .toc-keyword { font-size: 0.9rem; font-weight: 400; color: var(--gray); margin-left: auto; }
+
+        /* Section */
+        .sector { margin-bottom: 45px; page-break-inside: avoid; }
+        .sector-header {
+            display: flex; align-items: center; gap: 10px;
+            padding-bottom: 10px; border-bottom: 2px solid; margin-bottom: 20px;
+        }
+        .sector-header.beauty { border-color: var(--beauty); }
+        .sector-header.fashion { border-color: var(--fashion); }
+        .sector-header.lifestyle { border-color: var(--lifestyle); }
+        .sector-emoji { font-size: 1.5rem; }
+        .sector-title { font-size: 1.3rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
+
+        .trend-box { background: var(--light); border-radius: 8px; padding: 20px 25px; margin-bottom: 20px; }
+        .trend-keyword { font-size: 1.8rem; font-weight: 900; margin-bottom: 8px; }
+        .trend-summary { font-size: 0.95rem; color: #444; margin-bottom: 15px; }
+        .trend-tip { font-size: 0.85rem; color: #666; font-style: italic; padding: 10px 14px; background: #fff; border-radius: 6px; border-left: 3px solid var(--gold); margin-bottom: 15px; }
+        
+        /* B2B Insight additions */
+        .exec-brief { background: var(--dark); color: var(--gold); padding: 30px; border-radius: 12px; margin-bottom: 40px; text-align: center; }
+        .exec-headline { font-size: 1.4rem; font-weight: 900; line-height: 1.4; margin-bottom: 10px; }
+        .exec-desc { font-size: 0.95rem; color: #ccc; font-weight: 300; }
+
+        .radar { margin-bottom: 40px; page-break-inside: avoid; }
+        .radar-title { font-size: 1.1rem; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+        .radar-cards { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        .radar-card { background: #fafafa; border: 1px solid #eaeaea; border-radius: 8px; padding: 20px; border-left: 4px solid var(--black); }
+        .radar-pf { font-size: 0.75rem; font-weight: 800; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .radar-kw { font-size: 1.3rem; font-weight: 900; color: var(--black); margin-bottom: 10px; }
+        .radar-analysis { font-size: 0.9rem; color: #555; line-height: 1.5; }
+
+        .b2b-box { margin-top: 15px; background: #fff5e6; border: 1px solid #ffe0b2; padding: 15px; border-radius: 8px; }
+        .b2b-title { font-size: 0.8rem; font-weight: 800; color: #e67e22; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+        .b2b-text { font-size: 0.95rem; color: #d35400; line-height: 1.5; font-weight: 600; margin-bottom: 10px; }
+        .moq-badge { display: inline-block; background: #d35400; color: var(--white); font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: 4px; }
+
+        .tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+        .tag { font-size: 0.75rem; font-weight: 600; padding: 4px 12px; border-radius: 15px; color: var(--white); }
+        .tag.beauty { background: var(--beauty); }
+        .tag.fashion { background: var(--fashion); }
+        .tag.lifestyle { background: var(--lifestyle); }
+
+        .products { display: flex; flex-direction: column; gap: 20px; }
+        .product {
+            display: flex; gap: 20px; padding: 15px;
+            border: 1px solid #eee; border-radius: 8px; background: var(--white);
+        }
+        .product-img {
+            width: 120px; height: 120px; flex-shrink: 0;
+            background: var(--light); border-radius: 6px; overflow: hidden;
+            display: flex; align-items: center; justify-content: center; position: relative;
+        }
+        .product-img img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+        .rank {
+            position: absolute; top: 5px; left: 5px;
+            background: var(--black); color: var(--white);
+            width: 22px; height: 22px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 0.7rem;
+        }
+        .product-body { flex: 1; min-width: 0; }
+        .p-brand { font-size: 0.75rem; font-weight: 700; color: var(--gray); text-transform: uppercase; }
+        .p-name { font-size: 1rem; font-weight: 800; margin: 3px 0 8px; line-height: 1.3; }
+        .p-reason {
+            font-size: 0.85rem; color: #555; font-style: italic;
+            padding: 8px 12px; border-left: 3px solid var(--black); background: #fafafa; margin-bottom: 10px;
+        }
+        .p-price { font-size: 0.85rem; font-weight: 700; }
+
+        .pitches { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .pitch {
+            background: var(--dark); color: var(--white);
+            padding: 15px 18px; border-radius: 8px;
+        }
+        .pitch-lang { font-size: 0.65rem; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .pitch-headline { font-size: 0.95rem; font-weight: 800; color: #ffd700; margin-bottom: 10px; line-height: 1.3; }
+        .pitch-reasons { list-style: none; margin-bottom: 5px; }
+        .pitch-reasons li { padding-left: 12px; position: relative; margin-bottom: 4px; font-size: 0.8rem; line-height: 1.4; }
+        .pitch-reasons li::before { content: '•'; position: absolute; left: 0; color: #ffd700; }
+        .pitch-body { font-size: 0.8rem; color: #aaa; border-top: 1px solid #333; padding-top: 10px; margin-top: 8px; }
+        .cta {
+            display: inline-block; background: var(--white); color: var(--black);
+            font-weight: 800; font-size: 0.75rem; padding: 8px 16px;
+            border-radius: 4px; margin-top: 10px; text-decoration: none;
+        }
+
+        footer {
+            text-align: center; padding: 30px 0 10px;
+            font-size: 0.75rem; color: var(--gray); border-top: 1px solid #eee; margin-top: 20px;
+        }
+
+        @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .cover-page { height: 297mm; min-height: 297mm; }
+            .sector { page-break-inside: avoid; }
+            .product { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════ COVER PAGE ═══════════════ -->
+<div class="cover-page">
+    <div class="cover-accent-line left"></div>
+    <div class="cover-accent-line right"></div>
+    <div class="cover-accent-line top"></div>
+    <div class="cover-accent-line bottom"></div>
+
+    <div class="cover-content">
+        <div class="cover-brand">K-Vant Lab · AI-Powered Sourcing Intelligence</div>
+        <h1 class="cover-title">K-VANT<br><span>FORESIGHT</span></h1>
+        <div class="cover-subtitle">Predictive Trend Report for Southeast Asian Sellers</div>
+        <div class="cover-date">2026. 03. 25</div>
+        <div class="cover-trends">
+            
+            <div class="cover-trend-pill">
+                <span class="emoji">💄</span>
+                <span class="text">PDRN 겔 마스크</span>
+            </div>
+            
+            <div class="cover-trend-pill">
+                <span class="emoji">👗</span>
+                <span class="text">여름 레깅스</span>
+            </div>
+            
+            <div class="cover-trend-pill">
+                <span class="emoji">🏠</span>
+                <span class="text">아기 물티슈</span>
+            </div>
+            
+        </div>
+    </div>
+
+    <div class="cover-footer">
+        <div class="cover-footer-text">Confidential · For Authorized Partners Only</div>
+    </div>
+</div>
+
+<!-- ═══════════════ CONTENT ═══════════════ -->
+<div class="page">
+
+    <header>
+        <div class="logo">K-VANT <span>Foresight</span></div>
+        <div class="date">2026. 03. 25</div>
+    </header>
+
+    <!-- Table of Contents -->
+    <div class="toc">
+        <div class="toc-title">Today's K-Market Briefing</div>
+        <div class="toc-items">
+            
+            <div class="toc-item">
+                <span class="toc-emoji">💄</span>
+                <span class="toc-label">K-Beauty</span>
+                <span class="toc-keyword">PDRN 겔 마스크</span>
+            </div>
+            
+            <div class="toc-item">
+                <span class="toc-emoji">👗</span>
+                <span class="toc-label">K-Fashion</span>
+                <span class="toc-keyword">여름 레깅스</span>
+            </div>
+            
+            <div class="toc-item">
+                <span class="toc-emoji">🏠</span>
+                <span class="toc-label">K-Lifestyle</span>
+                <span class="toc-keyword">아기 물티슈</span>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Executive Brief -->
+    
+    <div class="exec-brief">
+        <div class="exec-headline">K-진정 케어와 로맨틱 캐주얼의 조화: 동남아 MZ세대를 사로잡을 이번 주 소싱 테마</div>
+        <div class="exec-desc">고온다습한 환경에 필수적인 시카 성분 제품으로 안정적인 매출을 확보하고, 동시에 편안함과 스타일을 겸비한 와이드핏 하의로 폭넓은 고객층을 유인하세요.
+여기에 발레코어 무드의 페미닌 아이템을 믹스매치하여 K-로맨틱 스타일을 완성, 동남아 MZ세대의 구매 욕구를 자극하며 높은 마진을 창출할 수 있습니다.</div>
+    </div>
+    
+
+    <!-- Platform Radar -->
+    
+    <div class="radar">
+        <div class="radar-title">🇰🇷 Platform Trend Radar</div>
+        <div class="radar-cards">
+            
+            <div class="radar-card">
+                <div class="radar-pf">oliveyoung K-Trend</div>
+                <div class="radar-kw">🔥 Cica (Centella)</div>
+                <div class="radar-analysis">센텔라(Cica) 성분 기반의 진정 및 장벽 리페어 제품이 클렌저, 앰플, 마스크팩 등 전 카테고리에서 압도적인 점유율을 기록하며 K-뷰티의 핵심 표준으로 자리 잡았습니다. 특히 고농축 리페어 기능이 강화된 2세대 시카 제품들은 고온다습한 환경으로 피부 트러블 고민이 많은 동남아 시장에서 가장 확실한 매출 보증 수표가 될 것입니다.</div>
+            </div>
+            
+            <div class="radar-card">
+                <div class="radar-pf">musinsa K-Trend</div>
+                <div class="radar-kw">🔥 와이드핏</div>
+                <div class="radar-analysis">와이드핏은 전체 하의 상품 중 약 27%를 차지하며, 편안함과 스타일을 동시에 추구하는 K-패션의 핵심 트렌드를 명확히 보여줍니다. 이 트렌드는 다양한 소재와 결합하여 동남아시아 시장에서도 폭넓은 소비자층에 어필할 수 있는 강력한 비즈니스 기회를 제공합니다.</div>
+            </div>
+            
+            <div class="radar-card">
+                <div class="radar-pf">ably K-Trend</div>
+                <div class="radar-kw">🔥 발레코어(Balletcore)</div>
+                <div class="radar-analysis">리본, 메리제인, 레이스 등 페미닌한 디테일이 신발과 잡화 카테고리의 약 40% 이상을 점유하며 압도적인 강세를 보이고 있습니다. 특히 스포티한 브랜드와 믹스매치되는 'K-로맨틱' 무드는 동남아 MZ세대의 취향과 직결되어 높은 수출 마진을 기대할 수 있는 핵심 비즈니스 타겟입니다.</div>
+            </div>
+            
+        </div>
+    </div>
+    
+
+    <!-- Sectors -->
+    
+    <div class="sector">
+        <div class="sector-header beauty">
+            <span class="sector-emoji">💄</span>
+            <span class="sector-title">K-Beauty</span>
+        </div>
+
+        <div class="trend-box">
+            <div class="trend-keyword">PDRN 겔 마스크</div>
+            <div class="trend-summary">올리브영 인기 상품에 'PDRN 스킨 탄력' 기능이 강조된 겔 마스크가 포함되어, 소비자들이 피부 탄력 및 수분 공급을 위한 고기능성 스킨케어 제품에 높은 관심을 보이고 있습니다.</div>
+            <div class="tags">
+                
+                <span class="tag beauty">#피부탄력</span>
+                
+                <span class="tag beauty">#재생케어</span>
+                
+                <span class="tag beauty">#고기능성마스크</span>
+                
+                <span class="tag beauty">#수분충전</span>
+                
+                <span class="tag beauty">#안티에이징</span>
+                
+            </div>
+            
+            
+            <div class="b2b-box">
+                <div class="b2b-title">💎 B2B Sourcing Insight</div>
+                <div class="b2b-text">PDRN 겔 마스크는 K-뷰티의 혁신적인 고기능성 성분으로, 동남아시아 시장에서 프리미엄 스킨케어 제품으로 높은 마진을 기대할 수 있습니다. 사용이 간편한 마스크팩 형태는 현지 소비자의 피부 집중 관리 수요를 충족시키며 즉각적인 효과로 빠르게 인기를 얻을 것입니다.</div>
+                
+                <div class="moq-badge">Target MOQ: 테스트 발주 50~100ea 추천</div>
+                
+            </div>
+            
+            
+            
+        </div>
+
+        <div class="products">
+            
+            <div class="product">
+                <div class="product-img">
+                    <div class="rank">1</div>
+                    
+                    <img src="https://image.oliveyoung.co.kr/cfimages/cf-goods/uploads/images/thumbnails/400/10/0000/0023/A00000023235606ko.jpg?l=ko" alt="[청담샵템] 센텔리안24 마데카랩 겔 마스크 5매(히알 워터풀 수분/PDRN 스킨 탄력)">
+                    
+                </div>
+                <div class="product-body">
+                    <div class="p-brand">센텔리안24 · oliveyoung</div>
+                    <div class="p-name">[청담샵템] 센텔리안24 마데카랩 겔 마스크 5매(히알 워터풀 수분/PDRN 스킨 탄력)</div>
+                    
+                    <div class="p-reason">"상품명에 'PDRN 스킨 탄력'과 '겔 마스크'가 명시되어 트렌드 키워드와 완벽하게 일치하며, 피부 탄력, 재생 케어, 수분 충전, 안티에이징 등 모든 특성을 포함합니다."</div>
+                    
+                    <div class="p-price">₩16,000</div>
+
+                    
+                    <div class="pitches">
+                        
+                        
+                        <div class="pitch">
+                            <div class="pitch-lang">🇰🇷 Korean</div>
+                            <div class="pitch-headline">✨ 올리브영 대란템! 청담샵템 '센텔리안24 마데카랩 겔 마스크'로 피부 탄력과 수분을 동시에! 💧</div>
+                            <ul class="pitch-reasons">
+                                <li>**PDRN의 힘**: 피부 속부터 차오르는 탄력! 쫀쫀하고 건강한 피부를 경험하세요.</li><li>**히알루론산 수분 폭탄**: 건조할 틈 없는 촉촉함! 하루 종일 빛나는 광채 피부 완성.</li><li>**겔 마스크의 완벽 밀착**: 에센스 한 방울까지 피부에 쏙! 집에서 즐기는 프리미엄 에스테틱 효과.</li>
+                            </ul>
+                        </div>
+                        
+                        
+                        
+                        
+                        <div class="pitch">
+                            <div class="pitch-lang">🇺🇸 English</div>
+                            <div class="pitch-headline">Unlock K-Beauty's Secret: Centellian24 Madecalab Gel Mask for Youthful Radiance! ✨</div>
+                            <ul class="pitch-reasons">
+                                <li>**PDRN Power for Firmness**: Experience visibly firmer, more resilient skin with cutting-edge PDRN technology.</li><li>**Hyal Waterfull Hydration**: Drench your skin in intense moisture, achieving a dewy, plump complexion that glows.</li><li>**Advanced Gel Mask Adherence**: Maximized essence delivery for salon-grade results, right in the comfort of your home.</li>
+                            </ul>
+                        </div>
+                        
+
+                        
+                        
+                        <div class="pitch">
+                            <div class="pitch-lang">🇹🇭 Thai</div>
+                            <div class="pitch-headline">เผยผิวสวยระดับพรีเมียม! ✨ Centellian24 มาส์กเจล PDRN ตัวดังจากเกาหลี! 🇰🇷</div>
+                            <ul class="pitch-reasons">
+                                <li>**พลัง PDRN เพื่อผิวยืดหยุ่น**: สัมผัสผิวกระชับ เต่งตึง แลดูอ่อนเยาว์อย่างเป็นธรรมชาติ.</li><li>**เติมน้ำให้ผิวฉ่ำวาว**: ด้วย Hyal Waterfull มอบความชุ่มชื้นล้ำลึก ผิวอิ่มฟู เปล่งประกายตลอดวัน.</li><li>**มาส์กเจลแนบสนิท**: ส่งตรงสารบำรุงสู่ผิวอย่างเต็มที่ ให้คุณปรนนิบัติผิวได้เหมือนทำสปาที่บ้าน.</li>
+                            </ul>
+                        </div>
+                        
+
+                        
+                        
+                        <div class="pitch">
+                            <div class="pitch-lang">🇻🇳 Vietnamese</div>
+                            <div class="pitch-headline">Khám phá Bí quyết da đẹp chuẩn Hàn! ✨ Mặt nạ gel Centellian24 PDRN đang "gây sốt"! 🇰🇷</div>
+                            <ul class="pitch-reasons">
+                                <li>**Sức mạnh PDRN tái tạo da**: Trải nghiệm làn da săn chắc, đàn hồi và trẻ trung rõ rệt từ sâu bên trong.</li><li>**Dưỡng ẩm chuyên sâu Hyal Waterfull**: Cấp nước tối ưu, mang lại làn da căng mọng, ẩm mượt và rạng rỡ suốt ngày dài.</li><li>**Mặt nạ gel ôm khít hoàn hảo**: Giúp dưỡng chất thẩm thấu tối đa, cho hiệu quả chăm sóc da cao cấp như tại spa ngay tại nhà.</li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    
+    <div class="sector">
+        <div class="sector-header fashion">
+            <span class="sector-emoji">👗</span>
+            <span class="sector-title">K-Fashion</span>
+        </div>
+
+        <div class="trend-box">
+            <div class="trend-keyword">여름 레깅스</div>
+            <div class="trend-summary">강력한 검색 트렌드인 '여름 레깅스'와 '룰루 레몬 레깅스', 그리고 쇼핑몰 인기 상품 '룰루레몬 셰이크 잇 아웃 하이라이즈 러닝 쇼츠'를 통해 가볍고 통기성, 스트레치 기능이 뛰어난 활동성 높은 하의에 대한 수요가 급증하고 있습니다.</div>
+            <div class="tags">
+                
+                <span class="tag fashion">통기성레깅스</span>
+                
+                <span class="tag fashion">하이라이즈쇼츠</span>
+                
+                <span class="tag fashion">스트레치팬츠</span>
+                
+                <span class="tag fashion">기능성하의</span>
+                
+                <span class="tag fashion">애슬레저룩</span>
+                
+            </div>
+            
+            
+            <div class="b2b-box">
+                <div class="b2b-title">💎 B2B Sourcing Insight</div>
+                <div class="b2b-text">동남아시아는 연중 고온다습한 기후로 인해 가볍고 통기성이 뛰어난 의류에 대한 수요가 매우 높으며, K-Pop과 K-Fashion의 영향으로 한국의 애슬레저 트렌드가 강하게 유입되고 있어 활동성과 스타일을 겸비한 여름 레깅스와 러닝 쇼츠는 높은 마진율과 빠른 재고 소진을 기대할 수 있습니다. 현지 소비자들이 일상복과 운동복 겸용으로 활용할 수 있는 다용도 아이템으로 큰 인기를 끌 것입니다.</div>
+                
+                <div class="moq-badge">Target MOQ: 테스트 발주 50~100ea 추천</div>
+                
+            </div>
+            
+            
+            
+        </div>
+
+        <div class="products">
+            
+            <div class="product">
+                <div class="product-img">
+                    <div class="rank">1</div>
+                    
+                    <img src="https://image.msscdn.net/images/goods_img/20251114/5738507/5738507_17707902003221_500.jpg" alt="셰이크 잇 아웃 하이라이즈 러닝 쇼츠 2.5inch  TRNV">
+                    
+                </div>
+                <div class="product-body">
+                    <div class="p-brand">룰루레몬 · musinsa</div>
+                    <div class="p-name">셰이크 잇 아웃 하이라이즈 러닝 쇼츠 2.5inch  TRNV</div>
+                    
+                    <div class="p-reason">"룰루레몬의 '하이라이즈 러닝 쇼츠'는 '하이라이즈 쇼츠', '기능성 하의', '애슬레저룩' 트렌드에 완벽하게 부합하는 대표 상품입니다."</div>
+                    
+                    <div class="p-price">₩93,000</div>
+
+                    
+                    <div class="pitches">
+                        
+                        
+                        <div class="pitch">
+                            <div class="pitch-lang">🇰🇷 Korean</div>
+                            <div class="pitch-headline">🔥한국 직배송! 룰루레몬 셰이크 잇 아웃 쇼츠, 여름 필수템 등극!🔥</div>
+                            <ul class="pitch-reasons">
+                                <li>국내 룰루레몬 인기템! '여름 레깅스' 트렌드를 잇는 최신상 러닝 쇼츠 🏃‍♀️</li><li>가볍고 시원한 통기성, 놀라운 스트레치! 어떤 움직임에도 편안함 그대로 ✨</li><li>하이라이즈 디자인으로 완벽한 핏과 스타일까지! 지금 바로 ₩93,000에 만나보세요 💖</li>
+                            </ul>
+                        </div>
+                        
+                        
+                        
+                        
+                        <div class="pitch">
+                            <div class="pitch-lang">🇺🇸 English</div>
+                            <div class="pitch-headline">✨ Elevate Your Summer: Lululemon Shake It Out High-Rise Running Shorts ✨</div>
+                            <ul class="pitch-reasons">
+                                <li>Experience ultimate comfort with lightweight, breathable, and ultra-stretchy fabric, perfect for active days. ☀️</li><li>Designed for performance and style, these high-rise shorts offer a flattering fit and unrestricted movement. 🏃‍♂️</li><li>Join the summer legging trend with this sought-after Lululemon bestseller. Get yours for ₩93,000! 💎</li>
+                            </ul>
+                        </div>
+                        
+
+                        
+                        
+                        <div class="pitch">
+                            <div class="pitch-lang">🇹🇭 Thai</div>
+                            <div class="pitch-headline">✨ กางเกงวิ่ง Lululemon Shake It Out ขาสั้นเอวสูง: สบายสุดๆ สำหรับซัมเมอร์นี้! ✨</div>
+                            <ul class="pitch-reasons">
+                                <li>สัมผัสความเบาสบาย ระบายอากาศดีเยี่ยม และยืดหยุ่นสูง เหมาะกับการเคลื่อนไหวทุกรูปแบบ 🏃‍♀️</li><li>ดีไซน์เอวสูงช่วยเสริมหุ่นให้ดูดี พร้อมความคล่องตัวไร้ขีดจำกัดในทุกกิจกรรม ☀️</li><li>เทรนด์ 'กางเกงเลกกิ้งหน้าร้อน' มาแรง! ช้อปเลยในราคา ₩93,000! 💖</li>
+                            </ul>
+                        </div>
+                        
+
+                        
+                        
+                        <div class="pitch">
+                            <div class="pitch-lang">🇻🇳 Vietnamese</div>
+                            <div class="pitch-headline">✨ Quần Short Chạy Bộ Lululemon Shake It Out Lưng Cao: Chuẩn Phong Cách Mùa Hè! ✨</div>
+                            <ul class="pitch-reasons">
+                                <li>Chất liệu siêu nhẹ, thoáng khí và co giãn tối đa mang lại sự thoải mái tuyệt đối cho mọi hoạt động. 🏃‍♂️</li><li>Thiết kế lưng cao tôn dáng, cho phép bạn vận động linh hoạt và tự tin suốt cả ngày. ☀️</li><li>Đón đầu xu hướng 'quần legging mùa hè' với item bán chạy nhất từ Lululemon. Giá chỉ ₩93,000! 💖</li>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <div class="product">
+                <div class="product-img">
+                    <div class="rank">2</div>
+                    
+                    <img src="https://image.msscdn.net/images/goods_img/20250929/5546412/5546412_17591371243912_500.jpg" alt="시스루 포켓 숏츠">
+                    
+                </div>
+                <div class="product-body">
+                    <div class="p-brand">타파하 · musinsa</div>
+                    <div class="p-name">시스루 포켓 숏츠</div>
+                    
+                    <div class="p-reason">"'시스루 포켓 숏츠'는 '숏츠' 트렌드에 적합하며, '시스루' 소재는 여름철 '통기성'을 강조하여 기능성 하의로 소싱하기 좋습니다."</div>
+                    
+                    <div class="p-price">₩128,000</div>
+
+                    
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    
+    <div class="sector">
+        <div class="sector-header lifestyle">
+            <span class="sector-emoji">🏠</span>
+            <span class="sector-title">K-Lifestyle</span>
+        </div>
+
+        <div class="trend-box">
+            <div class="trend-keyword">아기 물티슈</div>
+            <div class="trend-summary">최근 7일간 네이버 베스트 상품에 '베베숲 시그니처 위드 블루 스위트에디션 아기물티슈 70매 캡형 20팩'이 랭크되며, 육아 필수품인 아기 물티슈에 대한 꾸준한 수요와 관심을 확인할 수 있습니다.</div>
+            <div class="tags">
+                
+                <span class="tag lifestyle">#아기물티슈</span>
+                
+                <span class="tag lifestyle">#육아템</span>
+                
+                <span class="tag lifestyle">#신생아용품</span>
+                
+            </div>
+            
+            
+            <div class="b2b-box">
+                <div class="b2b-title">💎 B2B Sourcing Insight</div>
+                <div class="b2b-text">동남아시아 시장은 출산율이 높고 육아용품에 대한 수요가 꾸준히 증가하고 있어, 한국의 프리미엄 아기 물티슈는 안전성과 품질 면에서 높은 신뢰도를 바탕으로 즉각적인 판매를 기대할 수 있습니다. 특히 한국 육아 트렌드를 선도하는 인기 브랜드 제품은 현지 소비자들에게 매력적인 선택지가 될 것입니다.</div>
+                
+                <div class="moq-badge">Target MOQ: 테스트 발주 100~200팩 추천</div>
+                
+            </div>
+            
+            
+            
+        </div>
+
+        <div class="products">
+            
+        </div>
+    </div>
+    
+
+    <footer>
+        K-Vant Foresight — AI-Powered Sourcing Intelligence for Southeast Asian Sellers<br>
+        © 2026. 03. 25 K-Vant Lab. All rights reserved.
+    </footer>
+
+</div>
+</body>
+</html>

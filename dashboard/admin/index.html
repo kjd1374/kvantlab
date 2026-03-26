@@ -744,6 +744,7 @@ kvantlab.com</textarea>
                                     <th style="padding: 12px;">Name / Email</th>
                                     <th style="padding: 12px;">Ref Code</th>
                                     <th style="padding: 12px;">Commission</th>
+                                    <th style="padding: 12px;">Duration (Months)</th>
                                     <th style="padding: 12px;">Total Signups</th>
                                     <th style="padding: 12px;">Paid Conversions</th>
                                     <th style="padding: 12px;">Total Earnings</th>
@@ -1258,20 +1259,23 @@ kvantlab.com</textarea>
               const res = await fetch('/api/admin/partners');
               const data = await res.json();
               if (data.partners && data.partners.length > 0) {
-                  tbody.innerHTML = data.partners.map(p => `
+                  tbody.innerHTML = data.partners.map(p => {
+                      const durText = (p.reward_duration_months && p.reward_duration_months > 0) ? `${p.reward_duration_months} Months` : 'Lifetime (0)';
+                      return `
                       <tr style="border-bottom:1px solid #eee;">
                           <td style="padding:12px;"><strong>${p.name || '-'}</strong><br><span style="font-size:12px;color:#666;">${p.email}</span></td>
                           <td style="padding:12px;font-family:monospace;color:#0066ff;">${p.ref_code}</td>
                           <td style="padding:12px;">
                             ${p.commission_rate}%
-                            <button onclick="window.editCommission('${p.id}', ${p.commission_rate}, '${p.email}')" style="margin-left:8px; background:#f1f3f5; border:1px solid #dee2e6; cursor:pointer; font-size:11px; padding:2px 6px; border-radius:4px; color:#495057;">수정</button>
+                            <button onclick="window.editCommission('${p.id}', ${p.commission_rate}, ${p.reward_duration_months || 0}, '${p.email}')" style="margin-left:8px; background:#f1f3f5; border:1px solid #dee2e6; cursor:pointer; font-size:11px; padding:2px 6px; border-radius:4px; color:#495057;">수정</button>
                           </td>
+                          <td style="padding:12px;">${durText}</td>
                           <td style="padding:12px;">${p.partner_stats?.[0]?.total_signups || 0}</td>
                           <td style="padding:12px;">${p.partner_stats?.[0]?.paid_conversions || 0}</td>
                           <td style="padding:12px;font-weight:bold;color:#28a745;">$${(p.partner_stats?.[0]?.total_earnings || 0).toFixed(2)}</td>
                           <td style="padding:12px;"><span class="status-badge" style="background:#d4edda;color:#155724;padding:4px 8px;border-radius:4px;font-size:11px;">Active</span></td>
                       </tr>
-                  `).join('');
+                  `}).join('');
               } else {
                   tbody.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:#666;">등록된 파트너가 없습니다.</td></tr>';
               }
@@ -1281,17 +1285,22 @@ kvantlab.com</textarea>
           }
       };
 
-      window.editCommission = async function(partnerId, currentRate, email) {
+      window.editCommission = async function(partnerId, currentRate, currentDuration, email) {
           const newRate = prompt(`${email} 파트너의 커미션 비율을 입력하세요 (%)`, currentRate);
           if (newRate === null || newRate === '') return;
-          const parsed = parseFloat(newRate);
-          if (isNaN(parsed) || parsed < 0 || parsed > 100) return alert('유효한 비율(0~100)을 입력하세요.');
+          const parsedRate = parseFloat(newRate);
+          if (isNaN(parsedRate) || parsedRate < 0 || parsedRate > 100) return alert('유효한 비율(0~100)을 입력하세요.');
+
+          const newDuration = prompt(`${email} 파트너의 커미션 지급 유지 기간을 입력하세요 (개월수).\n※ 평생 지급을 원하시면 0을 입력하세요.`, currentDuration);
+          if (newDuration === null || newDuration === '') return;
+          const parsedDuration = parseInt(newDuration, 10);
+          if (isNaN(parsedDuration) || parsedDuration < 0) return alert('유효한 개월 수(0 이상의 정수)를 입력하세요.');
 
           try {
               const res = await fetch(`/api/admin/partners/${partnerId}/commission`, {
                   method: 'PATCH',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ commission_rate: parsed })
+                  body: JSON.stringify({ commission_rate: parsedRate, reward_duration_months: parsedDuration })
               });
               const data = await res.json();
               if (data.success) {

@@ -458,9 +458,25 @@
       </div>
     </div>
 
+    <!-- MONTHLY EARNINGS -->
+    <div class="section-card">
+      <div class="section-title">📅 Monthly Summary</div>
+      <table class="payout-table">
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>Total Earnings</th>
+          </tr>
+        </thead>
+        <tbody id="monthlyBody">
+          <tr><td colspan="2" class="empty-msg">No earnings yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+
     <!-- PAYOUT HISTORY -->
     <div class="section-card">
-      <div class="section-title">📋 Payout History</div>
+      <div class="section-title">📋 Recent Payouts</div>
       <table class="payout-table">
         <thead>
           <tr>
@@ -567,8 +583,19 @@
         const payoutsRes = await fetch('/api/affiliate/payouts', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        const { payouts } = await payoutsRes.json();
+        const { payouts, monthlyStats } = await payoutsRes.json();
 
+        // Render Monthly Summary
+        if (monthlyStats && monthlyStats.length > 0) {
+          document.getElementById('monthlyBody').innerHTML = monthlyStats.map(m => `
+            <tr>
+              <td><span style="font-weight:600;">${m.month}</span></td>
+              <td style="color:var(--green);font-weight:700;">$${m.earnings}</td>
+            </tr>
+          `).join('');
+        }
+
+        // Render Recent Payouts
         if (payouts && payouts.length > 0) {
           document.getElementById('payoutBody').innerHTML = payouts.map(p => `
             <tr>
