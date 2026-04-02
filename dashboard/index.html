@@ -693,16 +693,165 @@
       font-weight: 500;
     }
 
+    /* ─────────────── MOBILE RESPONSIVE ─────────────── */
     @media (max-width: 768px) {
+
+      /* NAV: compact for mobile */
+      nav {
+        padding: 0 16px;
+        height: 56px;
+      }
+      .logo img {
+        height: 28px !important;
+      }
+      .nav-links {
+        display: none;
+      }
+      .header-right {
+        gap: 8px;
+      }
+      .header-icon-btn {
+        font-size: 0.75rem;
+        padding: 5px 8px;
+      }
+      .header-auth .btn-login {
+        padding: 6px 12px !important;
+        font-size: 12px !important;
+      }
+
+      /* HERO: single column, no overflow */
+      .hero {
+        padding: 80px 20px 40px;
+        min-height: auto;
+      }
+      .hero-inner {
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+      .hero-h1 {
+        font-size: clamp(28px, 7vw, 40px);
+      }
+      .hero-sub {
+        font-size: 15px;
+        max-width: 100%;
+      }
+      .hero-cta {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .btn-primary {
+        padding: 12px 24px;
+        font-size: 14px;
+        width: 100%;
+        justify-content: center;
+      }
       .hero-interview-card {
-        margin-top: 50px;
-        height: 300px;
+        margin-top: 20px;
+        height: 260px;
+        max-width: 100%;
       }
       .interview-subtitle {
-        font-size: 16px;
+        font-size: 15px;
       }
       .hero-interview-overlay {
-        padding: 20px;
+        padding: 16px;
+      }
+      .interview-name {
+        font-size: 12px;
+      }
+
+      /* Hide floating badges on mobile to prevent overflow */
+      .mockup-wrap {
+        display: none;
+      }
+      .fbadge-1, .fbadge-2 {
+        display: none;
+      }
+
+      /* Glow effects: shrink to prevent overflow */
+      .hero-glow-1 {
+        width: 100%;
+        height: 300px;
+      }
+      .hero-glow-2 {
+        width: 200px;
+        height: 200px;
+      }
+
+      /* STATS BAR */
+      .stats-bar {
+        padding: 30px 20px;
+      }
+      .stats-inner {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+      }
+      .stat-num {
+        font-size: 28px;
+      }
+
+      /* ALL SECTIONS: reduce padding */
+      .section {
+        padding: 60px 20px;
+      }
+
+      /* PROBLEM SECTION */
+      .problem-grid {
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+
+      /* FEATURES GRID */
+      .features-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
+      /* PREVIEW TABLE — horizontal scroll */
+      .preview-table-header,
+      .preview-table-row {
+        min-width: 600px;
+      }
+
+      /* PRICING GRID */
+      .pricing-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        max-width: 420px;
+      }
+
+      /* FAQ GRID */
+      .faq-grid {
+        grid-template-columns: 1fr;
+      }
+
+      /* CARDS (comparison/plan cards) */
+      .cards {
+        grid-template-columns: 1fr;
+        max-width: 420px;
+      }
+
+      /* CTA Section */
+      .cta-title {
+        font-size: clamp(24px, 6vw, 36px);
+      }
+
+      /* FOOTER */
+      .footer {
+        padding: 40px 20px;
+      }
+    }
+
+    /* Extra small devices */
+    @media (max-width: 380px) {
+      .hero-h1 {
+        font-size: 26px;
+      }
+      .stats-inner {
+        grid-template-columns: 1fr;
+      }
+      .hero-interview-card {
+        height: 220px;
       }
     }
 
