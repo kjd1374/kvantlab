@@ -5082,3 +5082,207 @@ body[data-platform="k_trend"] #tab-all {
   white-space: nowrap;
   letter-spacing: 0.5px;
 }
+
+/* ============================================
+   COMPREHENSIVE MOBILE DASHBOARD RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+
+  /* Prevent horizontal overflow on the entire page */
+  html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  /* HEADER: wrap into 2 rows */
+  .header {
+    position: sticky !important;
+    padding: 0 12px !important;
+  }
+
+  .header-inner {
+    flex-wrap: wrap !important;
+    height: auto !important;
+    padding: 8px 0 !important;
+    gap: 8px !important;
+    max-width: 100% !important;
+  }
+
+  /* Logo: compact */
+  .header-inner .logo img {
+    height: 26px !important;
+    max-width: 120px !important;
+  }
+
+  /* Nav tabs: compact, scrollable in line with logo */
+  .header-nav {
+    order: 1 !important;
+    gap: 16px !important;
+    margin: 0 !important;
+    flex: 0 0 auto !important;
+  }
+
+  .header-nav-item {
+    font-size: 13px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Right section: move to second row */
+  .header-right {
+    order: 2 !important;
+    width: 100% !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    padding-bottom: 4px !important;
+  }
+
+  /* Search: hide on mobile (save space, can add a toggle icon later) */
+  .search-box {
+    display: none !important;
+  }
+
+  /* Language, notifications, auth: compact */
+  .lang-selector .header-icon-btn,
+  .notification-bell {
+    padding: 5px 8px !important;
+    font-size: 14px !important;
+  }
+
+  .header-auth {
+    margin-left: 4px !important;
+  }
+
+  .user-avatar {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 12px !important;
+  }
+
+  /* MAIN CONTENT: tighter padding */
+  .main {
+    padding: 16px 12px !important;
+  }
+
+  /* Platform bar: tighter */
+  .platform-bar {
+    padding: 10px 12px 0 !important;
+  }
+
+  /* KPI GRID: 2 columns on mobile */
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .kpi-card {
+    padding: 16px 12px !important;
+  }
+
+  .kpi-value {
+    font-size: 22px !important;
+  }
+
+  .kpi-label {
+    font-size: 11px !important;
+  }
+
+  /* Category filter: scroll */
+  .filter-bar {
+    padding: 8px !important;
+    overflow-x: auto !important;
+  }
+
+  .category-chips {
+    flex-wrap: nowrap !important;
+  }
+
+  /* Tab bar: scrollable */
+  .tab-bar {
+    overflow-x: auto !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .tab-bar::-webkit-scrollbar {
+    height: 0 !important;
+  }
+
+  /* Products grid: 2 columns */
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .product-card-top {
+    padding: 10px !important;
+    gap: 8px !important;
+  }
+
+  .product-img {
+    width: 60px !important;
+    height: 60px !important;
+  }
+
+  .product-name {
+    font-size: 12px !important;
+  }
+
+  /* Sourcing page: tighter */
+  #sourcingView {
+    padding: 16px !important;
+  }
+
+  .src-container {
+    padding: 16px 12px 40px !important;
+  }
+
+  /* Sourcing cart card: stack vertically */
+  .src-cart-card {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+
+  .src-cart-card .src-card-fields {
+    width: 100% !important;
+    flex-direction: column !important;
+  }
+
+  .src-cart-card .src-card-fields input[type="text"] {
+    width: 100% !important;
+  }
+
+  /* Section headers */
+  .section-header h2 {
+    font-size: 18px !important;
+  }
+
+  /* Modals: full width */
+  .src-modal-panel {
+    width: 95% !important;
+    padding: 20px !important;
+    max-height: 90vh !important;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 380px) {
+  .kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .products-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .header-nav {
+    gap: 10px !important;
+  }
+
+  .header-nav-item {
+    font-size: 12px !important;
+  }
+}
