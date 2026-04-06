@@ -1,15 +1,38 @@
 /**
  * Data Pool Admin Controller
- * Version: v33
+ * Version: v34 (Security: Admin auth headers)
  */
-console.log('admin.js v33 initialized');
+console.log('admin.js v34 initialized');
 import {
     fetchAnnouncements,
     insertAnnouncement,
     updateAnnouncement,
     deleteAnnouncement,
-    getProfile
+    getProfile,
+    getSession
 } from '../supabase.js';
+
+/**
+ * adminFetch: wrapper around fetch() that automatically adds
+ * the Authorization header with the current user's JWT token.
+ * All /api/admin/* calls MUST use this function.
+ */
+function adminFetch(url, options = {}) {
+    const session = getSession();
+    if (!session?.access_token) {
+        return Promise.reject(new Error('Not authenticated. Please log in again.'));
+    }
+    const headers = {
+        ...(options.headers || {}),
+        'Authorization': `Bearer ${session.access_token}`
+    };
+    // Don't set Content-Type for FormData (file uploads)
+    if (!(options.body instanceof FormData) && !headers['Content-Type']) {
+        headers['Content-Type'] = 'application/json';
+    }
+    return fetch(url, { ...options, headers });
+}
+
 
 async function initAdmin() {
     // 0. Authorization Check
@@ -80,7 +103,7 @@ async function initAdmin() {
         statusDiv.style.color = '#0066ff';
 
         try {
-            const res = await fetch('/api/admin/reports/generate', { method: 'POST' });
+            const res = await adminFetch('/api/admin/reports/generate', { method: 'POST' });
             const data = await res.json();
             if (data.success) {
                 statusDiv.innerText = '✅ 리포트 생성 완료!';
@@ -97,15 +120,27 @@ async function initAdmin() {
         }
     });
 
-    downloadBtn.addEventListener('click', () => {
-        window.location.href = '/api/admin/reports/download';
+    downloadBtn.addEventListener('click', async () => {
+        try {
+            const res = await adminFetch('/api/admin/reports/download');
+            if (!res.ok) throw new Error('Download failed');
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'daily_report.pdf';
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            alert('다운로드 실패: ' + err.message);
+        }
     });
 
     // 3. User Management Logic
     async function loadUsers() {
         userTableBody.innerHTML = '<tr><td colspan="5" style="padding: 40px; text-align: center; color: #888;">사용자 목록을 불러오는 중...</td></tr>';
         try {
-            const res = await fetch('/api/admin/users');
+            const res = await adminFetch('/api/admin/users');
             const data = await res.json();
             if (!data.success) throw new Error(data.error);
 
@@ -176,7 +211,7 @@ async function initAdmin() {
         promoteToPartner: async (id, email) => {
             if (!confirm(`${email} 사용자를 제휴 파트너로 임명하시겠습니까? (기본 커미션 20% 부여)`)) return;
             try {
-                const res = await fetch(`/api/admin/users/${id}/promote-partner`, {
+                const res = await adminFetch(`/api/admin/users/${id}/promote-partner`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email })
@@ -202,7 +237,7 @@ async function initAdmin() {
         resetPassword: async (email) => {
             if (!confirm(`${email} 사용자의 비밀번호 초기화 메일을 발송하시겠습니까?`)) return;
             try {
-                const res = await fetch('/api/admin/users/reset-password', {
+                const res = await adminFetch('/api/admin/users/reset-password', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email })
@@ -217,7 +252,7 @@ async function initAdmin() {
         deleteUser: async (id, email) => {
             if (!confirm(`정말로 ${email} 사용자를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) return;
             try {
-                const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+                const res = await adminFetch(`/api/admin/users/${id}`, { method: 'DELETE' });
                 const data = await res.json();
                 if (data.success) {
                     alert('사용자가 삭제되었습니다.');
@@ -239,7 +274,7 @@ async function initAdmin() {
 
         saveSubBtn.disabled = true;
         try {
-            const res = await fetch(`/api/admin/users/${currentEditingUserId}/subscription`, {
+            const res = await adminFetch(`/api/admin/users/${currentEditingUserId}/subscription`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ tier, expires_at: expiry || null })
@@ -262,7 +297,7 @@ async function initAdmin() {
         if (document.getElementById('logsSection').style.display === 'none') return;
         const type = logTypeSelect.value;
         try {
-            const res = await fetch(`/api/admin/logs?type=${type}`);
+            const res = await adminFetch(`/api/admin/logs?type=${type}`);
             const data = await res.json();
             if (data.success) {
                 logViewer.innerText = data.logs;
@@ -454,7 +489,7 @@ async function initAdmin() {
                 // Send notification to all users if published
                 if (isPublished) {
                     try {
-                        const notifyRes = await fetch('/api/admin/announcements/notify', {
+                        const notifyRes = await adminFetch('/api/admin/announcements/notify', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ title })
@@ -514,7 +549,7 @@ async function initAdmin() {
 
                 // Translate Title
                 if (titleKo) {
-                    const resTitle = await fetch('/api/admin/translate', {
+                    const resTitle = await adminFetch('/api/admin/translate', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ text: titleKo, target_lang: lang.code })
@@ -525,7 +560,7 @@ async function initAdmin() {
 
                 // Translate Content
                 if (contentKo) {
-                    const resContent = await fetch('/api/admin/translate', {
+                    const resContent = await adminFetch('/api/admin/translate', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ text: contentKo, target_lang: lang.code })
@@ -548,7 +583,7 @@ async function initAdmin() {
         tbody.innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: #888;">요청 내역을 불러오는 중...</td></tr>';
 
         try {
-            const res = await fetch('/api/admin/sourcing');
+            const res = await adminFetch('/api/admin/sourcing');
             const data = await res.json();
             if (!data.success) throw new Error(data.error);
 
@@ -600,7 +635,7 @@ async function initAdmin() {
         if (!confirm("정말로 이 소싱 요청(견적건)을 삭제하시겠습니까? 관련 데이터가 영구히 삭제됩니다.")) return;
 
         try {
-            const res = await fetch(`/api/admin/sourcing/${id}`, {
+            const res = await adminFetch(`/api/admin/sourcing/${id}`, {
                 method: 'DELETE'
             });
             const data = await res.json();
@@ -771,7 +806,7 @@ async function initAdmin() {
         const estimated_cost = sum + shipping_fee + service_fee;
 
         try {
-            const res = await fetch(`/api/admin/sourcing/${id}`, {
+            const res = await adminFetch(`/api/admin/sourcing/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -972,7 +1007,7 @@ async function initAdmin() {
         ssTableBody.innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: #888;">데이터를 불러오는 중...</td></tr>';
 
         try {
-            const res = await fetch('/api/admin/steady-sellers');
+            const res = await adminFetch('/api/admin/steady-sellers');
             const data = await res.json();
             if (!data.success) throw new Error(data.error);
 
@@ -1050,7 +1085,7 @@ async function initAdmin() {
     window.adminActions.deleteSteadySeller = async (id) => {
         if (!confirm('정말로 이 상품을 삭제하시겠습니까?')) return;
         try {
-            const res = await fetch(`/api/admin/steady-sellers/${id}`, { method: 'DELETE' });
+            const res = await adminFetch(`/api/admin/steady-sellers/${id}`, { method: 'DELETE' });
             const data = await res.json();
             if (!data.success) throw new Error(data.error);
             alert('삭제되었습니다.');
@@ -1103,7 +1138,7 @@ async function initAdmin() {
                 const formData = new FormData();
                 ssSelectedFiles.forEach(f => formData.append('images', f));
 
-                const uploadRes = await fetch('/api/admin/steady-sellers/upload', {
+                const uploadRes = await adminFetch('/api/admin/steady-sellers/upload', {
                     method: 'POST',
                     body: formData
                 });
@@ -1381,7 +1416,7 @@ async function initAdmin() {
         if (!container) return;
         container.innerHTML = '<div style="padding: 40px; text-align: center; color: #888;">불러오는 중...</div>';
         try {
-            const res = await fetch('/api/admin/search-requests');
+            const res = await adminFetch('/api/admin/search-requests');
             const data = await res.json();
             if (!data.success) throw new Error(data.error);
 
@@ -1444,7 +1479,7 @@ async function initAdmin() {
         const admin_reply = document.getElementById('searchReplyText').value.trim();
         if (!id) return;
         try {
-            const res = await fetch(`/api/admin/search-requests/${id}`, {
+            const res = await adminFetch(`/api/admin/search-requests/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status, admin_reply })

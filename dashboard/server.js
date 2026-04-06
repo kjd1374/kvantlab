@@ -297,9 +297,13 @@ async function sendOtpEmail(toEmail, code) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 
-// Supabase Admin Client
-const SUPABASE_URL = 'https://hgxblbbjlnsfkffwvfao.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhneGJsYmJqbG5zZmtmZnd2ZmFvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDA2NTY4NiwiZXhwIjoyMDc5NjQxNjg2fQ.SRxircIxDPE9Z8xElZzUFK_l9yOsjtKEoAnd7ILpKh8';
+// Supabase Admin Client (uses service_role key from .env — NEVER expose this to frontend)
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY;
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+    console.error('FATAL: SUPABASE_URL or SUPABASE_KEY not found in environment!');
+    process.exit(1);
+}
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
     auth: {
         autoRefreshToken: false,
@@ -307,8 +311,60 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
     }
 });
 
+// Supabase anon key for user JWT verification
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseAnon = SUPABASE_ANON_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { autoRefreshToken: false, persistSession: false } })
+    : null;
+
 app.use(cors());
 app.use(bodyParser.json());
+
+// ─── Auth Middleware ──────────────────────────────────────────────────────────
+/**
+ * requireAuth: Verifies the caller has a valid Supabase JWT.
+ * Attaches req.authUser (Supabase auth user object) on success.
+ */
+async function requireAuth(req, res, next) {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    if (!token) {
+        return res.status(401).json({ success: false, error: 'Missing authorization token' });
+    }
+    try {
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+        if (error || !user) {
+            return res.status(401).json({ success: false, error: 'Invalid or expired token' });
+        }
+        req.authUser = user;
+        next();
+    } catch (err) {
+        return res.status(401).json({ success: false, error: 'Authentication failed' });
+    }
+}
+
+/**
+ * requireAdmin: requireAuth + checks profiles.role = 'admin'.
+ */
+async function requireAdmin(req, res, next) {
+    // First run requireAuth
+    await requireAuth(req, res, async () => {
+        try {
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', req.authUser.id)
+                .single();
+            if (!profile || profile.role !== 'admin') {
+                return res.status(403).json({ success: false, error: 'Admin access required' });
+            }
+            next();
+        } catch (err) {
+            return res.status(403).json({ success: false, error: 'Permission check failed' });
+        }
+    });
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 // --- Custom Email OTP Endpoints ---
 
@@ -610,7 +666,7 @@ app.post('/api/auth/complete-signup', async (req, res) => {
 // --- User Management APIs ---
 
 // 1. List Users
-app.get('/api/admin/users', async (req, res) => {
+app.get('/api/admin/users', requireAdmin, async (req, res) => {
     try {
         // Fetch users from auth.users via admin API
         const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
@@ -648,7 +704,7 @@ app.get('/api/admin/users', async (req, res) => {
 });
 
 // 1.1 Update User Subscription
-app.patch('/api/admin/users/:id/subscription', async (req, res) => {
+app.patch('/api/admin/users/:id/subscription', requireAdmin, async (req, res) => {
     const { id } = req.params;
     const { tier, expires_at } = req.body;
     try {
@@ -668,7 +724,7 @@ app.patch('/api/admin/users/:id/subscription', async (req, res) => {
 });
 
 // 2. Reset Password
-app.post('/api/admin/users/reset-password', async (req, res) => {
+app.post('/api/admin/users/reset-password', requireAdmin, async (req, res) => {
     const { email } = req.body;
     try {
         const { error } = await supabase.auth.admin.generateLink({
@@ -683,7 +739,7 @@ app.post('/api/admin/users/reset-password', async (req, res) => {
 });
 
 // 3. Delete User (Admin)
-app.delete('/api/admin/users/:id', async (req, res) => {
+app.delete('/api/admin/users/:id', requireAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         // Fetch user email and profile before deletion (for deleted_accounts record)
@@ -719,7 +775,7 @@ app.delete('/api/admin/users/:id', async (req, res) => {
 });
 
 // 3.01 Promote to Partner (Admin)
-app.post('/api/admin/users/:id/promote-partner', async (req, res) => {
+app.post('/api/admin/users/:id/promote-partner', requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { email } = req.body;
@@ -756,9 +812,14 @@ app.post('/api/admin/users/:id/promote-partner', async (req, res) => {
 });
 
 // 3.1 Self-delete User (called by the user themselves from My Page)
-app.post('/api/user/delete', async (req, res) => {
+app.post('/api/user/delete', requireAuth, async (req, res) => {
     const { userId } = req.body;
     if (!userId) return res.status(400).json({ success: false, error: 'Missing userId' });
+
+    // Security: users can only delete their own account
+    if (req.authUser.id !== userId) {
+        return res.status(403).json({ success: false, error: 'You can only delete your own account' });
+    }
 
     try {
         // Fetch user email and profile before deletion
@@ -1015,7 +1076,7 @@ app.post('/api/paypal/cancel', async (req, res) => {
 
 // --- Announcement Notification Broadcast ---
 
-app.post('/api/admin/announcements/notify', async (req, res) => {
+app.post('/api/admin/announcements/notify', requireAdmin, async (req, res) => {
     const { title } = req.body;
     if (!title) {
         return res.status(400).json({ success: false, error: 'Missing announcement title' });
@@ -1064,7 +1125,7 @@ app.post('/api/admin/announcements/notify', async (req, res) => {
 
 
 // 1. AI Report Generation
-app.post('/api/admin/reports/generate', async (req, res) => {
+app.post('/api/admin/reports/generate', requireAdmin, async (req, res) => {
     try {
         const scriptPath = path.join(__dirname, 'report_generator', 'generate_daily_report.py');
         const cwd = __dirname;
@@ -1086,7 +1147,7 @@ app.post('/api/admin/reports/generate', async (req, res) => {
 });
 
 // 2. AI Report Download
-app.get('/api/admin/reports/download', async (req, res) => {
+app.get('/api/admin/reports/download', requireAdmin, async (req, res) => {
     try {
         const filePath = path.join(__dirname, 'report_generator', 'output_daily_report.pdf');
 
@@ -1109,7 +1170,7 @@ app.get('/api/admin/reports/download', async (req, res) => {
 });
 
 // 3. Crawler Logs API
-app.get('/api/admin/logs', async (req, res) => {
+app.get('/api/admin/logs', requireAdmin, async (req, res) => {
     const type = req.query.type || 'ecommerce';
     let logPath = '';
 
@@ -1355,7 +1416,7 @@ app.get('/api/sourcing/history/:userId', async (req, res) => {
 });
 
 // 3. Get All Sourcing Requests (Admin)
-app.get('/api/admin/sourcing', async (req, res) => {
+app.get('/api/admin/sourcing', requireAdmin, async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('sourcing_requests')
@@ -1370,7 +1431,7 @@ app.get('/api/admin/sourcing', async (req, res) => {
 });
 
 // 3. Delete Sourcing Request (Admin)
-app.delete('/api/admin/sourcing/:id', async (req, res) => {
+app.delete('/api/admin/sourcing/:id', requireAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         const { error } = await supabase
@@ -1388,7 +1449,7 @@ app.delete('/api/admin/sourcing/:id', async (req, res) => {
 
 // 4. Update Sourcing Request (Admin)
 // Notice the comments numerical increment
-app.put('/api/admin/sourcing/:id', async (req, res) => {
+app.put('/api/admin/sourcing/:id', requireAdmin, async (req, res) => {
     const { id } = req.params;
     const { status, estimated_cost, shipping_fee, service_fee, items, admin_reply } = req.body;
     try {
@@ -1504,7 +1565,7 @@ app.get('/api/search-request/history/:userId', async (req, res) => {
 });
 
 // 3. Admin — Get all search requests
-app.get('/api/admin/search-requests', async (req, res) => {
+app.get('/api/admin/search-requests', requireAdmin, async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('product_search_requests')
@@ -1518,7 +1579,7 @@ app.get('/api/admin/search-requests', async (req, res) => {
 });
 
 // 4. Admin — Update search request (status + admin reply)
-app.put('/api/admin/search-requests/:id', async (req, res) => {
+app.put('/api/admin/search-requests/:id', requireAdmin, async (req, res) => {
     const { id } = req.params;
     const { status, admin_reply } = req.body;
     try {
@@ -1935,7 +1996,7 @@ app.post('/api/paypal/cancel', async (req, res) => {
 })();
 
 // Upload images for steady sellers (max 5)
-app.post('/api/admin/steady-sellers/upload', upload.array('images', 5), async (req, res) => {
+app.post('/api/admin/steady-sellers/upload', requireAdmin, upload.array('images', 5), async (req, res) => {
     try {
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ success: false, error: 'No files uploaded' });
@@ -1970,7 +2031,7 @@ app.post('/api/admin/steady-sellers/upload', upload.array('images', 5), async (r
 });
 
 // 1. List Steady Sellers
-app.get('/api/admin/steady-sellers', async (req, res) => {
+app.get('/api/admin/steady-sellers', requireAdmin, async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('steady_sellers')
@@ -1985,7 +2046,7 @@ app.get('/api/admin/steady-sellers', async (req, res) => {
 });
 
 // 2. Create Steady Seller
-app.post('/api/admin/steady-sellers', async (req, res) => {
+app.post('/api/admin/steady-sellers', requireAdmin, async (req, res) => {
     try {
         const { product_name, brand, price, image_url, image_urls, description, rank, is_active, product_size, product_weight, notes, options } = req.body;
         const insertData = { product_name, brand, price, rank, is_active, description: description || '', product_size: product_size || '', product_weight: product_weight || '', notes: notes || '', options: options || [] };
@@ -2012,7 +2073,7 @@ app.post('/api/admin/steady-sellers', async (req, res) => {
 });
 
 // 3. Update Steady Seller
-app.put('/api/admin/steady-sellers/:id', async (req, res) => {
+app.put('/api/admin/steady-sellers/:id', requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { product_name, brand, price, image_url, image_urls, description, rank, is_active, product_size, product_weight, notes, options } = req.body;
@@ -2041,7 +2102,7 @@ app.put('/api/admin/steady-sellers/:id', async (req, res) => {
 });
 
 // 4. Delete Steady Seller
-app.delete('/api/admin/steady-sellers/:id', async (req, res) => {
+app.delete('/api/admin/steady-sellers/:id', requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { error } = await supabase
@@ -2057,7 +2118,7 @@ app.delete('/api/admin/steady-sellers/:id', async (req, res) => {
 });
 
 // 5. AI Translate API
-app.post('/api/admin/translate', async (req, res) => {
+app.post('/api/admin/translate', requireAdmin, async (req, res) => {
     const { text, target_lang = 'en' } = req.body;
     if (!text) return res.status(400).json({ success: false, error: 'Text is required' });
 
@@ -2175,7 +2236,7 @@ app.get('/api/product-reviews', async (req, res) => {
 // --- YouTube Outreach APIs ---
 
 // 1. Get Campaigns
-app.get('/api/admin/youtube/campaigns', async (req, res) => {
+app.get('/api/admin/youtube/campaigns', requireAdmin, async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('youtube_campaigns')
@@ -2190,7 +2251,7 @@ app.get('/api/admin/youtube/campaigns', async (req, res) => {
 });
 
 // 2. Run Extractor (Native Node)
-app.post('/api/admin/youtube/run-extractor', async (req, res) => {
+app.post('/api/admin/youtube/run-extractor', requireAdmin, async (req, res) => {
     const { keyword, max_results, llm_filter } = req.body;
     if (!keyword) return res.status(400).json({ success: false, error: 'Keyword is required' });
     try {
@@ -2207,7 +2268,7 @@ app.post('/api/admin/youtube/run-extractor', async (req, res) => {
 });
 
 // 3. Manual Send Mailer
-app.post('/api/admin/youtube/send/:id', async (req, res) => {
+app.post('/api/admin/youtube/send/:id', requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { emailSubject, emailBody } = req.body;
@@ -2222,7 +2283,7 @@ app.post('/api/admin/youtube/send/:id', async (req, res) => {
 });
 
 // 4. Track Read Receipts (1x1 Pixel)
-app.get('/api/admin/youtube/track/:id', async (req, res) => {
+app.get('/api/admin/youtube/track/:id', requireAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         if (id && id !== 'undefined') {
@@ -2247,7 +2308,7 @@ app.get('/api/admin/youtube/track/:id', async (req, res) => {
 });
 
 // 5. Manual Lead Registration
-app.post('/api/admin/youtube/campaigns', async (req, res) => {
+app.post('/api/admin/youtube/campaigns', requireAdmin, async (req, res) => {
     try {
         const { channel_name, email, channel_url, keyword } = req.body;
         if (!channel_name || !email) {
@@ -2269,7 +2330,7 @@ app.post('/api/admin/youtube/campaigns', async (req, res) => {
 });
 
 // 6. Delete Campaign
-app.delete('/api/admin/youtube/campaigns/:id', async (req, res) => {
+app.delete('/api/admin/youtube/campaigns/:id', requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { error } = await supabase.from('youtube_campaigns').delete().eq('id', id);
@@ -2282,7 +2343,7 @@ app.delete('/api/admin/youtube/campaigns/:id', async (req, res) => {
 });
 
 // 6. Test Email Send
-app.post('/api/admin/youtube/test-email', async (req, res) => {
+app.post('/api/admin/youtube/test-email', requireAdmin, async (req, res) => {
     try {
         const { emailSubject, emailBody } = req.body;
         if (!emailSubject || !emailBody) {
@@ -2324,7 +2385,7 @@ app.post('/api/admin/youtube/test-email', async (req, res) => {
 // ===================== OUTREACH CRM =====================
 
 // CRM: List leads (with optional status filter)
-app.get('/api/admin/crm', async (req, res) => {
+app.get('/api/admin/crm', requireAdmin, async (req, res) => {
     try {
         const { status } = req.query;
         let query = supabase.from('outreach_crm').select('*').order('updated_at', { ascending: false });
@@ -2338,7 +2399,7 @@ app.get('/api/admin/crm', async (req, res) => {
 });
 
 // CRM: Add lead
-app.post('/api/admin/crm', async (req, res) => {
+app.post('/api/admin/crm', requireAdmin, async (req, res) => {
     try {
         const { platform, account_name, contact_info, memo } = req.body;
         if (!account_name) return res.status(400).json({ success: false, error: '계정명은 필수입니다.' });
@@ -2357,7 +2418,7 @@ app.post('/api/admin/crm', async (req, res) => {
 });
 
 // CRM: Update lead (status / memo)
-app.patch('/api/admin/crm/:id', async (req, res) => {
+app.patch('/api/admin/crm/:id', requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const updates = { ...req.body, updated_at: new Date().toISOString() };
@@ -2370,7 +2431,7 @@ app.patch('/api/admin/crm/:id', async (req, res) => {
 });
 
 // CRM: Delete lead
-app.delete('/api/admin/crm/:id', async (req, res) => {
+app.delete('/api/admin/crm/:id', requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { error } = await supabase.from('outreach_crm').delete().eq('id', id);
@@ -2602,7 +2663,7 @@ app.post('/api/affiliate/record-referral', async (req, res) => {
 // ═════════════════════════════════════════════════════════════════════
 
 // GET /api/admin/partners — Load all partners and their stats
-app.get('/api/admin/partners', async (req, res) => {
+app.get('/api/admin/partners', requireAdmin, async (req, res) => {
     try {
 
         const { data: partners, error } = await supabase
@@ -2625,7 +2686,7 @@ app.get('/api/admin/partners', async (req, res) => {
 const INVITE_SECRET = process.env.SUPABASE_JWT_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'kvant-default-secret-fallback';
 
 // POST /api/admin/partners/invite — Generate an invite link
-app.post('/api/admin/partners/invite', async (req, res) => {
+app.post('/api/admin/partners/invite', requireAdmin, async (req, res) => {
     try {
         const { commission_rate } = req.body;
         const payload = Buffer.from(JSON.stringify({ 
@@ -2644,7 +2705,7 @@ app.post('/api/admin/partners/invite', async (req, res) => {
 });
 
 // PATCH /api/admin/partners/:id/commission — Edit a partner's commission rate
-app.patch('/api/admin/partners/:id/commission', async (req, res) => {
+app.patch('/api/admin/partners/:id/commission', requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { commission_rate, reward_duration_months } = req.body;

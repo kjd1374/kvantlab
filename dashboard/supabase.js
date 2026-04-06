@@ -1,12 +1,17 @@
 /**
  * Supabase API Client
  * K-Trend Intelligence Dashboard
- * Version: v33
+ * Version: v34 (Security Fix: anon key)
  */
-console.log('supabase.js v33 initialized');
+console.log('supabase.js v34 initialized');
 
-const SUPABASE_URL = 'https://hgxblbbjlnsfkffwvfao.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhneGJsYmJqbG5zZmtmZnd2ZmFvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDA2NTY4NiwiZXhwIjoyMDc5NjQxNjg2fQ.SRxircIxDPE9Z8xElZzUFK_l9yOsjtKEoAnd7ILpKh8';
+// ⚠️ IMPORTANT: Frontend must use the anon (public) key, NOT the service_role key.
+// The service_role key bypasses Row Level Security and must only be used server-side.
+const SUPABASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL)
+    || 'https://hgxblbbjlnsfkffwvfao.supabase.co';
+const SUPABASE_KEY = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY)
+    || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhneGJsYmJqbG5zZmtmZnd2ZmFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NDA1NDgsImV4cCI6MjA5MDgwMDU0OH0.hBK43ezVln7yE4tDg2doGX5l8OjbRjgnqFpykoP0j7U';
+
 
 const headers = {
     'apikey': SUPABASE_KEY,

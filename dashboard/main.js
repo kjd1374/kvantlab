@@ -3849,7 +3849,10 @@ document.getElementById('btnDeleteAccount')?.addEventListener('click', async () 
   try {
     const res = await fetch('/api/user/delete', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
       body: JSON.stringify({ userId: session.user.id })
     });
     const data = await res.json();
