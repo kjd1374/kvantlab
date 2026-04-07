@@ -231,7 +231,8 @@
     "job": "작업명",
     "status": "상태",
     "count": "수집량",
-    "message": "메시지"
+    "message": "메시지",
+    "action": "액션"
   },
   "platforms": {
     "oliveyoung": "올리브영",

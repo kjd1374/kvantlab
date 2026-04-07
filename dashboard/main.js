@@ -1375,13 +1375,13 @@ window.__toggleWatchlistFromMargin = async function() {
   
   try {
     if (isSaved) {
-      await window.removeProduct(pid);
+      await removeProduct(pid);
       currentMarginProduct.is_saved = false;
       btn.style.boxShadow = 'none';
       text.textContent = window.t('calc.watchlist_btn') || '관심상품 추가';
       btn.querySelector('span').textContent = '🤍';
     } else {
-      await window.saveProduct(pid, currentMarginProduct);
+      await saveProduct(pid, currentMarginProduct);
       currentMarginProduct.is_saved = true;
       btn.style.boxShadow = 'inset 0 0 0 2px #ef4444';
       text.textContent = window.t('calc.watchlist_btn_active') || '관심상품 취소';

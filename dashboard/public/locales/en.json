@@ -225,7 +225,8 @@
     "job": "Job Name",
     "status": "Status",
     "count": "Count",
-    "message": "Message"
+    "message": "Message",
+    "action": "Action"
   },
   "platforms": {
     "oliveyoung": "Olive Young",
