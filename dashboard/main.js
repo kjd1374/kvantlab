@@ -1309,38 +1309,100 @@ window.openMarginCalc = function(p) {
   document.getElementById('marginProductImg').src = p.image_url || '';
   document.getElementById('marginProductName').textContent = escapeHtml(name || '');
   document.getElementById('marginCostPrice').value = costPrice;
+  document.getElementById('marginExchangeRate').value = '1500';
   document.getElementById('marginSellPrice').value = ''; 
-  document.getElementById('marginResult').textContent = '- 원';
+  document.getElementById('marginResult').textContent = '- $';
   document.getElementById('marginResult').style.color = '#cbd5e1';
   document.getElementById('marginFee').value = '12';
-  document.getElementById('marginShipping').value = '3000';
+  document.getElementById('marginShipping').value = '2';
+  
+  const isSaved = p.is_saved || p.is_saved === true;
+  const btn = document.getElementById('marginWatchlistBtn');
+  const text = document.getElementById('marginWatchlistText');
+  if (isSaved) {
+    btn.style.boxShadow = 'inset 0 0 0 2px #ef4444';
+    text.textContent = window.t('calc.watchlist_btn_active') || '관심상품 취소';
+    btn.querySelector('span').textContent = '❤️';
+  } else {
+    btn.style.boxShadow = 'none';
+    text.textContent = window.t('calc.watchlist_btn') || '관심상품 추가';
+    btn.querySelector('span').textContent = '🤍';
+  }
+
+  if (window.updateTranslations) {
+    window.updateTranslations();
+  }
   
   document.getElementById('marginCalcModal').style.display = 'flex';
 };
 
 window.calculateMargin = function() {
-  const cost = parseFloat(document.getElementById('marginCostPrice').value) || 0;
+  const costKRW = parseFloat(document.getElementById('marginCostPrice').value) || 0;
+  const fxRate = parseFloat(document.getElementById('marginExchangeRate').value) || 1500;
+  const costTarget = costKRW / fxRate; 
+  
   const sell = parseFloat(document.getElementById('marginSellPrice').value) || 0;
   const shipping = parseFloat(document.getElementById('marginShipping').value) || 0;
   const feePct = parseFloat(document.getElementById('marginFee').value) || 0;
   
   if (sell <= 0) {
-    document.getElementById('marginResult').textContent = '- 원';
+    document.getElementById('marginResult').textContent = '- $';
     document.getElementById('marginResult').style.color = '#cbd5e1';
     return;
   }
   
   const fee = sell * (feePct / 100);
-  const profit = sell - cost - shipping - fee;
+  const profit = sell - costTarget - shipping - fee;
   const profitMargin = (profit / sell) * 100;
   
   const resultEl = document.getElementById('marginResult');
-  resultEl.textContent = `${formatNumber(Math.round(profit))} 원 (${profitMargin.toFixed(1)}%)`;
+  const formattedProfit = profit.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  resultEl.textContent = `$${formattedProfit} (${profitMargin.toFixed(1)}%)`;
   
   if (profit > 0) {
     resultEl.style.color = '#22c55e'; // Green
   } else {
     resultEl.style.color = '#ef4444'; // Red
+  }
+};
+
+window.__toggleWatchlistFromMargin = async function() {
+  if (!currentMarginProduct) return;
+  const btn = document.getElementById('marginWatchlistBtn');
+  const text = document.getElementById('marginWatchlistText');
+  const pid = currentMarginProduct.id || currentMarginProduct.product_id;
+  const isSaved = currentMarginProduct.is_saved;
+  
+  try {
+    if (isSaved) {
+      await window.removeProduct(pid);
+      currentMarginProduct.is_saved = false;
+      btn.style.boxShadow = 'none';
+      text.textContent = window.t('calc.watchlist_btn') || '관심상품 추가';
+      btn.querySelector('span').textContent = '🤍';
+    } else {
+      await window.saveProduct(pid, currentMarginProduct);
+      currentMarginProduct.is_saved = true;
+      btn.style.boxShadow = 'inset 0 0 0 2px #ef4444';
+      text.textContent = window.t('calc.watchlist_btn_active') || '관심상품 취소';
+      btn.querySelector('span').textContent = '❤️';
+    }
+    
+    // Attempt to update UI row if exists
+    const rowBtn = document.querySelector(`.btn-wishlist[data-id="${pid}"]`) || document.querySelector(`.btn-signal-wishlist[data-product-id="${pid}"]`);
+    if (rowBtn) {
+      if (currentMarginProduct.is_saved) {
+        rowBtn.classList.add('active');
+        const icon = rowBtn.querySelector('.wishlist-icon') || rowBtn;
+        if(icon.textContent.includes('🤍') || icon.textContent.includes('❤️')) icon.textContent = '❤️';
+      } else {
+        rowBtn.classList.remove('active');
+        const icon = rowBtn.querySelector('.wishlist-icon') || rowBtn;
+        if(icon.textContent.includes('🤍') || icon.textContent.includes('❤️')) icon.textContent = '🤍';
+      }
+    }
+  } catch(err) {
+    console.error('Watchlist error:', err);
   }
 };
 
