@@ -531,6 +531,30 @@ body {
   background: #fafafa;
 }
 
+.btn-signal-more {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.btn-signal-more:hover {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-color: #cbd5e1;
+}
+
 .signal-item {
   display: flex;
   align-items: center;

@@ -140,6 +140,8 @@ const FALLBACK_STRINGS = {
     'signal.red_desc': { ko: '초격차 상위권 · 경쟁 치열', en: 'Top Tier · Fierce Competition' },
     'signal.steady_title': { ko: 'Steady Sellers (안정성)', en: 'Steady Sellers (Secure)' },
     'signal.steady_desc': { ko: '압도적 리뷰 · 롱런 아이템', en: 'Massive reviews · Long-run items' },
+    'signal.view_more': { ko: '더보기', en: 'View More' },
+    'signal.view_less': { ko: '접기', en: 'Collapse' },
     'table.action_sourcing': { ko: '소싱', en: 'Sourcing' }
 };
 

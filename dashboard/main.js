@@ -660,7 +660,7 @@ function renderTabs() {
   });
 }
 
-function renderSignalItem(p, index) {
+function renderSignalItem(p, index, isHidden = false) {
   const profile = getProfile();
   const isLocked = !isProMember(profile);
 
@@ -684,8 +684,11 @@ function renderSignalItem(p, index) {
   else rankHtml = `<span class="signal-metric-highlight">-</span>`;
 
   const pJson = encodeURIComponent(JSON.stringify(p));
+  const hiddenStyle = isHidden ? 'display: none;' : '';
+  const hiddenClass = isHidden ? 'signal-hidden-item' : '';
+  
   return `
-    <div class="signal-item" onclick="window.__openProduct(JSON.parse(decodeURIComponent('${pJson}')))">
+    <div class="signal-item ${hiddenClass}" style="${hiddenStyle}" onclick="window.__openProduct(JSON.parse(decodeURIComponent('${pJson}')))">
       <div class="signal-item-rank">${index + 1}</div>
       <img src="${imgUrl}" alt="" onerror="this.style.display='none'" />
       <div class="signal-item-info">
@@ -718,7 +721,15 @@ async function loadSourcingSignals() {
           if (!items || items.length === 0) {
             listEl.innerHTML = '<div style="padding: 10px; font-size:12px; color:#999; text-align:center;">조건에 맞는 상품이 없습니다.</div>';
           } else {
-            listEl.innerHTML = items.slice(0, 3).map((item, idx) => renderSignalItem(item, idx)).join('');
+            const itemsHtml = items.slice(0, 10).map((item, idx) => renderSignalItem(item, idx, idx >= 3)).join('');
+            let btnHtml = '';
+            if (items.length > 3) {
+              const moreText = window.t ? window.t('signal.view_more') : '더보기';
+              btnHtml = `<button class="btn-signal-more" onclick="window.toggleSignalItems(this)">
+                           <span data-i18n="signal.view_more">${moreText}</span> <span>▼</span>
+                         </button>`;
+            }
+            listEl.innerHTML = itemsHtml + btnHtml;
           }
         }
       };
@@ -736,6 +747,26 @@ async function loadSourcingSignals() {
     return false;
   }
 }
+
+// ─── Event Handlers ─────────────────────────────────────
+window.toggleSignalItems = function(btn) {
+  const listEl = btn.closest('.signal-list');
+  const hiddenItems = listEl.querySelectorAll('.signal-hidden-item');
+  const isExpanded = btn.getAttribute('data-expanded') === 'true';
+  const moreText = window.t ? window.t('signal.view_more') : '더보기';
+  const lessText = window.t ? window.t('signal.view_less') : '접기';
+
+  if (isExpanded) {
+    hiddenItems.forEach(el => el.style.display = 'none');
+    btn.setAttribute('data-expanded', 'false');
+    btn.innerHTML = `<span data-i18n="signal.view_more">${moreText}</span> <span>▼</span>`;
+  } else {
+    // Show hidden items smoothly or instantly
+    hiddenItems.forEach(el => el.style.display = 'flex');
+    btn.setAttribute('data-expanded', 'true');
+    btn.innerHTML = `<span data-i18n="signal.view_less">${lessText}</span> <span>▲</span>`;
+  }
+};
 
 async function loadKPIs() {
   try {

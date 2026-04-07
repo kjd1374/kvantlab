@@ -44,31 +44,31 @@ export const MusinsaBridge = {
         let blueOcean = [...rankedProducts]
             .filter(p => p.rank_change > 0 && p.review_count < 3000)
             .sort((a, b) => b.rank_change - a.rank_change)
-            .slice(0, 3);
+            .slice(0, 10);
             
-        if (blueOcean.length < 3) {
+        if (blueOcean.length < 10) {
             const fallback = [...rankedProducts]
                 .filter(p => p._current_rank >= 10 && p._current_rank <= 25 && !blueOcean.find(b => b.product_id === p.product_id))
                 .sort((a, b) => (b.review_count || 0) - (a.review_count || 0));
-            blueOcean = [...blueOcean, ...fallback].slice(0, 3);
+            blueOcean = [...blueOcean, ...fallback].slice(0, 10);
         }
             
         let redOcean = [...rankedProducts]
             .filter(p => p._current_rank <= 15 && p.rank_change < 0)
             .sort((a, b) => a.rank_change - b.rank_change)
-            .slice(0, 3);
+            .slice(0, 10);
             
-        if (redOcean.length < 3) {
+        if (redOcean.length < 10) {
             const fallback = [...rankedProducts]
                 .filter(p => p._current_rank <= 5 && !redOcean.find(r => r.product_id === p.product_id))
                 .sort((a, b) => b.review_count - a.review_count);
-            redOcean = [...redOcean, ...fallback].slice(0, 3);
+            redOcean = [...redOcean, ...fallback].slice(0, 10);
         }
         
         const steadySellers = [...rankedProducts]
             .filter(p => p.review_count > 1000)
             .sort((a, b) => b.review_count - a.review_count)
-            .slice(0, 3);
+            .slice(0, 10);
 
         return { blueOcean, redOcean, steadySellers };
     },
