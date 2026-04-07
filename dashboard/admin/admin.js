@@ -710,6 +710,7 @@ async function initAdmin() {
         let totalComputed = 0;
         const itemsHtml = Array.isArray(req.items) ? req.items.map((item, idx) => {
             const unitPrice = item.unit_price || 0;
+            const weight = item.weight || '';
             totalComputed += (unitPrice * item.quantity);
             return `
             <div style="display:flex; flex-direction:column; padding:10px 0; border-bottom:1px solid #eee;">
@@ -719,9 +720,15 @@ async function initAdmin() {
                 </div>
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <strong style="color:var(--admin-primary)">${item.quantity}개</strong>
-                    <div style="display:flex; align-items:center; gap:5px;">
-                        <label style="font-size:12px; color:#666;">단가($):</label>
-                        <input type="number" step="0.01" class="calc-unit-price" data-idx="${idx}" data-qty="${item.quantity}" value="${unitPrice}" style="width:80px; padding:4px; font-size:12px; text-align:right;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <label style="font-size:12px; color:#666;">무게/용량:</label>
+                            <input type="text" class="calc-item-weight" data-idx="${idx}" value="${weight}" placeholder="예: 250g, 1.2kg" style="width:100px; padding:4px; font-size:12px;">
+                        </div>
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <label style="font-size:12px; color:#666;">단가($):</label>
+                            <input type="number" step="0.01" class="calc-unit-price" data-idx="${idx}" data-qty="${item.quantity}" value="${unitPrice}" style="width:80px; padding:4px; font-size:12px; text-align:right;">
+                        </div>
                     </div>
                 </div>
             </div>`;
@@ -774,6 +781,169 @@ async function initAdmin() {
     const refreshBtn = document.getElementById('refreshSourcingBtn');
     if (refreshBtn) refreshBtn.addEventListener('click', loadSourcingRequests);
 
+    const previewInvoiceBtn = document.getElementById('previewInvoiceBtn');
+    const invoiceModal = document.getElementById('invoiceModal');
+    const closeInvoiceModalBtn = document.getElementById('closeInvoiceModalBtn');
+    const printInvoiceBtn = document.getElementById('printInvoiceBtn');
+    const invoiceIframe = document.getElementById('invoiceIframe');
+
+    if (previewInvoiceBtn) previewInvoiceBtn.addEventListener('click', () => {
+        const id = document.getElementById('sourcingId').value;
+        const req = (window.__sourcingRequests || []).find(r => r.id === id);
+        if (!req) return alert('요청 정보를 찾을 수 없습니다.');
+        
+        // Use updated values from the DOM
+        const itemsDataRaw = document.getElementById('sourcingItemsList').dataset.itemsJson;
+        let finalItems = [];
+        try { finalItems = JSON.parse(itemsDataRaw); } catch (e) { }
+        
+        document.querySelectorAll('.calc-unit-price').forEach(input => {
+            const idx = parseInt(input.dataset.idx);
+            if (finalItems[idx]) finalItems[idx].unit_price = parseFloat(input.value) || 0;
+        });
+        document.querySelectorAll('.calc-item-weight').forEach(input => {
+            const idx = parseInt(input.dataset.idx);
+            if (finalItems[idx]) finalItems[idx].weight = input.value.trim();
+        });
+        
+        const shippingFee = parseFloat(document.getElementById('shippingFee').value) || 0;
+        const serviceFee = parseFloat(document.getElementById('serviceFee').value) || 0;
+        
+        let subTotal = 0;
+        finalItems.forEach(item => {
+            subTotal += (item.unit_price || 0) * (item.quantity || 1);
+        });
+        const totalAmount = subTotal + shippingFee + serviceFee;
+        
+        const invoiceDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const invoiceNo = `INV-${new Date().getFullYear()}${String(new Date().getMonth()+1).padStart(2,'0')}${String(new Date().getDate()).padStart(2,'0')}-${req.id.substring(0,5).toUpperCase()}`;
+
+        const html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body { font-family: 'Helvetica Neue', 'Helvetica', sans-serif; padding: 40px; color: #333; line-height: 1.6; }
+                    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 50px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+                    .title { font-size: 36px; font-weight: bold; color: #333; letter-spacing: 2px; }
+                    .company-info { text-align: right; font-size: 14px; color: #666; }
+                    .invoice-details { display: flex; justify-content: space-between; margin-bottom: 40px; }
+                    .bill-to h4 { margin: 0 0 10px 0; color: #666; text-transform: uppercase; font-size: 12px; }
+                    .bill-to p { margin: 0; font-size: 15px; font-weight: bold; }
+                    .meta-info { text-align: right; }
+                    .meta-info table { margin-left: auto; border-collapse: collapse; }
+                    .meta-info th { text-align: left; padding-right: 15px; color: #666; font-weight: normal; font-size: 13px; }
+                    .meta-info td { font-weight: bold; font-size: 14px; }
+                    .items-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
+                    .items-table th { background: #f8f9fa; padding: 12px 15px; text-align: left; font-size: 13px; color: #666; border-bottom: 2px solid #ddd; text-transform: uppercase; }
+                    .items-table td { padding: 15px; border-bottom: 1px solid #eee; font-size: 14px; }
+                    .items-table .amount { text-align: right; }
+                    .summary { width: 50%; float: right; }
+                    .summary table { width: 100%; border-collapse: collapse; }
+                    .summary td { padding: 10px 15px; font-size: 14px; }
+                    .summary .amount { text-align: right; }
+                    .summary .total-row { font-size: 18px; font-weight: bold; border-top: 2px solid #333; background: #fafafa; }
+                    .footer { clear: both; margin-top: 80px; text-align: center; color: #888; font-size: 12px; border-top: 1px solid #eee; padding-top: 20px; }
+                    @media print {
+                        body { padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div>
+                        <div class="title">INVOICE</div>
+                        <div style="margin-top: 5px; color: #666;">K-Vant Sourcing Solutions</div>
+                    </div>
+                    <div class="company-info">
+                        <strong>Data Pool (K-Vant)</strong><br>
+                        contact@kvantlab.com<br>
+                        www.kvantlab.com
+                    </div>
+                </div>
+
+                <div class="invoice-details">
+                    <div class="bill-to">
+                        <h4>Bill To</h4>
+                        <p>${req.user_email}</p>
+                        <div style="color: #666; font-size: 13px; margin-top: 5px;">Client ID: ${req.user_id.substring(0,8)}</div>
+                    </div>
+                    <div class="meta-info">
+                        <table>
+                            <tr><th>Invoice No:</th><td>${invoiceNo}</td></tr>
+                            <tr><th>Date:</th><td>${invoiceDate}</td></tr>
+                        </table>
+                    </div>
+                </div>
+
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>Item Description</th>
+                            <th>Weight/Vol</th>
+                            <th>Qty</th>
+                            <th class="amount">Unit Price (USD)</th>
+                            <th class="amount">Total (USD)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${finalItems.map(item => `
+                        <tr>
+                            <td>
+                                <strong>${item.brand || 'No Brand'}</strong><br>
+                                <span style="font-size: 13px; color: #555;">${item.name}</span>
+                            </td>
+                            <td>${item.weight || '-'}</td>
+                            <td>${item.quantity}</td>
+                            <td class="amount">$${(item.unit_price || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                            <td class="amount">$${((item.unit_price || 0) * (item.quantity || 1)).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+
+                <div class="summary">
+                    <table>
+                        <tr>
+                            <td>Subtotal</td>
+                            <td class="amount">$${subTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        <tr>
+                            <td>Shipping Fee</td>
+                            <td class="amount">$${shippingFee.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        <tr>
+                            <td>Service Fee</td>
+                            <td class="amount">$${serviceFee.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        </tr>
+                        <tr class="total-row">
+                            <td>Total Amount</td>
+                            <td class="amount">$${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="footer">
+                    <p>Thank you for your business. If you have any questions about this invoice, please contact contact@kvantlab.com</p>
+                </div>
+            </body>
+            </html>
+        `;
+
+        invoiceIframe.srcdoc = html;
+        invoiceModal.style.display = 'flex';
+    });
+
+    if (closeInvoiceModalBtn) closeInvoiceModalBtn.addEventListener('click', () => {
+        invoiceModal.style.display = 'none';
+    });
+
+    if (printInvoiceBtn) printInvoiceBtn.addEventListener('click', () => {
+        invoiceIframe.contentWindow.focus();
+        invoiceIframe.contentWindow.print();
+    });
+
     const saveSourcingBtn = document.getElementById('saveSourcingBtn');
     if (saveSourcingBtn) saveSourcingBtn.addEventListener('click', async () => {
         const btn = document.getElementById('saveSourcingBtn');
@@ -799,6 +969,13 @@ async function initAdmin() {
                 finalItems[idx].unit_price = up;
             }
             sum += (up * qty);
+        });
+
+        document.querySelectorAll('.calc-item-weight').forEach(input => {
+            const idx = parseInt(input.dataset.idx);
+            if (finalItems[idx]) {
+                finalItems[idx].weight = input.value.trim();
+            }
         });
 
         const shipping_fee = parseFloat(document.getElementById('shippingFee').value) || 0;

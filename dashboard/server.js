@@ -1259,6 +1259,9 @@ app.post('/api/sourcing/request', async (req, res) => {
         // Send Email Notification asynchronously (non-blocking)
         const count = Array.isArray(items) ? items.length : 0;
         sendSourcingEmailNotification(user_email, user_message || '없음', count);
+        
+        // 텔레그램 알림도 비동기로 전송
+        sendTelegramNotification(`📦 [신규 소싱/견적 요청 접수]\n- 요청자: ${user_email}\n- 상품 수: ${count}개\n- 고객 메시지: ${user_message || '없음'}`);
 
         res.json({ success: true, message: 'Request submitted successfully.', data: data[0] });
     } catch (error) {

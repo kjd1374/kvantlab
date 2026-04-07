@@ -468,8 +468,9 @@
                         <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
                             <button type="button" class="btn-danger"
                                 style="padding: 10px 20px; border-radius: 8px; border: 1px solid #dc3545; background: #fff; color: #dc3545; cursor: pointer; margin-right:auto;"
-                                onclick="if(document.getElementById('sourcingId').value) window.deleteSourcingRequest(document.getElementById('sourcingId').value)">이
-                                요청 삭제 (Delete)</button>
+                                onclick="if(document.getElementById('sourcingId').value) window.deleteSourcingRequest(document.getElementById('sourcingId').value)">이 요청 삭제 (Delete)</button>
+                            <button type="button" class="btn-primary" id="previewInvoiceBtn"
+                                style="padding: 10px 20px; border-radius: 8px; background: #28a745; border: none; cursor: pointer; color: white;">🖨️ 인보이스 미리보기</button>
                             <button type="button" class="btn-secondary" id="cancelSourcingBtn"
                                 style="padding: 10px 20px; border-radius: 8px; border: 1px solid #ddd; background: white; cursor: pointer;">취소</button>
                             <button type="button" class="btn-primary" id="saveSourcingBtn"
@@ -762,6 +763,24 @@ kvantlab.com</textarea>
         </main>
     </div>
 
+    <!-- Invoice Preview Modal -->
+    <div id="invoiceModal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 3000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;">
+        <div style="background: white; width: 800px; max-width: 100%; height: 90vh; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+            <div style="padding: 15px 20px; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 18px;">📄 Invoice Preview</h3>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-primary" id="printInvoiceBtn" style="padding: 8px 16px; font-size: 13px;">🖨️ PDF 인쇄 (Print)</button>
+                    <button id="closeInvoiceModalBtn" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">&times;</button>
+                </div>
+            </div>
+            <!-- Scrollable iframe container to isolate print styles -->
+            <div style="flex: 1; padding: 20px; overflow-y: auto; background: #525659; display: flex; justify-content: center;">
+                <iframe id="invoiceIframe" style="width: 210mm; min-height: 297mm; background: white; border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.1);"></iframe>
+            </div>
+        </div>
+    </div>
+
 
 
 
@@ -1011,7 +1030,7 @@ kvantlab.com</textarea>
         </div>
     </div>
 
-    <script type="module" src="admin.js?v=33"></script>
+    <script type="module" src="admin.js?v=35"></script>
 
     <script>
       window.loadYouTubeCampaigns = async function() {
