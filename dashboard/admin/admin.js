@@ -810,9 +810,45 @@ async function initAdmin() {
         const serviceFee = parseFloat(document.getElementById('serviceFee').value) || 0;
         
         let subTotal = 0;
-        finalItems.forEach(item => {
-            subTotal += (item.unit_price || 0) * (item.quantity || 1);
-        });
+        let totalWeightKg = 0;
+        
+        const invoiceRowsHtml = finalItems.map(item => {
+            const up = item.unit_price || 0;
+            const qty = item.quantity || 1;
+            const lineTotal = up * qty;
+            subTotal += lineTotal;
+            
+            let weightStr = (item.weight || '').trim();
+            let lineTotalWeightStr = '-';
+            
+            const wMatch = weightStr.match(/^([\d.]+)\s*(kg|g|lb|ml|l|oz)/i);
+            if (wMatch) {
+                let wVal = parseFloat(wMatch[1]) || 0;
+                let wUnit = wMatch[2].toLowerCase();
+                let lineWeight = wVal * qty;
+                lineTotalWeightStr = parseFloat(lineWeight.toFixed(3)) + wUnit;
+                
+                if (wUnit === 'g' || wUnit === 'ml') totalWeightKg += (lineWeight / 1000);
+                else if (wUnit === 'kg' || wUnit === 'l') totalWeightKg += lineWeight;
+                else if (wUnit === 'lb') totalWeightKg += (lineWeight * 0.453592);
+                else if (wUnit === 'oz') totalWeightKg += (lineWeight * 0.0283495);
+            }
+            
+            return `
+            <tr>
+                <td>
+                    <strong>${item.brand || 'No Brand'}</strong><br>
+                    <span style="font-size: 13px; color: #555;">${item.name}</span>
+                </td>
+                <td>${weightStr || '-'}</td>
+                <td>${qty}</td>
+                <td>${lineTotalWeightStr}</td>
+                <td class="amount">$${up.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td class="amount">$${lineTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+            </tr>
+            `;
+        }).join('');
+        
         const totalAmount = subTotal + shippingFee + serviceFee;
         
         const invoiceDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -881,30 +917,26 @@ async function initAdmin() {
                     <thead>
                         <tr>
                             <th>Item Description</th>
-                            <th>Weight/Vol</th>
+                            <th>Unit Wt/Vol</th>
                             <th>Qty</th>
+                            <th>Total Wt/Vol</th>
                             <th class="amount">Unit Price (USD)</th>
                             <th class="amount">Total (USD)</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${finalItems.map(item => `
-                        <tr>
-                            <td>
-                                <strong>${item.brand || 'No Brand'}</strong><br>
-                                <span style="font-size: 13px; color: #555;">${item.name}</span>
-                            </td>
-                            <td>${item.weight || '-'}</td>
-                            <td>${item.quantity}</td>
-                            <td class="amount">$${(item.unit_price || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                            <td class="amount">$${((item.unit_price || 0) * (item.quantity || 1)).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                        </tr>
-                        `).join('')}
+                        ${invoiceRowsHtml}
                     </tbody>
                 </table>
 
                 <div class="summary">
                     <table>
+                        ${totalWeightKg > 0 ? `
+                        <tr>
+                            <td style="color:#666;">Est. Total Weight</td>
+                            <td class="amount" style="color:#666;">${parseFloat(totalWeightKg.toFixed(3))} kg</td>
+                        </tr>
+                        ` : ''}
                         <tr>
                             <td>Subtotal</td>
                             <td class="amount">$${subTotal.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
