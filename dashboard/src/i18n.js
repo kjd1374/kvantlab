@@ -132,6 +132,15 @@ const FALLBACK_STRINGS = {
     'naver_cat.50000006': { ko: '식품', en: 'Food' },
     'naver_cat.50000007': { ko: '스포츠/레저', en: 'Sports' },
     'naver_cat.50000008': { ko: '생활/건강', en: 'Living' },
+
+    // Sourcing Signals
+    'signal.blue_title': { ko: 'Blue Ocean (소싱 기회)', en: 'Blue Ocean (Opportunities)' },
+    'signal.blue_desc': { ko: '리뷰 적음 · 랭킹 급상승', en: 'Low reviews · Ranking surges' },
+    'signal.red_title': { ko: 'Red Ocean (경쟁 심화)', en: 'Red Ocean (Heavy Competition)' },
+    'signal.red_desc': { ko: '초격차 상위권 · 경쟁 치열', en: 'Top Tier · Fierce Competition' },
+    'signal.steady_title': { ko: 'Steady Sellers (안정성)', en: 'Steady Sellers (Secure)' },
+    'signal.steady_desc': { ko: '압도적 리뷰 · 롱런 아이템', en: 'Massive reviews · Long-run items' },
+    'table.action_sourcing': { ko: '소싱', en: 'Sourcing' }
 };
 
 class I18n {

@@ -660,37 +660,118 @@ function renderTabs() {
   });
 }
 
-// ─── Load KPIs ──────────────────────────────
-async function loadKPIs() {
-  try {
-    const kpis = await state.activeBridge.getKPIs(state.currentPlatform);
-    const container = document.getElementById('kpiGrid');
-    if (!container) return;
+function renderSignalItem(p, index) {
+  const profile = getProfile();
+  const isLocked = !isProMember(profile);
 
-    container.innerHTML = kpis.map(kpi => `
-      <div class="kpi-card kpi-${kpi.id}">
-        <div class="kpi-icon">${kpi.icon}</div>
-        <div class="kpi-content">
-          <div class="kpi-value">${kpi.format ? formatNumber(kpi.value) : kpi.value}</div>
-          <div class="kpi-label" data-i18n="${kpi.label}">${window.t(kpi.label)}</div>
+  let name = escapeHtml(getLocalizedName(p));
+  let brand = escapeHtml(getLocalizedBrand(p));
+
+  if (isLocked) {
+    name = maskText(name);
+    brand = maskText(brand);
+  }
+
+  const brandPrefix = brand ? `[${brand}] ` : '';
+  const fullName = `${brandPrefix}${name}`;
+
+  const imgUrl = p.image_url || '';
+  const price = `${formatNumber(p.price || p.price_current)}원`;
+  
+  let rankHtml = '';
+  if (p.rank_change > 0) rankHtml = `<span class="signal-metric-highlight red">▲${p.rank_change}</span>`;
+  else if (p.rank_change < 0) rankHtml = `<span class="signal-metric-highlight blue">▼${Math.abs(p.rank_change)}</span>`;
+  else rankHtml = `<span class="signal-metric-highlight">-</span>`;
+
+  const pJson = encodeURIComponent(JSON.stringify(p));
+  return `
+    <div class="signal-item" onclick="window.__openProduct(JSON.parse(decodeURIComponent('${pJson}')))">
+      <div class="signal-item-rank">${index + 1}</div>
+      <img src="${imgUrl}" alt="" onerror="this.style.display='none'" />
+      <div class="signal-item-info">
+        <div class="signal-item-name">${fullName}</div>
+        <div class="signal-item-metrics">
+          <span>${price}</span>
+          <span>⭐ ${formatNumber(p.review_count || 0)}</span>
+          ${rankHtml}
         </div>
       </div>
-    `).join('');
+    </div>
+  `;
+}
 
-    // Apply translations to dynamic content
-    i18n.documentUpdate();
+// ─── Load KPIs & Signals ──────────────────────────────
+async function loadSourcingSignals() {
+  try {
+    const signalGrid = document.getElementById('signalGrid');
+    if (!signalGrid) return false;
+    
+    if (state.activeBridge.getSourcingSignals) {
+      signalGrid.style.display = 'grid';
+      signalGrid.querySelectorAll('.signal-list').forEach(el => el.innerHTML = '<div class="loading-skeleton" style="height:60px;"></div>');
+      
+      const signals = await state.activeBridge.getSourcingSignals(state.currentPlatform, state.activeCategory);
+      
+      const renderList = (id, items) => {
+        const listEl = document.getElementById(id);
+        if (listEl) {
+          if (!items || items.length === 0) {
+            listEl.innerHTML = '<div style="padding: 10px; font-size:12px; color:#999; text-align:center;">조건에 맞는 상품이 없습니다.</div>';
+          } else {
+            listEl.innerHTML = items.slice(0, 3).map((item, idx) => renderSignalItem(item, idx)).join('');
+          }
+        }
+      };
 
-    // Update header stats
-    const totalKpi = kpis.find(k => k.id === 'total');
-    if (totalKpi) {
-      const totalProductsEl = document.getElementById('totalProducts');
-      if (totalProductsEl) totalProductsEl.textContent = formatNumber(totalKpi.value);
-      state.totalProducts = totalKpi.value;
+      renderList('signalBlueList', signals.blueOcean);
+      renderList('signalRedList', signals.redOcean);
+      renderList('signalTrendList', signals.steadySellers);
+      return true;
+    } else {
+      signalGrid.style.display = 'none';
+      return false;
     }
   } catch (err) {
-    console.error('KPI load error:', err);
-    const container = document.getElementById('kpiGrid');
-    if (container) container.innerHTML = '<div class="error-msg">KPI 로딩 실패</div>';
+    console.error('Error loading signals:', err);
+    return false;
+  }
+}
+
+async function loadKPIs() {
+  try {
+    // 1. Load Signals if available
+    const signalsLoaded = await loadSourcingSignals();
+    
+    // 2. Load Legacy KPIs
+    if (state.activeBridge.getKPIs) {
+      const kpis = await state.activeBridge.getKPIs(state.currentPlatform);
+      
+      const container = document.getElementById('kpiGrid');
+      if (container && !signalsLoaded) {
+        container.style.display = 'grid';
+        container.innerHTML = kpis.map(kpi => `
+          <div class="kpi-card kpi-${kpi.id}">
+            <div class="kpi-icon">${kpi.icon}</div>
+            <div class="kpi-content">
+              <div class="kpi-value">${kpi.format ? formatNumber(kpi.value) : kpi.value}</div>
+              <div class="kpi-label" data-i18n="${kpi.label}">${window.t(kpi.label)}</div>
+            </div>
+          </div>
+        `).join('');
+        i18n.documentUpdate();
+      } else if (container && signalsLoaded) {
+        container.style.display = 'none';
+      }
+
+      const totalKpi = kpis.find(k => k.id === 'total');
+      if (totalKpi) {
+        const totalProductsEl = document.getElementById('totalProducts');
+        if (totalProductsEl) totalProductsEl.textContent = formatNumber(totalKpi.value);
+        state.totalProducts = totalKpi.value;
+      }
+    }
+  } catch (err) {
+    console.error('Error loading KPIs:', err);
   }
 }
 
@@ -732,6 +813,9 @@ async function loadCategories() {
         if (searchInput) searchInput.value = '';
 
         state.currentPage = 1;
+        
+        // Reload sourcing signals for the newly selected category
+        loadSourcingSignals();
 
         // Re-render controls to maintain active state for gender buttons
         if (state.activeBridge && state.activeBridge.renderCustomHeader) {
@@ -1135,23 +1219,106 @@ function renderTableRow(p, index) {
     rankChangeHtml = `<span style="color:#ef4444;font-weight:600;">▼${Math.abs(p.rank_change)}</span>`;
   }
 
+  const escapedName = (name || '').replace(/'/g, "\\'");
+  const safeImg = p.image_url || '';
+  const defaultPrice = p.price || p.price_current || 0;
   return `
       <tr class="${isLocked ? 'locked-row' : ''}" 
-        onclick="${isLocked ? '' : `window.__openProduct(${JSON.stringify(p).replace(/"/g, '&quot;')})`}" 
+        onclick="${isLocked ? '' : `window.__openProduct(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(p))}')))`}" 
         style="cursor:${isLocked ? 'default' : 'pointer'}">
         <td style="text-align:center;"><span class="rank-num">${rank}</span></td>
-        <td style="text-align:center;"><img class="thumb" src="${p.image_url || ''}" alt="" loading="lazy" onerror="this.style.display='none'" /></td>
+        <td style="text-align:center;"><img class="thumb" src="${safeImg}" alt="" loading="lazy" onerror="this.style.display='none'" /></td>
         <td style="max-width:280px">
           <div class="product-name" data-pid="${p.product_id || p.id}" style="-webkit-line-clamp:1">${name}</div>
         </td>
         <td style="text-align:center;"><span class="product-brand" data-brand-pid="${p.product_id || p.id}">${brand}</span></td>
-        <td style="text-align:center;">${formatPrice(p.price || p.price_current)}</td>
+        <td style="text-align:center;">${formatPrice(defaultPrice)}</td>
         <td style="text-align:center;">${p.review_count > 0 ? formatNumber(p.review_count) : '-'}</td>
         <td style="text-align:center;">${p.review_rating > 5 ? '❤️ ' + formatNumber(p.review_rating) : (p.review_rating > 0 && !isNaN(p.review_rating) ? p.review_rating : '-')}</td>
         <td style="text-align:center;">${rankChangeHtml}</td>
+        <td style="text-align:center;" onclick="event.stopPropagation()">
+          <div style="display:flex;gap:4px;justify-content:center;">
+            <button class="btn-direct-quote" onclick="window.__addToQuoteCart(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(p))}')))" title="Request Quote">📦 <span data-i18n="table.action_sourcing">${window.t ? window.t('table.action_sourcing') : '소싱'}</span></button>
+            <button class="btn-direct-quote" style="padding: 6px;" onclick="window.openMarginCalc(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(p))}')))" title="Margin Calculator">🧮</button>
+          </div>
+        </td>
       </tr>
     `;
 }
+
+// ─── Actions ─────────────────────────────────────
+window.__addToQuoteCart = function(p) {
+  const item = {
+    product_id: p.product_id || p.id,
+    name: getLocalizedName(p),
+    brand: getLocalizedBrand(p),
+    image_url: p.image_url || '',
+    price: p.price || p.price_current || 0,
+    source: state.currentPlatform || '',
+    qty: 5
+  };
+  
+  if (!window.__srcCartItems) window.__srcCartItems = [];
+  const exists = window.__srcCartItems.some(it => String(it.product_id) === String(item.product_id));
+  if (!exists) window.__srcCartItems.push(item);
+  
+  window.switchMainTab('sourcing');
+  if (window.__srcRenderCart) {
+    window.__srcRenderCart(window.__srcCartItems);
+  }
+};
+
+let currentMarginProduct = null;
+
+window.openMarginCalc = function(p) {
+  currentMarginProduct = p;
+  const name = getLocalizedName(p);
+  const costPrice = p.price || p.price_current || 0;
+  
+  document.getElementById('marginProductImg').src = p.image_url || '';
+  document.getElementById('marginProductName').textContent = escapeHtml(name || '');
+  document.getElementById('marginCostPrice').value = costPrice;
+  document.getElementById('marginSellPrice').value = ''; 
+  document.getElementById('marginResult').textContent = '- 원';
+  document.getElementById('marginResult').style.color = '#cbd5e1';
+  document.getElementById('marginFee').value = '12';
+  document.getElementById('marginShipping').value = '3000';
+  
+  document.getElementById('marginCalcModal').style.display = 'flex';
+};
+
+window.calculateMargin = function() {
+  const cost = parseFloat(document.getElementById('marginCostPrice').value) || 0;
+  const sell = parseFloat(document.getElementById('marginSellPrice').value) || 0;
+  const shipping = parseFloat(document.getElementById('marginShipping').value) || 0;
+  const feePct = parseFloat(document.getElementById('marginFee').value) || 0;
+  
+  if (sell <= 0) {
+    document.getElementById('marginResult').textContent = '- 원';
+    document.getElementById('marginResult').style.color = '#cbd5e1';
+    return;
+  }
+  
+  const fee = sell * (feePct / 100);
+  const profit = sell - cost - shipping - fee;
+  const profitMargin = (profit / sell) * 100;
+  
+  const resultEl = document.getElementById('marginResult');
+  resultEl.textContent = `${formatNumber(Math.round(profit))} 원 (${profitMargin.toFixed(1)}%)`;
+  
+  if (profit > 0) {
+    resultEl.style.color = '#22c55e'; // Green
+  } else {
+    resultEl.style.color = '#ef4444'; // Red
+  }
+};
+
+window.__addToQuoteCartFromMargin = function() {
+  if (currentMarginProduct) {
+    document.getElementById('marginCalcModal').style.display = 'none';
+    window.__addToQuoteCart(currentMarginProduct);
+  }
+};
 
 // ─── Semantic Search Results ───────────────
 async function loadSemanticResults() {

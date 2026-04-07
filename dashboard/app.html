@@ -137,34 +137,39 @@
       <div id="platformControls" class="platform-controls"></div>
     </section>
 
-    <!-- KPI Cards -->
-    <section class="kpi-grid" id="kpiGrid">
-      <div class="kpi-card kpi-trending">
-        <div class="kpi-icon">🔥</div>
-        <div class="kpi-content">
-          <div class="kpi-value" id="kpiTrending">-</div>
-          <div class="kpi-label" data-i18n="kpi.trending">7일 급상승</div>
+    <!-- Legacy KPI Cards (Hidden by default, used by other platforms) -->
+    <section class="kpi-grid" id="kpiGrid" style="display:none;"></section>
+
+    <!-- Sourcing Signals -->
+    <section class="signal-grid" id="signalGrid">
+      <div class="signal-card signal-blue">
+        <div class="signal-header">
+          <div class="signal-icon">🌊</div>
+          <div class="signal-title" data-i18n="signal.blue_title">Blue Ocean (소싱 기회)</div>
+          <div class="signal-subtitle" data-i18n="signal.blue_desc">리뷰 적음 · 랭킹 급상승</div>
+        </div>
+        <div class="signal-list" id="signalBlueList">
+          <div class="loading-skeleton"></div>
         </div>
       </div>
-      <div class="kpi-card kpi-deals">
-        <div class="kpi-icon">💰</div>
-        <div class="kpi-content">
-          <div class="kpi-value" id="kpiDeals">-</div>
-          <div class="kpi-label" data-i18n="kpi.deals">오늘 할인</div>
+      <div class="signal-card signal-red">
+        <div class="signal-header">
+          <div class="signal-icon">🚨</div>
+          <div class="signal-title" data-i18n="signal.red_title">Red Ocean (경쟁 심화)</div>
+          <div class="signal-subtitle" data-i18n="signal.red_desc">초격차 상위권 · 경쟁 치열</div>
+        </div>
+        <div class="signal-list" id="signalRedList">
+          <div class="loading-skeleton"></div>
         </div>
       </div>
-      <div class="kpi-card kpi-reviews">
-        <div class="kpi-icon">⭐</div>
-        <div class="kpi-content">
-          <div class="kpi-value" id="kpiReviews">-</div>
-          <div class="kpi-label" data-i18n="kpi.reviews">리뷰 상위</div>
+      <div class="signal-card signal-trend">
+        <div class="signal-header">
+          <div class="signal-icon">🔥</div>
+          <div class="signal-title" data-i18n="signal.steady_title">Steady Sellers (안정성)</div>
+          <div class="signal-subtitle" data-i18n="signal.steady_desc">압도적 리뷰 · 롱런 아이템</div>
         </div>
-      </div>
-      <div class="kpi-card kpi-total">
-        <div class="kpi-icon">📦</div>
-        <div class="kpi-content">
-          <div class="kpi-value" id="kpiTotal">-</div>
-          <div class="kpi-label" data-i18n="kpi.total">전체 상품</div>
+        <div class="signal-list" id="signalTrendList">
+          <div class="loading-skeleton"></div>
         </div>
       </div>
     </section>
@@ -336,11 +341,12 @@
                 <th style="text-align: center;" data-i18n="table.review">리뷰</th>
                 <th style="text-align: center;" data-i18n="table.rating">평점</th>
                 <th style="text-align: center;" data-i18n="table.rank_change">변동</th>
+                <th style="text-align: center; width: 120px;">액션</th>
               </tr>
             </thead>
             <tbody id="allProductsBody">
               <tr>
-                <td colspan="8" class="loading-cell">데이터 로딩 중...</td>
+                <td colspan="9" class="loading-cell">데이터 로딩 중...</td>
               </tr>
             </tbody>
           </table>
@@ -848,6 +854,67 @@
             data-i18n="tutorial.next_btn">다음 (Next)</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Margin Calculator Modal -->
+  <div id="marginCalcModal" class="modal-overlay" style="display:none; z-index:2000;">
+    <div class="modal-content" style="max-width:380px; padding:28px; display:block; height:auto; overflow:visible; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); position: relative;">
+      <button style="position: absolute; top: 20px; right: 20px; width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9; border: none; font-size: 18px; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10;" onclick="document.getElementById('marginCalcModal').style.display='none'" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">×</button>
+      
+      <style>
+        .margin-input { width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid #cbd5e1; outline: none; font-size: 16px; font-weight: 600; font-family: inherit; transition: all 0.2s ease; box-sizing: border-box; }
+        .margin-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); }
+        .margin-label { display: block; font-size: 13px; color: #475569; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.3px; }
+        .margin-unit { position: absolute; right: 16px; top: 15px; color: #94a3b8; font-size: 16px; font-weight: 600; pointer-events: none; }
+      </style>
+
+      <h3 style="margin: 0 0 20px 0; font-size: 20px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">🧮 B2B 마진 시뮬레이터</h3>
+      
+      <div id="marginProductInfo" style="display:flex; gap:14px; margin-bottom:24px; align-items:center; background: #f8fafc; padding: 12px; border-radius: 16px; border: 1px solid #e2e8f0;">
+        <img id="marginProductImg" src="" style="width:52px; height:52px; border-radius:10px; object-fit:cover; border: 1px solid #e2e8f0; background: #fff;">
+        <div style="flex:1;">
+          <div id="marginProductName" style="font-size:13px; font-weight:700; color: #334155; line-height: 1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;"></div>
+        </div>
+      </div>
+      
+      <div style="margin-bottom:16px;">
+        <label class="margin-label">1. 매입 원가 <span style="font-weight: 500; color: #94a3b8; font-size: 11px;">(자동 연동)</span></label>
+        <div style="position:relative;">
+          <input type="number" id="marginCostPrice" class="margin-input" readonly style="background:#f1f5f9; color: #64748b; border-color: #e2e8f0; padding-right: 36px;">
+          <span class="margin-unit">원</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom:24px;">
+        <label class="margin-label" style="color: #2563eb;">2. 현지 예상 판매가 <span style="font-weight: 500; opacity: 0.8; font-size: 11px;">(직접 입력)</span></label>
+        <div style="position:relative;">
+          <input type="number" id="marginSellPrice" class="margin-input" placeholder="예: 30000" oninput="window.calculateMargin()" style="border-width: 2px; border-color: #bfdbfe; color: #1e3a8a; padding-right: 36px;">
+          <span class="margin-unit" style="color: #60a5fa;">원</span>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px; padding-bottom: 24px; border-bottom: 1px dashed #e2e8f0;">
+        <div>
+          <label class="margin-label">기본 배송/포장비</label>
+          <div style="position:relative;">
+            <input type="number" id="marginShipping" value="3000" class="margin-input" style="padding: 10px 12px; font-size: 14px;" oninput="window.calculateMargin()">
+          </div>
+        </div>
+        <div>
+          <label class="margin-label">플랫폼 수수료(%)</label>
+          <div style="position:relative;">
+            <input type="number" id="marginFee" value="12" class="margin-input" style="padding: 10px 12px; font-size: 14px;" oninput="window.calculateMargin()">
+          </div>
+        </div>
+      </div>
+
+      <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; border-radius: 16px; padding: 24px; text-align: center; box-shadow: inset 0 2px 4px rgba(255,255,255,0.8);">
+        <div style="font-size: 13px; color: #3b82f6; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.3px;">✨ 예상 순이익 (마진율)</div>
+        <div id="marginResult" style="font-size: 28px; font-weight: 900; color: #94a3b8; text-shadow: 0 1px 1px rgba(255,255,255,1); letter-spacing: -0.5px;">- 원</div>
+      </div>
+
+      <button style="width: 100%; margin-top: 24px; padding: 16px; border-radius: 14px; background: #2563eb; color: white; border: none; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35); transition: all 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(37, 99, 235, 0.45)'; this.style.background='#1d4ed8';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 14px rgba(37, 99, 235, 0.35)'; this.style.background='#2563eb';" onclick="window.__addToQuoteCartFromMargin()">🚀 이 제품 바로 소싱하기</button>
     </div>
   </div>
 
