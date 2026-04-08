@@ -374,7 +374,7 @@ export const KoreaTrendBridge = {
                 const displayBrand = isLocked && typeof window.__maskText === 'function' ? window.__maskText(p.brand || '') : (p.brand || '');
                 const displayName = isLocked && typeof window.__maskText === 'function' ? window.__maskText(p.name || '') : (p.name || '');
 
-                return `<div class="nb-grid-card ${isLocked ? 'locked-card' : ''}" onclick="${isLocked ? '' : `window.open('${p.url || '#'}','_blank')`}">
+                return `<div class="nb-grid-card ${isLocked ? 'locked-card' : ''}">
                     <div style="position:relative">
                         ${isLocked ? `<div class="locked-overlay" style="border-radius:12px;"><span>PRO Only</span></div>` : ''}
                         ${img}${badge}
@@ -414,8 +414,7 @@ export const KoreaTrendBridge = {
                     ? `<img src="${b.logo_url}" alt="" style="width:40px;height:40px;border-radius:8px;object-fit:cover;" onerror="this.style.display='none'">`
                     : `<div style="width:40px;height:40px;border-radius:8px;background:var(--card-bg2);display:flex;align-items:center;justify-content:center;">🏢</div>`;
                 const tags = (b.hashtags || []).map(tag => `<span class="nb-hash">${tag}</span>`).join('');
-                const storeLink = b.store_url ? `onclick="window.open('${b.store_url}','_blank')" style="cursor:pointer;"` : '';
-                return `<div class="nb-brand-row" ${storeLink}>
+                return `<div class="nb-brand-row">
     ${badge}
                     ${logo}
 <div style="flex:1;min-width:0;">
