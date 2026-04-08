@@ -5499,3 +5499,43 @@ body[data-platform="k_trend"] #tab-all {
     font-size: 12px !important;
   }
 }
+
+/* Trend Sourcing Overlay Formats */
+.trend-sourcing-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+    border-radius: inherit;
+}
+
+.nb-grid-card:hover .trend-sourcing-overlay,
+.gt-product-row:hover .trend-sourcing-overlay {
+    opacity: 1;
+}
+
+.trend-sourcing-btn {
+    background-color: var(--accent-blue, #2b5fe7);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(43, 95, 231, 0.3);
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    pointer-events: auto;
+}
+
+.trend-sourcing-btn:hover {
+    background-color: #1a4bc5;
+    transform: scale(1.05);
+}

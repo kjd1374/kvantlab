@@ -226,8 +226,13 @@ export const KoreaTrendBridge = {
             const imgHtml = isPlaceholder
                 ? `<div class="gt-product-img gt-no-image"><span>${window.t('gt.gt_no_image') || '이미지 없음'}</span></div>`
                 : `<img class="gt-product-img" src="${item.imageUrl}" alt="${item.product_name}" loading="lazy" onerror="this.outerHTML='<div class=&quot;gt-product-img gt-no-image&quot;><span>${window.t('gt.gt_no_image') || '이미지 없음'}</span></div>'">`;
+            const safeName = (item.product_name || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
+            const safeBrand = (item.brand_name || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
+            const overlayHtml = isPro ? `<div class="trend-sourcing-overlay"><button class="trend-sourcing-btn" onclick="window.__fillSourcingFromTrend('${safeName}', '${safeBrand}', '')">🚀 소싱 요청</button></div>` : '';
+
             return `
-                <div class="gt-product-row ${!isPro ? 'locked-card' : ''}">
+                <div class="gt-product-row ${!isPro ? 'locked-card' : ''}" style="position:relative;">
+                    ${overlayHtml}
                     ${imgHtml}
                     <div class="gt-product-info">
                         <div class="gt-product-brand" data-pid="${item.product_id}">${!isPro && typeof window.__maskText === 'function' ? window.__maskText(item.brand_name || '') : (item.brand_name || '')} ${matchBadge}</div>
@@ -374,7 +379,13 @@ export const KoreaTrendBridge = {
                 const displayBrand = isLocked && typeof window.__maskText === 'function' ? window.__maskText(p.brand || '') : (p.brand || '');
                 const displayName = isLocked && typeof window.__maskText === 'function' ? window.__maskText(p.name || '') : (p.name || '');
 
-                return `<div class="nb-grid-card ${isLocked ? 'locked-card' : ''}">
+                const safeName = (p.name || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                const safeBrand = (p.brand || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                const safeUrl = (p.url || '').replace(/'/g, "\\'");
+                const overlayHtml = !isLocked ? `<div class="trend-sourcing-overlay"><button class="trend-sourcing-btn" onclick="window.__fillSourcingFromTrend('${safeName}', '${safeBrand}', '${safeUrl}')">🚀 소싱 요청</button></div>` : '';
+
+                return `<div class="nb-grid-card ${isLocked ? 'locked-card' : ''}" style="position:relative;">
+                    ${overlayHtml}
                     <div style="position:relative">
                         ${isLocked ? `<div class="locked-overlay" style="border-radius:12px;"><span>PRO Only</span></div>` : ''}
                         ${img}${badge}

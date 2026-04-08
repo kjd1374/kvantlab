@@ -5096,6 +5096,46 @@ window.__srcSwitchTab = function (tabId) {
   if (tabContent) tabContent.classList.add('active');
 };
 
+// Autofill sourcing from global/naver trend blocks
+window.__fillSourcingFromTrend = function(name, brand, url) {
+    if (window.switchMainTab) window.switchMainTab('sourcing');
+    if (window.__srcSwitchTab) window.__srcSwitchTab('url');
+
+    const container = document.getElementById('srcUrlList');
+    if (!container) return;
+
+    // We check if the last row is empty; if so, grab it. Else add a new one.
+    const blocks = container.querySelectorAll('.src-url-row-block');
+    let targetRow = null;
+
+    if (blocks.length > 0) {
+        const lastBlock = blocks[blocks.length - 1];
+        const lastUrl = lastBlock.querySelector('.src-url-input')?.value;
+        const lastMemo = lastBlock.querySelector('.src-url-memo')?.value;
+        if (!lastUrl && !lastMemo) {
+            targetRow = lastBlock;
+        }
+    }
+
+    if (!targetRow) {
+        window.__srcAddUrl();
+        const newBlocks = container.querySelectorAll('.src-url-row-block');
+        targetRow = newBlocks[newBlocks.length - 1];
+    }
+
+    if (targetRow) {
+        const urlInput = targetRow.querySelector('.src-url-input');
+        const memoInput = targetRow.querySelector('.src-url-memo');
+        if (urlInput && url) urlInput.value = url;
+        const itemName = brand ? `[${brand}] ${name}` : name;
+        if (memoInput && itemName) memoInput.value = itemName;
+    }
+
+    // Scroll naturally to the form
+    document.getElementById('sourcingView')?.scrollIntoView({ behavior: 'smooth' });
+};
+
+
 // Add URL row (per-row qty + comment)
 window.__srcAddUrl = function () {
   const list = document.getElementById('srcUrlList');
