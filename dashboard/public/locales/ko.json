@@ -427,7 +427,21 @@
     "total_quote": "총 견적:",
     "btn_confirm_order": "주문 확정하기",
     "btn_close": "닫기",
-    "max_url_alert": "최대 5개까지 추가할 수 있습니다."
+    "max_url_alert": "최대 5개까지 추가할 수 있습니다.",
+    "view_invoice": "📄 상세 보기",
+    "invoice_title": "Proforma Invoice",
+    "invoice_no": "인보이스 번호",
+    "invoice_date": "발급일",
+    "invoice_item": "상품명",
+    "invoice_qty": "수량",
+    "invoice_weight_vol": "무게/용량",
+    "invoice_unit_price": "단가",
+    "invoice_amount": "금액",
+    "invoice_subtotal": "소계",
+    "invoice_shipping": "국제 배송비",
+    "invoice_service_fee": "수수료",
+    "terms_agree": "(필수) 배송지 주소를 정확히 기입해야 하며, 오배송에 대한 책임은 구매자에게 있습니다. K-Vant의 B2B 결제 및 환불 약관에 동의합니다.",
+    "print_invoice": "🖨️ 인쇄 / PDF 저장"
   },
   "deals": {
     "today_title": "오늘의 특가 주문 마감까지",

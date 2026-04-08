@@ -415,7 +415,7 @@ def main():
 
     try:
         env = Environment(loader=FileSystemLoader(os.path.join(dashboard_dir, "report_generator")))
-        template = env.get_template("premium_template_v2.html")
+        template = env.get_template("premium_template_v3.html")
 
         html_content = template.render(
             report_date=datetime.now().strftime("%Y. %m. %d"),

@@ -419,7 +419,21 @@
     "total_quote": "Total Quote:",
     "btn_confirm_order": "Confirm Order",
     "btn_close": "Close",
-    "max_url_alert": "You can add up to 5 URLs."
+    "max_url_alert": "You can add up to 5 URLs.",
+    "view_invoice": "📄 View Invoice",
+    "invoice_title": "Proforma Invoice",
+    "invoice_no": "Invoice No.",
+    "invoice_date": "Date",
+    "invoice_item": "Item",
+    "invoice_qty": "Qty",
+    "invoice_weight_vol": "Weight/Vol",
+    "invoice_unit_price": "Unit Price",
+    "invoice_amount": "Amount",
+    "invoice_subtotal": "Subtotal",
+    "invoice_shipping": "Intl. Shipping",
+    "invoice_service_fee": "Service Fee",
+    "terms_agree": "(Required) Accurate shipping address is required. We are not liable for misdelivery. I agree to K-Vant's B2B billing and refund policies.",
+    "print_invoice": "🖨️ Print / Save PDF"
   },
   "deals": {
     "today_title": "Daily Deals Order Deadline",

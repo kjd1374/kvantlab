@@ -199,7 +199,7 @@ def get_video_captions(video_id: str):
     return ""
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL_NAME = "deepseek-r1:8b"
+MODEL_NAME = os.getenv("OLLAMA_MODEL", "gemma4")
 
 def prompt_local_llm(text: str, country: str) -> list:
     """Send text to Local DeepSeek (Ollama) to extract product lists."""

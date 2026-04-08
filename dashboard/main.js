@@ -5230,17 +5230,17 @@ window.__srcOpenInvoice = function (reqId) {
       const up = item.unit_price || 0;
       const amt = up * (item.quantity || 1);
       subtotal += amt;
-      return \`
+      return `
         <tr>
           <td>
-            <div class="invoice-item-name">\${escapeHtml(item.name || 'Sourcing Item')}</div>
+            <div class="invoice-item-name">${escapeHtml(item.name || 'Sourcing Item')}</div>
           </td>
-          <td style="text-align:right;">\${item.quantity || 1}</td>
-          <td style="text-align:center;">\${escapeHtml(item.weight || '-')}</td>
-          <td style="text-align:right;">$\${up.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-          <td style="text-align:right;">$\${amt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          <td style="text-align:right;">${item.quantity || 1}</td>
+          <td style="text-align:center;">${escapeHtml(item.weight || '-')}</td>
+          <td style="text-align:right;">$${up.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          <td style="text-align:right;">$${amt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
         </tr>
-      \`;
+      `;
     }).join('');
   }
 
@@ -5248,63 +5248,63 @@ window.__srcOpenInvoice = function (reqId) {
   const service = req.service_fee || 0;
   const grandTotal = req.estimated_cost || 0;
 
-  content.innerHTML = \`
+  content.innerHTML = `
     <div class="invoice-header">
       <div>
-        <h2 style="font-size:24px;">\${window.t('sourcing.invoice_title') || 'Proforma Invoice'}</h2>
+        <h2 style="font-size:24px;">${window.t('sourcing.invoice_title') || 'Proforma Invoice'}</h2>
         <div style="font-size:12px; font-weight:700; background:#222; color:#fff; display:inline-block; padding:3px 8px; border-radius:4px; margin-top:4px;">K-VANT B2B SOURCING</div>
       </div>
       <div class="invoice-meta">
-        <strong>\${window.t('sourcing.invoice_no') || 'Invoice No.'}:</strong> \${req.id.split('-').shift().toUpperCase()}<br>
-        <strong>\${window.t('sourcing.invoice_date') || 'Date'}:</strong> \${dateStr}
+        <strong>${window.t('sourcing.invoice_no') || 'Invoice No.'}:</strong> ${req.id.split('-').shift().toUpperCase()}<br>
+        <strong>${window.t('sourcing.invoice_date') || 'Date'}:</strong> ${dateStr}
       </div>
     </div>
 
     <table class="invoice-table">
       <thead>
         <tr>
-          <th>\${window.t('sourcing.invoice_item') || 'Item'}</th>
-          <th style="text-align:right; width:60px;">\${window.t('sourcing.invoice_qty') || 'Qty'}</th>
-          <th style="text-align:center; width:80px;">\${window.t('sourcing.invoice_weight_vol') || 'Weight/Vol'}</th>
-          <th style="text-align:right; width:80px;">\${window.t('sourcing.invoice_unit_price') || 'Unit Price'}</th>
-          <th style="text-align:right; width:90px;">\${window.t('sourcing.invoice_amount') || 'Amount'}</th>
+          <th>${window.t('sourcing.invoice_item') || 'Item'}</th>
+          <th style="text-align:right; width:60px;">${window.t('sourcing.invoice_qty') || 'Qty'}</th>
+          <th style="text-align:center; width:80px;">${window.t('sourcing.invoice_weight_vol') || 'Weight/Vol'}</th>
+          <th style="text-align:right; width:80px;">${window.t('sourcing.invoice_unit_price') || 'Unit Price'}</th>
+          <th style="text-align:right; width:90px;">${window.t('sourcing.invoice_amount') || 'Amount'}</th>
         </tr>
       </thead>
       <tbody>
-        \${itemsHtml}
+        ${itemsHtml}
       </tbody>
     </table>
 
     <div class="invoice-totals">
       <div class="invoice-totals-row">
-        <span>\${window.t('sourcing.invoice_subtotal') || 'Subtotal'}</span>
-        <span>$\${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        <span>${window.t('sourcing.invoice_subtotal') || 'Subtotal'}</span>
+        <span>$${subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
       </div>
       <div class="invoice-totals-row">
-        <span>\${window.t('sourcing.invoice_shipping') || 'Intl. Shipping'}</span>
-        <span>$\${shipping.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        <span>${window.t('sourcing.invoice_shipping') || 'Intl. Shipping'}</span>
+        <span>$${shipping.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
       </div>
       <div class="invoice-totals-row">
-        <span>\${window.t('sourcing.invoice_service_fee') || 'Service Fee'}</span>
-        <span>$\${service.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        <span>${window.t('sourcing.invoice_service_fee') || 'Service Fee'}</span>
+        <span>$${service.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
       </div>
       <div class="invoice-totals-row grand-total">
         <span>Total Due (USD)</span>
-        <span>$\${grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        <span>$${grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
       </div>
     </div>
 
-    \${req.admin_reply ? \`
+    ${req.admin_reply ? `
     <div class="invoice-notes">
       <strong style="display:block; margin-bottom:4px; color:#333;">Remarks & Terms:</strong>
-      <div style="white-space:pre-wrap; line-height: 1.5;">\${escapeHtml(req.admin_reply)}</div>
+      <div style="white-space:pre-wrap; line-height: 1.5;">${escapeHtml(req.admin_reply)}</div>
     </div>
-    \` : ''}
+    ` : ''}
 
     <div style="margin-top:24px; text-align:center;" class="noprint-actions">
-      <button class="btn-print" onclick="window.print()">\${window.t('sourcing.print_invoice') || '🖨️ Print / Save PDF'}</button>
+      <button class="btn-print" onclick="window.print()">${window.t('sourcing.print_invoice') || '🖨️ Print / Save PDF'}</button>
     </div>
-  \`;
+  `;
 
   overlay.classList.add('active');
 };

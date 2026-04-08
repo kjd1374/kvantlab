@@ -1,1 +1,0 @@
-from supabase import create_client; import os; from dotenv import load_dotenv; load_dotenv(); client = create_client(os.getenv('SUPABASE_URL'), os.getenv('SUPABASE_KEY')); print(client.table('global_shopping_trends').select('*').execute().data)
