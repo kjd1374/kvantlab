@@ -905,6 +905,17 @@ async function initAdmin() {
                         <p>${req.user_email}</p>
                         <div style="color: #666; font-size: 13px; margin-top: 5px;">Client ID: ${req.user_id.substring(0,8)}</div>
                     </div>
+                    ${req.profiles ? `
+                    <div class="ship-to" style="margin-left: 40px; flex: 1;">
+                        <h4 style="margin: 0 0 10px 0; color: #666; text-transform: uppercase; font-size: 12px;">Ship To</h4>
+                        <p style="margin: 0; font-size: 14px;">
+                            ${req.profiles.address1 || ''} ${req.profiles.address2 || ''}<br>
+                            ${req.profiles.city || ''}, ${req.profiles.zip_code || ''}<br>
+                            ${req.profiles.country || ''}<br>
+                            Tel: ${req.profiles.phone || ''}
+                        </p>
+                    </div>
+                    ` : ''}
                     <div class="meta-info">
                         <table>
                             <tr><th>Invoice No:</th><td>${invoiceNo}</td></tr>

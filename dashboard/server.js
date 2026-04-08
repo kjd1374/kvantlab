@@ -1427,7 +1427,26 @@ app.get('/api/admin/sourcing', requireAdmin, async (req, res) => {
             .order('created_at', { ascending: false });
 
         if (error) throw error;
-        res.json({ success: true, requests: data });
+        
+        // Fetch specific profile data securely
+        const userIds = [...new Set(data.map(r => r.user_id))].filter(Boolean);
+        let profileMap = {};
+        if (userIds.length > 0) {
+            const { data: profiles } = await supabase
+                .from('profiles')
+                .select('id, phone, country, city, zip_code, address1, address2')
+                .in('id', userIds);
+            if (profiles) {
+                profiles.forEach(p => profileMap[p.id] = p);
+            }
+        }
+        
+        const enrichedData = data.map(r => ({
+            ...r,
+            profiles: profileMap[r.user_id] || null
+        }));
+
+        res.json({ success: true, requests: enrichedData });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }

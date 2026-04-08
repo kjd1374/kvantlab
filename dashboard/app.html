@@ -505,6 +505,16 @@
         </div>
       </div>
     </div>
+
+    <!-- ═══ INVOICE MODAL ═══ -->
+    <div class="src-modal-overlay" id="srcInvoiceOverlay" onclick="if(event.target===this) window.__srcCloseInvoice()">
+      <div class="src-invoice-panel" id="srcInvoicePanel">
+        <button class="src-modal-close" onclick="window.__srcCloseInvoice()" style="right:-40px; top:0; color:#fff; font-size:28px;">&times;</button>
+        <div id="srcInvoiceContent" class="printable-invoice">
+          <!-- JS로 렌더링 -->
+        </div>
+      </div>
+    </div>
   </main>
 
   <!-- Product Detail Modal -->
@@ -948,7 +958,7 @@
     </div>
   </div>
 
-  <script type="module" src="/main.js?v=36"></script>
+  <script type="module" src="/main.js?v=37"></script>
   <!-- Reliable body[data-platform] setter independent of ES module system -->
   <script>
     document.addEventListener('click', function (e) {
