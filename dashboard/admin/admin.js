@@ -893,8 +893,8 @@ async function initAdmin() {
                         <div style="margin-top: 5px; color: #666;">K-Vant Sourcing Solutions</div>
                     </div>
                     <div class="company-info">
-                        <strong>Data Pool (K-Vant)</strong><br>
-                        contact@kvantlab.com<br>
+                        <strong>K-Vant</strong><br>
+                        roundbase84@gmail.com<br>
                         www.kvantlab.com
                     </div>
                 </div>
@@ -968,7 +968,7 @@ async function initAdmin() {
                 </div>
 
                 <div class="footer">
-                    <p>Thank you for your business. If you have any questions about this invoice, please contact contact@kvantlab.com</p>
+                    <p>Thank you for your business. If you have any questions about this invoice, please contact roundbase84@gmail.com</p>
                 </div>
             </body>
             </html>
